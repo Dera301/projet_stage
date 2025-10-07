@@ -8,8 +8,7 @@ import {
   Bars3Icon as MenuIcon, 
   XMarkIcon as XIcon,
   ChatBubbleLeftRightIcon as ChatIcon,
-  PlusIcon,
-  HomeIcon
+  PlusIcon
 } from '@heroicons/react/24/outline';
 
 const Navbar: React.FC = () => {

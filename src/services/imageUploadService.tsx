@@ -1,5 +1,4 @@
 // services/imageUploadService.ts
-import toast from 'react-hot-toast';
 
 export const uploadImageToServer = async (file: File): Promise<string> => {
   const formData = new FormData();

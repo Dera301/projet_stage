@@ -87,7 +87,7 @@ const Footer: React.FC = () => {
               <div className="flex items-center space-x-3">
                 <PhoneIcon className="w-5 h-5 text-primary-400" />
                 <span className="text-gray-300">
-                  +261 34 12 345 67
+                  +261 34 71 807 09
                 </span>
               </div>
               <div className="flex items-center space-x-3">
@@ -103,7 +103,7 @@ const Footer: React.FC = () => {
         {/* Copyright */}
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
           <p className="text-gray-400">
-            © 2024 ColocAntananarivo. Tous droits réservés. | 
+            © 2025 ColocAntananarivo. Tous droits réservés. | 
             <a href="/privacy" className="hover:text-white transition-colors ml-2">
               Politique de confidentialité
             </a>

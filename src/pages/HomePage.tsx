@@ -8,7 +8,6 @@ import {
   MagnifyingGlassIcon as SearchIcon,
   ChatBubbleLeftRightIcon as ChatIcon,
   StarIcon,
-  CurrencyDollarIcon,
   HeartIcon,
   
   CalendarIcon

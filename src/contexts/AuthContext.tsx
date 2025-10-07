@@ -41,9 +41,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const text = await res.text();
       console.log('📡 Réponse me.php - Body:', text);
       
-      let data;
+      //let data;
       try {
-        data = JSON.parse(text);
+        //data = JSON.parse(text);
       } catch (parseError) {
         console.error('❌ Erreur parsing JSON:', parseError);
         setIsLoading(false);

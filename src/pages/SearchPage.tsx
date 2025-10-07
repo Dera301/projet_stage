@@ -36,16 +36,30 @@ const SearchPage: React.FC = () => {
   ];
 
   useEffect(() => {
-    handleSearch();
-  }, [filters]);
+    const searchWithFilters = async () => {
+      try {
+        const results = await searchProperties(filters);
+        setProperties(results);
+      } catch (error) {
+        console.error('Erreur lors de la recherche:', error);
+      }
+    };
 
-  const handleSearch = async () => {
-    try {
-      const results = await searchProperties(filters);
-      setProperties(results);
-    } catch (error) {
-      console.error('Erreur lors de la recherche:', error);
-    }
+    searchWithFilters();
+  }, [filters, searchProperties]); // Direct dependencies
+
+  const handleSearch = () => {
+    // This can now be used for the manual search button
+    // Reuse the same logic or call searchWithFilters directly
+    const searchWithFilters = async () => {
+      try {
+        const results = await searchProperties(filters);
+        setProperties(results);
+      } catch (error) {
+        console.error('Erreur lors de la recherche:', error);
+      }
+    };
+    searchWithFilters();
   };
 
   const handleFilterChange = (key: keyof SearchFilters, value: any) => {

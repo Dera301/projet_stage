@@ -300,17 +300,18 @@ const PropertyDetailPage: React.FC = () => {
                 <h4 className="text-md font-semibold mb-2">Emplacement sur la carte</h4>
                 <div className="rounded-lg overflow-hidden border border-gray-200">
                   <iframe
-                    width="100%"
-                    height="300"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    allowFullScreen
-                    src={
-                      property.latitude && property.longitude
-                        ? `https://www.google.com/maps?q=${property.latitude},${property.longitude}&z=16&output=embed`
-                        : `https://www.google.com/maps?q=${encodeURIComponent(property.address)}&output=embed`
-                    }
-                  />
+  width="100%"
+  height="300"
+  style={{ border: 0 }}
+  loading="lazy"
+  allowFullScreen
+  title={`Carte montrant la localisation de ${property.title || 'la propriété'} à ${property.address}`}
+  src={
+    property.latitude && property.longitude
+      ? `https://www.google.com/maps?q=${property.latitude},${property.longitude}&z=16&output=embed`
+      : `https://www.google.com/maps?q=${encodeURIComponent(property.address)}&output=embed`
+  }
+/>
                 </div>
               </div>
             )}
