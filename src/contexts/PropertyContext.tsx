@@ -32,7 +32,7 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
   const { user } = useAuth();
 
   // URL de base de votre API PHP - ADAPTEZ SELON VOTRE CONFIGURATION
-  const API_BASE_URL = 'http://localhost/Projet_stage/api/properties';
+  const API_BASE_URL = 'https://nytranoko.infinityfree.me/api/properties';
 
   // Fonction utilitaire pour gérer les réponses
   const handleResponse = async (response: Response) => {
