@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Conversation, Message, MessageContextType } from '../types';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
@@ -23,8 +23,93 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
 
-  // Données mock pour la démo
-  const getMockConversations = (): Conversation[] => {
+  useEffect(() => {
+    const getMockConversations = (): Conversation[] => {
+      if (!user) return [];
+
+      const lastMessage = {
+        id: '1',
+        senderId: '2',
+        receiverId: user.id,
+        content: 'Bonjour, je suis intéressé par votre logement',
+        isRead: false,
+        createdAt: new Date(),
+        sender: { firstName: 'Jean', lastName: 'Dupont' },
+        receiver: { firstName: user.firstName, lastName: user.lastName },
+      };
+
+      return [
+        {
+          id: '1',
+          participants: [
+            {
+              id: '2',
+              email: 'proprietaire@example.com',
+              firstName: 'Jean',
+              lastName: 'Dupont',
+              phone: '+261320123456',
+              userType: 'owner',
+              isVerified: true,
+              preferences: [],
+              bio: 'Propriétaire sérieux',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }
+          ],
+          lastMessage: lastMessage,
+          unreadCount: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }
+      ];
+    };
+
+    const getMockMessages = (): Message[] => {
+      if (!user) return [];
+
+      return [
+        {
+          id: '1',
+          conversationId: '1',
+          senderId: '2',
+          receiverId: user.id,
+          content: 'Bonjour, je suis intéressé par votre logement',
+          isRead: false,
+          createdAt: new Date(),
+          sender: { firstName: 'Jean', lastName: 'Dupont' },
+          receiver: { firstName: user.firstName, lastName: user.lastName },
+        }
+      ];
+    };
+    if (user) {
+      setConversations(getMockConversations());
+      setMessages(getMockMessages());
+    } else {
+      setConversations([]);
+      setMessages([]);
+    }
+  }, [user]); // Now only depends on user
+
+  // Keep separate versions for other methods
+  const getMockMessagesForMethod = useCallback((): Message[] => {
+    if (!user) return [];
+
+    return [
+      {
+        id: '1',
+        conversationId: '1',
+        senderId: '2',
+        receiverId: user.id,
+        content: 'Bonjour, je suis intéressé par votre logement',
+        isRead: false,
+        createdAt: new Date(),
+        sender: { firstName: 'Jean', lastName: 'Dupont' },
+        receiver: { firstName: user.firstName, lastName: user.lastName },
+      }
+    ];
+  }, [user]);
+
+  const getMockConversationsForMethod = useCallback((): Conversation[] => {
     if (!user) return [];
 
     const lastMessage = {
@@ -62,34 +147,6 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
         updatedAt: new Date(),
       }
     ];
-  };
-
-  const getMockMessages = (): Message[] => {
-    if (!user) return [];
-
-    return [
-      {
-        id: '1',
-        conversationId: '1',
-        senderId: '2',
-        receiverId: user.id,
-        content: 'Bonjour, je suis intéressé par votre logement',
-        isRead: false,
-        createdAt: new Date(),
-        sender: { firstName: 'Jean', lastName: 'Dupont' },
-        receiver: { firstName: user.firstName, lastName: user.lastName },
-      }
-    ];
-  };
-
-  useEffect(() => {
-    if (user) {
-      setConversations(getMockConversations());
-      setMessages(getMockMessages());
-    } else {
-      setConversations([]);
-      setMessages([]);
-    }
   }, [user]);
 
   const sendMessage = async (receiverId: string, content: string): Promise<void> => {
@@ -170,12 +227,10 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
     }
   };
 
-  const getConversationMessages = async (conversationId: string): Promise<Message[]> => {
+   const getConversationMessages = async (conversationId: string): Promise<Message[]> => {
     try {
-      // Simulation de chargement
       await new Promise(resolve => setTimeout(resolve, 200));
-      
-      return getMockMessages().filter(msg => msg.conversationId === conversationId);
+      return getMockMessagesForMethod().filter(msg => msg.conversationId === conversationId);
     } catch (error: any) {
       toast.error('Erreur lors du chargement des messages');
       return [];
@@ -184,13 +239,13 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
 
   const refreshConversations = () => {
     if (user) {
-      setConversations(getMockConversations());
+      setConversations(getMockConversationsForMethod());
     }
   };
 
   const refreshMessages = () => {
     if (user) {
-      setMessages(getMockMessages());
+      setMessages(getMockMessagesForMethod());
     }
   };
 
