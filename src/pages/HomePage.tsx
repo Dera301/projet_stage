@@ -89,7 +89,7 @@ const HomePage: React.FC = () => {
     if (!imageUrl) return '/api/placeholder/400/300';
     if (imageUrl.startsWith('http')) return imageUrl;
     if (imageUrl.startsWith('/')) {
-      return `http://localhost${imageUrl}`;
+      return `https://nytranoko.infinityfree.me${imageUrl}`;
     }
     return imageUrl;
   };

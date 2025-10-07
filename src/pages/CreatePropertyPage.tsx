@@ -23,7 +23,7 @@ const uploadImageToServer = async (file: File): Promise<string> => {
   formData.append('image', file);
   
   try {
-    const response = await fetch('http://localhost/Projet_stage/api/upload/image.php', {
+    const response = await fetch('https://nytranoko.infinityfree.me/api/upload/image.php', {
       method: 'POST',
       body: formData
       // Pas de credentials pour les uploads de fichiers

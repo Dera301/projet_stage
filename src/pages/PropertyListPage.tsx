@@ -107,7 +107,7 @@ const PropertyListPage: React.FC = () => {
   
   // Si c'est un chemin relatif, le convertir en URL absolue
   if (imageUrl.startsWith('/')) {
-    return `http://localhost${imageUrl}`;
+    return `https://nytranoko.infinityfree.me${imageUrl}`;
   }
   
   return imageUrl;
