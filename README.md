@@ -1,5 +1,8 @@
 # ColocAntananarivo - Plateforme de Colocation Étudiante
 
+# Pour accéder à l'application visiter le lien suivant:
+https://dera301.github.io/projet_stage/
+
 ## Description du Projet
 
 ColocAntananarivo est une plateforme web de mise en relation pour la colocation étudiante à Antananarivo, Madagascar. Cette application facilite la recherche de logements abordables et la mise en relation entre étudiants et propriétaires.
