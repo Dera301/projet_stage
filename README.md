@@ -1,7 +1,7 @@
 # ColocAntananarivo - Plateforme de Colocation Étudiante
 
 # Pour accéder à l'application visiter le lien suivant:
-https://dera301.github.io/projet_stage/
+https://projet-stage.vercel.app/
 
 ## Description du Projet
 
@@ -128,7 +128,7 @@ Un backend PHP minimal a été ajouté dans `api/` pour gérer l'authentificatio
 ### 1) Installer la base de données
 
 1. Ouvrez `phpMyAdmin` (`http://localhost/phpmyadmin`).
-2. Importez le fichier SQL: `api/database.sql`.
+2. Importez le fichierdans git hub montre moi ou trouver le lien pour accéeder à mon application SQL: `api/database.sql`.
 
 ### 2) Déployer l'API sous XAMPP
 

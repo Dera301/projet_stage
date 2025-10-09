@@ -37,7 +37,7 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
 
-  const API_BASE_URL = 'http://nytranoko.infinityfree.me/api/properties';
+  const API_BASE_URL = 'https://nytranoko.infinityfree.me/api/properties';
   // Fonction utilitaire pour gérer les réponses
   const handleResponse = async (response: Response) => {
     const contentType = response.headers.get('content-type');
@@ -79,8 +79,7 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
   const fetchProperties = useCallback(async () => {
     setLoading(true);
     try {
-      
-      const response = await fetch(`http://nytranoko.infinityfree.me/api/properties/get_all.php`, {
+      const response = await fetch(`${API_BASE_URL}/get_all.php`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +103,7 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [API_BASE_URL]);
 
   // Récupérer une propriété par ID
   const fetchPropertyById = async (id: string): Promise<Property | null> => {
