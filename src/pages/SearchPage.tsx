@@ -87,7 +87,7 @@ const SearchPage: React.FC = () => {
   
   // Si c'est un chemin relatif, le convertir en URL absolue
   if (imageUrl.startsWith('/')) {
-    return `https://nytranoko.infinityfree.me${imageUrl}`;
+    return `http://localhost${imageUrl}`;
   }
   
   return imageUrl;
@@ -281,7 +281,7 @@ const SearchPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
                   {filteredProperties.map((property) => (
                     <div key={property.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                       <div className="aspect-w-16 aspect-h-9 bg-gray-200">

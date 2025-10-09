@@ -5,11 +5,16 @@ import toast from 'react-hot-toast';
 
 interface PropertyContextType {
   properties: Property[];
+  userProperties: Property[]; // Ajouter cette ligne
   loading: boolean;
   createProperty: (propertyData: CreatePropertyData) => Promise<void>;
   searchProperties: (filters?: SearchFilters) => Promise<Property[]>;
   fetchProperties: () => Promise<void>;
   fetchPropertyById: (id: string) => Promise<Property | null>;
+  deleteProperty: (propertyId: string) => Promise<void>;
+  updateProperty: (propertyId: string, updates: Partial<Property>) => Promise<Property>;
+  fetchUserProperties: () => Promise<void>; // Ajouter cette ligne
+  
 }
 
 const PropertyContext = createContext<PropertyContextType | undefined>(undefined);
@@ -28,12 +33,11 @@ interface PropertyProviderProps {
 
 export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) => {
   const [properties, setProperties] = useState<Property[]>([]);
+  const [userProperties, setUserProperties] = useState<Property[]>([]); // AJOUT: État pour les propriétés de l'utilisateur
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
 
-  // URL de base de votre API PHP - ADAPTEZ SELON VOTRE CONFIGURATION
-  const API_BASE_URL = 'https://nytranoko.infinityfree.me/api/properties';
-
+  const API_BASE_URL = 'http://nytranoko.infinityfree.me/api/properties';
   // Fonction utilitaire pour gérer les réponses
   const handleResponse = async (response: Response) => {
     const contentType = response.headers.get('content-type');
@@ -75,7 +79,8 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
   const fetchProperties = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/get_all.php`, {
+      
+      const response = await fetch(`http://nytranoko.infinityfree.me/api/properties/get_all.php`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +104,7 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
     } finally {
       setLoading(false);
     }
-  }, [API_BASE_URL]);
+  }, []);
 
   // Récupérer une propriété par ID
   const fetchPropertyById = async (id: string): Promise<Property | null> => {
@@ -128,46 +133,129 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
   };
 
   // Créer une nouvelle propriété
-  const createProperty = async (propertyData: CreatePropertyData) => {
-  setLoading(true);
-  try {
+   const createProperty = async (propertyData: CreatePropertyData) => {
+    setLoading(true);
+    try {
+      if (!user) {
+        throw new Error('Vous devez être connecté pour créer une propriété');
+      }
+
+      console.log('Données envoyées à l\'API:', {
+        ...propertyData,
+        ownerId: user.id
+      });
+
+      const propertyWithOwner = {
+        ...propertyData,
+        ownerId: user.id
+      };
+
+      const response = await fetch(`${API_BASE_URL}/create.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(propertyWithOwner),
+      });
+
+      const newProperty = await handleResponse(response);
+      
+      // Mettre à jour les deux listes
+      setProperties(prev => [newProperty, ...prev]);
+      setUserProperties(prev => [newProperty, ...prev]); // AJOUT: Mettre à jour userProperties aussi
+      
+      toast.success('Propriété créée avec succès !');
+    } catch (error) {
+      console.error('Erreur createProperty:', error);
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la création de la propriété');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserProperties = useCallback(async () => {
     if (!user) {
-      throw new Error('Vous devez être connecté pour créer une propriété');
+      setUserProperties([]);
+      return;
     }
 
-    // DEBUG: Afficher les données envoyées
-    console.log('Données envoyées à l\'API:', {
-      ...propertyData,
-      ownerId: user.id
-    });
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/get_by_user.php?userId=${user.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-    const propertyWithOwner = {
-      ...propertyData,
-      ownerId: user.id // Assurez-vous que c'est bien envoyé
-    };
+      const data = await handleResponse(response);
+      
+      if (Array.isArray(data)) {
+        setUserProperties(data);
+      } else {
+        console.error('Les données reçues ne sont pas un tableau:', data);
+        setUserProperties([]);
+      }
+    } catch (error) {
+      console.error('Erreur fetchUserProperties:', error);
+      toast.error('Erreur lors du chargement de vos propriétés');
+      setUserProperties([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, API_BASE_URL]);
 
-    const response = await fetch(`${API_BASE_URL}/create.php`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(propertyWithOwner),
-    });
+  // Modifier une propriété
+  const updateProperty = async (propertyId: string, updates: Partial<Property>): Promise<Property> => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/update.php?id=${propertyId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      });
+      
+      const updatedProperty = await handleResponse(response);
+      
+      // Mettre à jour les listes locales
+      setProperties(prev => prev.map(p => p.id === propertyId ? updatedProperty : p));
+      setUserProperties(prev => prev.map(p => p.id === propertyId ? updatedProperty : p));
+      
+      toast.success('Propriété modifiée avec succès');
+      return updatedProperty;
+    } catch (error: any) {
+      toast.error('Erreur lors de la modification de la propriété');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const newProperty = await handleResponse(response);
-    
-    // Ajouter la nouvelle propriété à la liste
-    setProperties(prev => [newProperty, ...prev]);
-    
-    toast.success('Propriété créée avec succès !');
-  } catch (error) {
-    console.error('Erreur createProperty:', error);
-    toast.error(error instanceof Error ? error.message : 'Erreur lors de la création de la propriété');
-    throw error;
-  } finally {
-    setLoading(false);
-  }
-};
+  // Supprimer une propriété
+  const deleteProperty = async (propertyId: string): Promise<void> => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/delete.php?id=${propertyId}`, {
+        method: 'DELETE',
+      });
+      
+      await handleResponse(response);
+      
+      // Mettre à jour les listes locales
+      setProperties(prev => prev.filter(p => p.id !== propertyId));
+      setUserProperties(prev => prev.filter(p => p.id !== propertyId));
+      
+      toast.success('Propriété supprimée avec succès');
+    } catch (error: any) {
+      toast.error('Erreur lors de la suppression de la propriété');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Rechercher des propriétés avec filtres
   const searchProperties = async (filters: SearchFilters = {}): Promise<Property[]> => {
@@ -206,18 +294,42 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
     }
   };
 
-  // Charger les propriétés au montage du composant
-  useEffect(() => {
+  
+   useEffect(() => {
     fetchProperties();
   }, [fetchProperties]);
 
+  // AJOUT: Charger les propriétés de l'utilisateur quand il change
+  useEffect(() => {
+    if (user) {
+      fetchUserProperties();
+    } else {
+      setUserProperties([]);
+    }
+  }, [user, fetchUserProperties]);useEffect(() => {
+    const loadUserProperties = async () => {
+      if (user) {
+        await fetchUserProperties();
+      } else {
+        setUserProperties([]);
+      }
+    };
+
+    loadUserProperties();
+  }, [user, fetchUserProperties]);  // Supprimer fetchUserProperties des dépendances
+
+
   const value: PropertyContextType = {
     properties,
+    userProperties, // Ajouter au contexte
     loading,
     createProperty,
     searchProperties,
     fetchProperties,
     fetchPropertyById,
+    deleteProperty,
+    updateProperty,
+    fetchUserProperties, // Ajouter cette fonction
   };
 
   return (

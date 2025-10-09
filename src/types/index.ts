@@ -16,6 +16,7 @@ export interface User {
   updatedAt: Date;
 }
 
+// types.ts
 export interface Property {
   id: string;
   title: string;
@@ -34,8 +35,8 @@ export interface Property {
   isAvailable: boolean;
   latitude?: number;
   longitude?: number;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Message {
@@ -140,4 +141,5 @@ export interface MessageContextType {
   refreshConversations?: () => void;
   refreshMessages?: () => void;
   loading: boolean;
+  
 }

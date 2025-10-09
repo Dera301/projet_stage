@@ -1,5 +1,5 @@
 // config.ts - CORRECTION COMPLÈTE
-const API_BASE_URL = 'https://nytranoko.infinityfree.me';
+const API_BASE_URL = 'http://nytranoko.infinityfree.me';
 
 export const apiGet = async (url: string) => {
   const token = localStorage.getItem('auth_token');

@@ -8,9 +8,11 @@ import {
   PlusIcon,
   XMarkIcon,
   MapPinIcon,
+  MagnifyingGlassIcon
    // REMPLACEMENT de CloudArrowUpIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import { MapIcon } from 'lucide-react';
 
 interface Coordinates {
   lat: number;
@@ -23,7 +25,7 @@ const uploadImageToServer = async (file: File): Promise<string> => {
   formData.append('image', file);
   
   try {
-    const response = await fetch('https://nytranoko.infinityfree.me/api/upload/image.php', {
+    const response = await fetch('http://localhost/Projet_stage/api/upload/image.php', {
       method: 'POST',
       body: formData
       // Pas de credentials pour les uploads de fichiers
@@ -85,9 +87,20 @@ const CreatePropertyPage: React.FC = () => {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [tempCoordinates, setTempCoordinates] = useState<Coordinates | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isGeolocating, setIsGeolocating] = useState(false);
+  const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  
+// AJOUTER CES 3 LIGNES ICI :
+const [manualLat, setManualLat] = useState<string>('');
+const [manualLng, setManualLng] = useState<string>('');
+const [showManualInput, setShowManualInput] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const geocodingTimeoutRef = useRef<NodeJS.Timeout>();
+
 
   const districts = [
     'Analakely', 'Ambohijatovo', 'Ankadifotsy', 'Ankatso', 'Antaninarenina',
@@ -104,6 +117,264 @@ const CreatePropertyPage: React.FC = () => {
     { value: 'house', label: 'Maison' },
     { value: 'studio', label: 'Studio' }
   ];
+
+  const getCurrentLocation = () => {
+  if (!navigator.geolocation) {
+    toast.error("La géolocalisation n'est pas supportée par votre navigateur");
+    return;
+  }
+
+  setIsGeolocating(true);
+  toast.loading("Récupération de votre position actuelle...");
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude } = position.coords;
+
+      // ✅ Utilise la position GPS réelle
+      setCoordinates({ lat: latitude, lng: longitude });
+      setTempCoordinates({ lat: latitude, lng: longitude });
+
+      // Reverse geocoding pour remplir adresse
+      reverseGeocode(latitude, longitude);
+
+      toast.dismiss();
+      toast.success(`Position détectée : ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+      setIsGeolocating(false);
+    },
+    (error) => {
+      toast.dismiss();
+      setIsGeolocating(false);
+      
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          toast.error("Permission de géolocalisation refusée");
+          break;
+        case error.POSITION_UNAVAILABLE:
+          toast.error("Position GPS indisponible");
+          break;
+        case error.TIMEOUT:
+          toast.error("Timeout de la géolocalisation");
+          break;
+        default:
+          toast.error("Erreur de géolocalisation inconnue");
+      }
+    },
+    {
+      enableHighAccuracy: true, // 🛰️ GPS haute précision
+      timeout: 15000,           // 15 secondes max
+      maximumAge: 0             // Pas de cache
+    }
+  );
+  };
+
+  // Reverse geocoding pour obtenir l'adresse à partir des coordonnées
+  const reverseGeocode = async (lat: number, lng: number): Promise<void> => {
+    try {
+      // Utilisation de l'API Nominatim (OpenStreetMap)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+      );
+      
+      const data = await response.json();
+      
+      if (data && data.display_name) {
+        const address = data.display_name;
+        setFormData(prev => ({
+          ...prev,
+          address: address
+        }));
+        
+        // Essayer de déterminer le quartier
+        if (data.address) {
+          const district = data.address.suburb || data.address.neighbourhood || data.address.quarter;
+          if (district && districts.includes(district)) {
+            setFormData(prev => ({
+              ...prev,
+              district: district
+            }));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erreur reverse geocoding:', error);
+    }
+  };
+
+  // Geocoding pour obtenir les coordonnées à partir de l'adresse
+  const geocodeAddress = async (address: string): Promise<Coordinates | null> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=5&countrycodes=mg`
+      );
+      
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const firstResult = data[0];
+        return {
+          lat: parseFloat(firstResult.lat),
+          lng: parseFloat(firstResult.lon)
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Erreur geocoding:', error);
+      return null;
+    }
+  };
+
+  // Recherche d'adresses avec suggestions
+  const searchAddress = async (query: string) => {
+    if (query.length < 3) {
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=mg`
+      );
+      
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const suggestions = data.map((item: any) => item.display_name);
+        setAddressSuggestions(suggestions);
+        setShowSuggestions(true);
+      } else {
+        setAddressSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (error) {
+      console.error('Erreur recherche adresse:', error);
+      setAddressSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  // Gestion du changement d'adresse avec debounce
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      address: value
+    }));
+
+    // Clear previous timeout
+    if (geocodingTimeoutRef.current) {
+      clearTimeout(geocodingTimeoutRef.current);
+    }
+
+    // Set new timeout for address search
+    geocodingTimeoutRef.current = setTimeout(() => {
+      searchAddress(value);
+    }, 500);
+  };
+
+  // Sélection d'une suggestion d'adresse
+  const handleAddressSelect = async (suggestion: string) => {
+    setFormData(prev => ({
+      ...prev,
+      address: suggestion
+    }));
+    setShowSuggestions(false);
+    setAddressSuggestions([]);
+
+    // Géocoder l'adresse sélectionnée
+    toast.loading('Récupération des coordonnées...');
+    const coords = await geocodeAddress(suggestion);
+    
+    if (coords) {
+      setCoordinates(coords);
+      setTempCoordinates(coords);
+      toast.dismiss();
+      toast.success('Adresse localisée sur la carte !');
+    } else {
+      toast.dismiss();
+      toast.error('Impossible de localiser cette adresse');
+    }
+  };
+  // Géolocalisation manuelle
+  const handleManualGeolocate = async () => {
+    if (!formData.address.trim()) {
+      toast.error('Veuillez d\'abord saisir une adresse');
+      return;
+    }
+
+    try {
+      toast.loading('Recherche des coordonnées...');
+      const coords = await geocodeAddress(formData.address);
+      
+      if (coords) {
+        setCoordinates(coords);
+        setTempCoordinates(coords);
+        setIsMapModalOpen(true);
+        toast.dismiss();
+        toast.success('Coordonnées trouvées ! Ajustez la position sur la carte.');
+      } else {
+        toast.dismiss();
+        toast.error('Impossible de trouver les coordonnées pour cette adresse');
+      }
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Erreur lors de la géolocalisation');
+    }
+  };
+
+  const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  if (!mapRef.current || !coordinates) return;
+
+  const rect = mapRef.current.getBoundingClientRect();
+  const xRatio = (e.clientX - rect.left) / rect.width;
+  const yRatio = (e.clientY - rect.top) / rect.height;
+
+  // Déplacement local (petit ajustement autour de la position actuelle)
+  const newCoords: Coordinates = {
+    lat: coordinates.lat + (0.01 * (yRatio - 0.5)),
+    lng: coordinates.lng + (0.01 * (xRatio - 0.5)),
+  };
+
+  setTempCoordinates(newCoords);
+  };
+
+  const confirmLocation = () => {
+    if (tempCoordinates) {
+      setCoordinates(tempCoordinates);
+      toast.success('Emplacement confirmé !');
+    }
+    setIsMapModalOpen(false);
+  };
+
+  const handleManualCoordinatesSubmit = () => {
+  const lat = parseFloat(manualLat);
+  const lng = parseFloat(manualLng);
+  
+  if (isNaN(lat) || isNaN(lng)) {
+    toast.error('Veuillez saisir des coordonnées valides');
+    return;
+  }
+  
+  if (lat < -90 || lat > 90) {
+    toast.error('La latitude doit être entre -90 et 90');
+    return;
+  }
+  
+  if (lng < -180 || lng > 180) {
+    toast.error('La longitude doit être entre -180 et 180');
+    return;
+  }
+  
+  const newCoords: Coordinates = { lat, lng };
+  setCoordinates(newCoords);
+  setTempCoordinates(newCoords);
+  setShowManualInput(false);
+  setManualLat('');
+  setManualLng('');
+  toast.success('Coordonnées manuelles enregistrées !');
+};
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -191,67 +462,9 @@ const CreatePropertyPage: React.FC = () => {
     }
   };
 
-  const geocodeAddress = async (address: string): Promise<Coordinates | null> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          lat: -18.8792 + (Math.random() - 0.5) * 0.01,
-          lng: 47.5079 + (Math.random() - 0.5) * 0.01
-        });
-      }, 1000);
-    });
-  };
+  
 
-  const handleAddressGeocode = async () => {
-    if (!formData.address.trim()) {
-      toast.error('Veuillez d\'abord saisir une adresse');
-      return;
-    }
-
-    try {
-      toast.loading('Recherche des coordonnées...');
-      const coords = await geocodeAddress(formData.address);
-      
-      if (coords) {
-        setCoordinates(coords);
-        setTempCoordinates(coords);
-        setIsMapModalOpen(true);
-        toast.dismiss();
-        toast.success('Coordonnées trouvées ! Ajustez la position sur la carte.');
-      } else {
-        toast.dismiss();
-        toast.error('Impossible de trouver les coordonnées pour cette adresse');
-      }
-    } catch (error) {
-      toast.dismiss();
-      toast.error('Erreur lors de la géolocalisation');
-    }
-  };
-
-  const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!mapRef.current) return;
-
-    const rect = mapRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const newCoords: Coordinates = {
-      lat: -18.8792 + (y / rect.height - 0.5) * 0.02,
-      lng: 47.5079 + (x / rect.width - 0.5) * 0.02
-    };
-
-    setTempCoordinates(newCoords);
-  };
-
-  const confirmLocation = () => {
-    if (tempCoordinates) {
-      setCoordinates(tempCoordinates);
-      toast.success('Emplacement confirmé !');
-    }
-    setIsMapModalOpen(false);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!user) {
@@ -355,7 +568,7 @@ const CreatePropertyPage: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Basic Information */}
+          {/* Section Informations de base (garder le titre et description) */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Informations de base</h2>
             
@@ -428,38 +641,172 @@ const CreatePropertyPage: React.FC = () => {
                   ))}
                 </select>
               </div>
-
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Localisation</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Adresse complète *
                 </label>
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    className="input-field flex-1"
-                    placeholder="Ex: Rue de l'Indépendance, Analakely, Antananarivo"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddressGeocode}
-                    className="btn-secondary flex items-center space-x-2 whitespace-nowrap"
-                    disabled={!formData.address.trim()}
-                  >
-                    <MapPinIcon className="w-4 h-4" />
-                    <span>Localiser</span>
-                  </button>
+                <div className="relative">
+                  <div className="flex space-x-2">
+                    <div className="flex-1 relative">
+                      <input
+                        ref={addressInputRef}
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleAddressChange}
+                        className="input-field pr-10"
+                        placeholder="Ex: Rue de l'Indépendance, Analakely, Antananarivo"
+                        required
+                        onFocus={() => {
+                          if (addressSuggestions.length > 0) {
+                            setShowSuggestions(true);
+                          }
+                        }}
+                        onBlur={() => {
+                          setTimeout(() => setShowSuggestions(false), 200);
+                        }}
+                      />
+                      <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2" />
+                    </div>
+                    
+                    {/* Bouton géolocalisation automatique */}
+                    <button
+                      type="button"
+                      onClick={getCurrentLocation}
+                      className="btn-secondary flex items-center space-x-2 whitespace-nowrap"
+                      disabled={isGeolocating}
+                      title="Utiliser ma position actuelle"
+                    >
+                      {isGeolocating ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                      ) : (
+                        <MapIcon className="w-4 h-4" />
+                      )}
+                      <span>Ma position</span>
+                    </button>
+
+                    {/* Bouton géolocalisation manuelle */}
+                    <button
+                      type="button"
+                      onClick={handleManualGeolocate}
+                      className="btn-secondary flex items-center space-x-2 whitespace-nowrap"
+                      disabled={!formData.address.trim()}
+                      title="Localiser cette adresse"
+                    >
+                      <MapPinIcon className="w-4 h-4" />
+                      <span>Localiser</span>
+                    </button>
+                  </div>
+
+                  {/* Suggestions d'adresses */}
+                  {showSuggestions && addressSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                      {addressSuggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 border-b border-gray-100 last:border-b-0"
+                          onClick={() => handleAddressSelect(suggestion)}
+                        >
+                          <div className="flex items-start space-x-2">
+                            <MapPinIcon className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm text-gray-700">{suggestion}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-2 text-xs text-gray-500">
+                  <p>Commencez à taper pour voir les suggestions d'adresse</p>
+                  <p>Ou sur "Mobile" utilisez "Ma position" pour détecter automatiquement votre localisation actuelle</p>
                 </div>
               </div>
 
+              {/* Section Coordonnées Géographiques */}
               {/* Section Coordonnées Géographiques */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Localisation sur la carte
                 </label>
+                
+                {/* REMPLACER TOUTE CETTE SECTION PAR : */}
+                {/* Bouton pour saisie manuelle */}
+                <div className="mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowManualInput(!showManualInput)}
+                    className="btn-secondary flex items-center space-x-2 text-sm"
+                  >
+                    <PlusIcon className="w-4 h-4" />
+                    <span>Saisir les coordonnées manuellement</span>
+                  </button>
+                </div>
+
+                {/* Formulaire de saisie manuelle */}
+                {showManualInput && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <h4 className="text-sm font-medium text-blue-900 mb-3">
+                      Saisie manuelle des coordonnées
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-blue-700 mb-1">
+                          Latitude *
+                        </label>
+                        <input
+                          type="text"
+                          value={manualLat}
+                          onChange={(e) => setManualLat(e.target.value)}
+                          className="input-field text-sm"
+                          placeholder="Ex: -18.8792"
+                        />
+                        <p className="text-xs text-blue-600 mt-1">Entre -90 et 90</p>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-blue-700 mb-1">
+                          Longitude *
+                        </label>
+                        <input
+                          type="text"
+                          value={manualLng}
+                          onChange={(e) => setManualLng(e.target.value)}
+                          className="input-field text-sm"
+                          placeholder="Ex: 47.5079"
+                        />
+                        <p className="text-xs text-blue-600 mt-1">Entre -180 et 180</p>
+                      </div>
+                    </div>
+                    <div className="flex space-x-2 mt-3">
+                      <button
+                        type="button"
+                        onClick={handleManualCoordinatesSubmit}
+                        className="btn-primary text-sm px-3 py-2"
+                      >
+                        Valider les coordonnées
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowManualInput(false);
+                          setManualLat('');
+                          setManualLng('');
+                        }}
+                        className="btn-secondary text-sm px-3 py-2"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
                   {coordinates ? (
                     <div className="text-center">
@@ -492,13 +839,22 @@ const CreatePropertyPage: React.FC = () => {
                         <p>Latitude: {coordinates.lat.toFixed(6)}</p>
                         <p>Longitude: {coordinates.lng.toFixed(6)}</p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setIsMapModalOpen(true)}
-                        className="btn-secondary mt-2"
-                      >
-                        Ajuster la position
-                      </button>
+                      <div className="flex justify-center space-x-2 mt-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsMapModalOpen(true)}
+                          className="btn-secondary text-sm"
+                        >
+                          Ajuster sur la carte
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowManualInput(true)}
+                          className="btn-secondary text-sm"
+                        >
+                          Modifier manuellement
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="text-center py-8">
@@ -507,14 +863,43 @@ const CreatePropertyPage: React.FC = () => {
                         Aucune localisation définie
                       </p>
                       <p className="text-sm text-gray-400 mb-4">
-                        Cliquez sur "Localiser" pour positionner votre logement sur la carte
+                        Saisissez une adresse, utilisez "Ma position" ou entrez les coordonnées manuellement
                       </p>
+                      <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                        <button
+                          type="button"
+                          onClick={getCurrentLocation}
+                          className="btn-primary flex items-center space-x-2 text-sm"
+                          disabled={isGeolocating}
+                        >
+                          {isGeolocating ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              <span>Détection...</span>
+                            </>
+                          ) : (
+                            <>
+                              <MapIcon className="w-4 h-4" />
+                              <span>Utiliser ma position</span>
+                            </>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowManualInput(true)}
+                          className="btn-secondary flex items-center space-x-2 text-sm"
+                        >
+                          <PlusIcon className="w-4 h-4" />
+                          <span>Saisir manuellement</span>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
             </div>
-          </div>
+            </div>
+
 
           {/* Pricing */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -760,6 +1145,24 @@ const CreatePropertyPage: React.FC = () => {
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">
                   Ajuster la position sur la carte
                 </h3>
+                <div className="mb-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Pré-remplir avec les coordonnées actuelles si disponibles
+                      if (tempCoordinates) {
+                        setManualLat(tempCoordinates.lat.toString());
+                        setManualLng(tempCoordinates.lng.toString());
+                      }
+                      setShowManualInput(true);
+                      setIsMapModalOpen(false);
+                    }}
+                    className="btn-secondary flex items-center space-x-2 text-sm"
+                  >
+                    <PlusIcon className="w-4 h-4" />
+                    <span>Saisir les coordonnées manuellement</span>
+                  </button>
+                </div>
                 
                 <div className="mb-4">
                   <p className="text-sm text-gray-600 mb-2">

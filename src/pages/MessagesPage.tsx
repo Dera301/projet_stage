@@ -1,38 +1,90 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useMessage } from '../contexts/MessageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   ChatBubbleLeftRightIcon as ChatIcon, 
   PaperAirplaneIcon, 
   CheckIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Message } from '../types';
 
 const MessagesPage: React.FC = () => {
-  const { conversations, messages, sendMessage, loading } = useMessage();
+  const { conversations, sendMessage, markAsRead, getConversationMessages, loading } = useMessage();
   const { user } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
+  const [conversationMessages, setConversationMessages] = useState<Message[]>([]);
+  const [isSending, setIsSending] = useState(false);
+  const [readConversations, setReadConversations] = useState<Set<string>>(new Set());
+  const [userHasManuallyClosed, setUserHasManuallyClosed] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const currentConversation = conversations.find(c => c.id === selectedConversation);
-  const currentMessages = messages.filter(m => 
-    (m.senderId === user?.id && m.receiverId === currentConversation?.participants.find(p => p.id !== user?.id)?.id) ||
-    (m.receiverId === user?.id && m.senderId === currentConversation?.participants.find(p => p.id !== user?.id)?.id)
-  );
+
+  // Charger les messages quand une conversation est sélectionnée
+  const loadConversationMessages = useCallback(async (conversationId: string) => {
+    if (!getConversationMessages) return;    
+    const messages = await getConversationMessages(conversationId);
+    setConversationMessages(messages);
+  }, [getConversationMessages]);
+
+  useEffect(() => {
+    if (selectedConversation) {
+      loadConversationMessages(selectedConversation);
+    }
+  }, [selectedConversation, loadConversationMessages]);
+
+  // Faire défiler vers le bas quand de nouveaux messages arrivent
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [conversationMessages]);
+
+  // Marquer les messages comme lus quand on ouvre une conversation
+  useEffect(() => {
+    if (selectedConversation && user && markAsRead) {
+      const unreadMessages = conversationMessages.filter(
+        msg => msg.receiverId === user.id && !msg.isRead
+      );
+      
+      // Marquer la conversation comme lue localement
+      if (unreadMessages.length > 0) {
+        setReadConversations(prev => new Set([...prev, selectedConversation]));
+      }
+
+
+      // Marquer les messages comme lus dans l'API
+      unreadMessages.forEach(async (msg) => {
+        try {
+          await markAsRead(msg.id);
+        } catch (error) {
+          console.error('Erreur marquage comme lu:', error);
+        }
+      });
+    }
+  }, [selectedConversation, conversationMessages, user, markAsRead]);
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !currentConversation) return;
+    if (!newMessage.trim() || !currentConversation || !user || isSending) return;
     
-    const otherParticipant = currentConversation.participants.find(p => p.id !== user?.id);
+    const otherParticipant = currentConversation.participants.find(p => p.id !== user.id);
     if (!otherParticipant) return;
 
+    setIsSending(true);
     try {
       await sendMessage(otherParticipant.id, newMessage);
       setNewMessage('');
+      // Recharger les messages de la conversation
+      if (selectedConversation) {
+        await loadConversationMessages(selectedConversation);
+      }
     } catch (error) {
       console.error('Erreur lors de l\'envoi du message:', error);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -42,6 +94,48 @@ const MessagesPage: React.FC = () => {
       handleSendMessage();
     }
   };
+
+  // Fonction pour quitter la conversation
+  const handleCloseConversation = () => {
+    setSelectedConversation(null);
+    setNewMessage('');
+    setUserHasManuallyClosed(true);
+  };
+
+  // Sélectionner automatiquement la première conversation seulement si l'utilisateur n'a pas fermé manuellement
+  useEffect(() => {
+    if (conversations.length > 0 && !selectedConversation && !loading && !userHasManuallyClosed) {
+      setSelectedConversation(conversations[0].id);
+    }
+  }, [conversations, selectedConversation, loading, userHasManuallyClosed]);
+
+  // Réinitialiser le flag de fermeture manuelle quand l'utilisateur sélectionne une conversation
+  useEffect(() => {
+    if (selectedConversation) {
+      setUserHasManuallyClosed(false);
+    }
+  }, [selectedConversation]);
+
+  // Fonction pour calculer le nombre de messages non lus affichés
+  const getDisplayUnreadCount = (conversation: any) => {
+  const isSelected = selectedConversation === conversation.id;
+
+  // Si la conversation est ouverte → on la considère comme lue
+  if (isSelected) return 0;
+
+  // Si la conversation a été déjà ouverte au moins une fois
+  if (readConversations.has(conversation.id)) return 0;
+
+  // Afficher le badge seulement si le dernier message vient de l'autre participant et qu'il n'est pas lu
+  const lastMsg = conversation.lastMessage;
+  if (!lastMsg) return 0;
+
+  const isFromOther = String(lastMsg.senderId) !== String(user?.id);
+  const isUnread = !lastMsg.isRead;
+
+  return isFromOther && isUnread ? 1 : 0;
+};
+
 
   if (!user) {
     return (
@@ -80,7 +174,8 @@ const MessagesPage: React.FC = () => {
                 ) : conversations.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-gray-500">
                     <ChatIcon className="w-12 h-12 mb-4" />
-                    <p>Aucune conversation</p>
+                    <p className="text-center">Aucune conversation</p>
+                    <p className="text-sm text-center mt-2">Commencez une nouvelle conversation depuis une annonce</p>
                   </div>
                 ) : (
                   <div className="space-y-1">
@@ -88,10 +183,14 @@ const MessagesPage: React.FC = () => {
                       const otherParticipant = conversation.participants.find(p => p.id !== user.id);
                       if (!otherParticipant) return null;
 
+                      const displayUnreadCount = getDisplayUnreadCount(conversation.id);
+
                       return (
                         <button
                           key={conversation.id}
-                          onClick={() => setSelectedConversation(conversation.id)}
+                          onClick={() => {
+                            setSelectedConversation(conversation.id);
+                          }}
                           className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
                             selectedConversation === conversation.id ? 'bg-primary-50 border-r-2 border-primary-500' : ''
                           }`}
@@ -99,7 +198,7 @@ const MessagesPage: React.FC = () => {
                           <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
                               <span className="text-primary-600 font-medium text-sm">
-                                {otherParticipant.firstName[0]}
+                                {otherParticipant.firstName[0]}{otherParticipant.lastName[0]}
                               </span>
                             </div>
                             <div className="flex-1 min-w-0">
@@ -107,14 +206,16 @@ const MessagesPage: React.FC = () => {
                                 <h3 className="text-sm font-medium text-gray-900 truncate">
                                   {otherParticipant.firstName} {otherParticipant.lastName}
                                 </h3>
-                                {conversation.unreadCount > 0 && (
+                                {displayUnreadCount > 0 && (
                                   <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                    {conversation.unreadCount}
+                                    {displayUnreadCount}
                                   </span>
                                 )}
                               </div>
                               {conversation.lastMessage && (
-                                <p className="text-sm text-gray-500 truncate">
+                                <p className={`text-sm truncate ${
+                                  displayUnreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-500'
+                                }`}>
                                   {conversation.lastMessage.content}
                                 </p>
                               )}
@@ -138,12 +239,13 @@ const MessagesPage: React.FC = () => {
             <div className="flex-1 flex flex-col">
               {currentConversation ? (
                 <>
-                  {/* Chat Header */}
-                  <div className="p-4 border-b border-gray-200">
+                  {/* Chat Header avec bouton de fermeture */}
+                  <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
                         <span className="text-primary-600 font-medium text-sm">
                           {currentConversation.participants.find(p => p.id !== user.id)?.firstName[0]}
+                          {currentConversation.participants.find(p => p.id !== user.id)?.lastName[0]}
                         </span>
                       </div>
                       <div>
@@ -156,52 +258,61 @@ const MessagesPage: React.FC = () => {
                         </p>
                       </div>
                     </div>
+                    <button
+                      onClick={handleCloseConversation}
+                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                      title="Fermer la conversation"
+                    >
+                      <XMarkIcon className="w-5 h-5" />
+                    </button>
                   </div>
 
                   {/* Messages */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                    {currentMessages.length === 0 ? (
+                    {conversationMessages.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full text-gray-500">
                         <ChatIcon className="w-12 h-12 mb-4" />
                         <p>Aucun message dans cette conversation</p>
                         <p className="text-sm">Envoyez le premier message !</p>
                       </div>
                     ) : (
-                      currentMessages.map((message) => {
-                        const isOwn = message.senderId === user.id;
-                        return (
-                          <div
-                            key={message.id}
-                            className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
-                          >
+                      <>
+                        {conversationMessages.map((message) => {
+                          const isOwn = String(message.senderId) === String(user.id);
+
+                          return (
                             <div
-                              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                                isOwn
-                                  ? 'bg-primary-600 text-white'
-                                  : 'bg-gray-200 text-gray-900'
-                              }`}
+                              key={message.id}
+                              className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2`}
                             >
-                              <p className="text-sm">{message.content}</p>
-                              <div className={`flex items-center justify-end mt-1 space-x-1 ${
-                                isOwn ? 'text-primary-100' : 'text-gray-500'
-                              }`}>
-                                <span className="text-xs">
-                                  {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true, locale: fr })}
-                                </span>
-                                {isOwn && (
-                                  <div className="flex items-center">
-                                    {message.isRead ? (
-                                      <CheckCircleIcon className="w-3 h-3" />
-                                    ) : (
-                                      <CheckIcon className="w-3 h-3" />
-                                    )}
-                                  </div>
-                                )}
+                              <div
+                                className={`max-w-[75%] px-4 py-2 rounded-2xl shadow-sm ${
+                                  isOwn
+                                    ? 'bg-primary-600 text-white rounded-br-none'
+                                    : 'bg-gray-100 text-gray-900 rounded-bl-none border border-gray-200'
+                                }`}
+                              >
+                                <p className="text-sm break-words">{message.content}</p>
+                                <div className={`flex items-center justify-end mt-1 space-x-1 text-xs ${
+                                  isOwn ? 'text-primary-100' : 'text-gray-500'
+                                }`}>
+                                  <span>{formatDistanceToNow(new Date(message.createdAt), { addSuffix: true, locale: fr })}</span>
+                                  {isOwn && (
+                                    <div className="flex items-center">
+                                      {message.isRead ? (
+                                        <CheckCircleIcon className="w-3 h-3" />
+                                      ) : (
+                                        <CheckIcon className="w-3 h-3" />
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })
+                          );
+                        })}
+                        
+                      </>
                     )}
                   </div>
 
@@ -215,13 +326,18 @@ const MessagesPage: React.FC = () => {
                         placeholder="Tapez votre message..."
                         rows={2}
                         className="flex-1 input-field resize-none"
+                        disabled={isSending}
                       />
                       <button
                         onClick={handleSendMessage}
-                        disabled={!newMessage.trim()}
+                        disabled={!newMessage.trim() || isSending}
                         className="btn-primary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <PaperAirplaneIcon className="w-4 h-4" />
+                        {isSending ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        ) : (
+                          <PaperAirplaneIcon className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -231,9 +347,14 @@ const MessagesPage: React.FC = () => {
                   <div className="text-center">
                     <ChatIcon className="w-16 h-16 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      Sélectionnez une conversation
+                      {conversations.length === 0 ? 'Aucune conversation' : 'Sélectionnez une conversation'}
                     </h3>
-                    <p>Choisissez une conversation pour commencer à discuter</p>
+                    <p>
+                      {conversations.length === 0 
+                        ? 'Commencez une nouvelle conversation depuis une annonce' 
+                        : 'Choisissez une conversation pour commencer à discuter'
+                      }
+                    </p>
                   </div>
                 </div>
               )}

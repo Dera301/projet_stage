@@ -22,44 +22,60 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-  const token = localStorage.getItem('auth_token');
-  console.log('🔐 Token dans localStorage:', token);
-  
-  if (!token) {
-    setIsLoading(false);
-    return;
-  }
-
-  (async () => {
-    try {
-      console.log('🔄 Tentative de récupération du profil...');
-      const res = await apiGet('/api/auth/me.php');
-      
-      console.log('📡 Réponse me.php - Status:', res.status);
-      console.log('📡 Réponse me.php - Headers:', Object.fromEntries(res.headers.entries()));
-      
-      const text = await res.text();
-      console.log('📡 Réponse me.php - Body:', text);
-      
-      //let data;
-      try {
-        //data = JSON.parse(text);
-      } catch (parseError) {
-        console.error('❌ Erreur parsing JSON:', parseError);
-        setIsLoading(false);
-        return;
-      }
-      
-      // ... reste du code existant
-    } catch (error) {
-      console.error('❌ Erreur lors du chargement du profil:', error);
-      setAuthToken(null);
-      localStorage.removeItem('auth_token');
-    } finally {
+    const token = localStorage.getItem('auth_token');
+    console.log('🔐 Token dans localStorage:', token);
+    
+    if (!token) {
       setIsLoading(false);
+      return;
     }
-  })();
-}, []);
+
+    // Réappliquer le token aux en-têtes API
+    setAuthToken(token);
+
+    (async () => {
+      try {
+        console.log('🔄 Tentative de récupération du profil...');
+        const res = await apiGet('/api/auth/me.php');
+        
+        console.log('📡 Réponse me.php - Status:', res.status);
+        
+        const text = await res.text();
+        console.log('📡 Réponse me.php - Body:', text);
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          console.error('❌ Erreur parsing JSON:', parseError);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Vérifier si la requête a réussi
+        if (data.success && data.data) {
+          console.log('✅ Profil récupéré avec succès:', data.data);
+          setUser(mapApiUserToFront(data.data));
+        } else {
+          console.error('❌ Erreur dans la réponse me.php:', data.message);
+          // Si le token est invalide, nettoyer le localStorage
+          setAuthToken(null);
+          localStorage.removeItem('auth_token');
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors du chargement du profil:', error);
+        setAuthToken(null);
+        localStorage.removeItem('auth_token');
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, []);
 
   const login = async (email: string, password: string): Promise<void> => {
   setIsLoading(true);

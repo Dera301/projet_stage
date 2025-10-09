@@ -107,11 +107,13 @@ const PropertyListPage: React.FC = () => {
   
   // Si c'est un chemin relatif, le convertir en URL absolue
   if (imageUrl.startsWith('/')) {
-    return `https://nytranoko.infinityfree.me${imageUrl}`;
+    return `http://localhost${imageUrl}`;
   }
   
   return imageUrl;
-};
+  };
+
+  
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">

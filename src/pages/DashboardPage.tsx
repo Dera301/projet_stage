@@ -2,10 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
+import { TrashIcon } from '@heroicons/react/24/solid';
 import { 
   HomeIcon, 
   PlusIcon, 
   EyeIcon, 
+  PencilIcon,
   ChatBubbleLeftRightIcon as ChatIcon,
   UsersIcon,
   CurrencyDollarIcon,
@@ -14,12 +16,16 @@ import {
   BellIcon,
   CheckCircleIcon,
   ClockIcon,
-  XCircleIcon
+  XCircleIcon,
+  MapPinIcon,
+  PhotoIcon // Corriger l'import
 } from '@heroicons/react/24/outline';
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
-  const { properties } = useProperty();
+  
+  const { userProperties, deleteProperty,  } = useProperty(); // Maintenant deleteProperty est disponible
+  const [deleteLoading, setDeleteLoading] = React.useState<string | null>(null);
 
   if (!user) {
     return (
@@ -29,8 +35,8 @@ const DashboardPage: React.FC = () => {
     );
   }
 
-  const userProperties = properties.filter(p => p.ownerId === user.id);
-  const recentProperties = properties.slice(0, 3);
+  
+  const recentProperties = userProperties.slice(0, 3);
 
   const stats = user.userType === 'student' ? [
     {
@@ -64,9 +70,9 @@ const DashboardPage: React.FC = () => {
   ] : [
     {
       name: 'Logements publiés',
-      value: userProperties.length.toString(),
-      change: '+1 ce mois',
-      changeType: 'positive',
+      value: userProperties.length.toString(), 
+      change: userProperties.length > 0 ? '+1 ce mois' : 'Aucun logement',
+      changeType: userProperties.length > 0 ? 'positive' : 'neutral',
       icon: <HomeIcon className="w-6 h-6" />
     },
     {
@@ -118,6 +124,34 @@ const DashboardPage: React.FC = () => {
       icon: <UsersIcon className="w-5 h-5" />
     }
   ];
+
+  const handleDeleteProperty = async (propertyId: string) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce logement ? Cette action est irréversible.')) {
+      return;
+    }
+
+    setDeleteLoading(propertyId);
+    try {
+      await deleteProperty(propertyId);
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression du logement');
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
+  const getImageUrl = (imageUrl: string | undefined) => {
+    if (!imageUrl) return '/api/placeholder/400/300';
+    
+    if (imageUrl.startsWith('http')) return imageUrl;
+    
+    if (imageUrl.startsWith('/')) {
+      return `http://localhost${imageUrl}`;
+    }
+    
+    return imageUrl;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -214,42 +248,132 @@ const DashboardPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Recent Properties */}
-            {user.userType === 'owner' && userProperties.length > 0 && (
+            {/* My Properties Section - Only for Owners */}
+            {user.userType === 'owner' && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">Mes logements</h2>
-                  <Link
-                    to="/properties"
-                    className="text-primary-600 hover:text-primary-700 text-sm font-medium"
-                  >
-                    Voir tout
-                  </Link>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900">Mes logements publiés</h2>
+                  {userProperties.length > 0 && (
+                    <Link
+                      to="/create-property"
+                      className="btn-primary text-sm flex items-center space-x-2"
+                    >
+                      <PlusIcon className="w-4 h-4" />
+                      <span>Ajouter un logement</span>
+                    </Link>
+                  )}
                 </div>
-                <div className="space-y-4">
-                  {userProperties.slice(0, 3).map((property) => (
-                    <div key={property.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">{property.title}</h3>
-                        <p className="text-sm text-gray-600">{property.address}</p>
-                        <p className="text-sm text-gray-500">
-                          {property.availableRooms} chambre(s) disponible(s) • {property.price.toLocaleString()} Ar/mois
-                        </p>
+
+                {userProperties.length === 0 ? (
+                  <div className="text-center py-8">
+                    <HomeIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Aucun logement publié
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Commencez par publier votre premier logement pour le proposer en colocation
+                    </p>
+                    <Link
+                      to="/create-property"
+                      className="btn-primary inline-flex items-center space-x-2"
+                    >
+                      <PlusIcon className="w-5 h-5" />
+                      <span>Publier un logement</span>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {userProperties.map((property) => (
+                      <div key={property.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                        <div className="flex flex-col md:flex-row">
+                          {/* Property Image */}
+                          <div className="md:w-48 h-48 bg-gray-200 flex-shrink-0">
+                            {property.images && property.images.length > 0 ? (
+                              <img
+                                src={getImageUrl(property.images[0])}
+                                alt={property.title}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.src = '/api/placeholder/400/300';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                <PhotoIcon className="w-12 h-12 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Property Details */}
+                          <div className="flex-1 p-6">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                                  {property.title}
+                                </h3>
+                                <div className="flex items-center text-gray-600 mb-2">
+                                  <MapPinIcon className="w-4 h-4 mr-1" />
+                                  <span className="text-sm">{property.address}</span>
+                                </div>
+                              </div>
+                              <span className={`badge ${property.isAvailable ? 'badge-success' : 'badge-warning'} ml-4`}>
+                                {property.isAvailable ? 'Disponible' : 'Occupé'}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center text-primary-600">
+                                <CurrencyDollarIcon className="w-4 h-4 mr-1" />
+                                <span className="font-semibold">{property.price.toLocaleString()} Ar</span>
+                                <span className="text-gray-500 text-sm ml-1">/mois</span>
+                              </div>
+                              <div className="flex items-center text-gray-600">
+                                <UsersIcon className="w-4 h-4 mr-1" />
+                                <span className="text-sm">{property.availableRooms}/{property.totalRooms} ch.</span>
+                              </div>
+                            </div>
+                            
+                            <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                              {property.description}
+                            </p>
+                            
+                            {/* Actions */}
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                              <div className="flex items-center space-x-3">
+                                <Link
+                                  to={`/properties/${property.id}`}
+                                  className="btn-secondary text-sm flex items-center space-x-1"
+                                >
+                                  <EyeIcon className="w-4 h-4" />
+                                  <span>Voir</span>
+                                </Link>
+                                <Link
+                                  to={`/edit-property/${property.id}`}
+                                  className="btn-primary text-sm flex items-center space-x-1"
+                                >
+                                  <PencilIcon className="w-4 h-4" />
+                                  <span>Modifier</span>
+                                </Link>
+                              </div>
+                              <button
+                                onClick={() => handleDeleteProperty(property.id)}
+                                disabled={deleteLoading === property.id}
+                                className="btn-danger text-sm flex items-center space-x-1 disabled:opacity-50"
+                              >
+                                {deleteLoading === property.id ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                ) : (
+                                  <TrashIcon className="w-4 h-4" />
+                                )}
+                                <span>Supprimer</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`badge ${property.isAvailable ? 'badge-success' : 'badge-warning'}`}>
-                          {property.isAvailable ? 'Disponible' : 'Occupé'}
-                        </span>
-                        <Link
-                          to={`/properties/${property.id}`}
-                          className="text-primary-600 hover:text-primary-700"
-                        >
-                          <EyeIcon className="w-5 h-5" />
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -259,7 +383,7 @@ const DashboardPage: React.FC = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-gray-900">Logements récents</h2>
                   <Link
-                    to="/properties"
+                    to="/search"
                     className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                   >
                     Voir tout

@@ -23,6 +23,7 @@ import ContactPage from './pages/ContactPage';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import EditPropertyPage from './pages/EditPropertyPage';
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
                   <Route path="/search" element={<SearchPage />} />
                   <Route path="/properties" element={<PropertyListPage />} />
                   <Route path="/properties/:id" element={<PropertyDetailPage />} />
+                  <Route path="/edit-property/:id" element={<EditPropertyPage />} />
                   
                   {/* Protected Routes */}
                   <Route path="/dashboard" element={
