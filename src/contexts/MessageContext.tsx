@@ -29,7 +29,7 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
 
     try {
       setLoading(true);
-      const response = await fetch(`https://nytranoko.infinityfree.me/api/messages/conversation.php?userId=${user.id}`);
+      const response = await fetch(`http://localhost/Projet_stage/api/messages/conversation.php?userId=${user.id}`);
       
       if (!response.ok) {
         throw new Error('Erreur lors du chargement des conversations');
@@ -60,7 +60,7 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
   // Charger les messages d'une conversation
   const fetchMessages = useCallback(async (conversationId: string) => {
     try {
-      const response = await fetch(`https://nytranoko.infinityfree.me/api/messages/messages.php?conversationId=${conversationId}`);
+      const response = await fetch(`http://localhost/Projet_stage/api/messages/messages.php?conversationId=${conversationId}`);
       
       if (!response.ok) {
         throw new Error('Erreur lors du chargement des messages');
@@ -128,7 +128,7 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
 
     setLoading(true);
     try {
-      const response = await fetch('https://nytranoko.infinityfree.me/api/messages/send.php', {
+      const response = await fetch('http://localhost/Projet_stage/api/messages/send.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -194,7 +194,7 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
   // Marquer un message comme lu
   const markAsRead = async (messageId: string): Promise<void> => {
     try {
-      const response = await fetch('https://nytranoko.infinityfree.me/api/messages/markAsRead.php', {
+      const response = await fetch('http://localhost/Projet_stage/api/messages/markAsRead.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -231,7 +231,7 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
   // Récupérer les messages d'une conversation
   const getConversationMessages = async (conversationId: string): Promise<Message[]> => {
   try {
-    const response = await fetch(`https://nytranoko.infinityfree.me/api/messages/messages.php?conversationId=${conversationId}`);
+    const response = await fetch(`http://localhost/Projet_stage/api/messages/messages.php?conversationId=${conversationId}`);
     
     if (!response.ok) throw new Error('Erreur lors du chargement des messages');
     
