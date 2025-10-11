@@ -37,7 +37,7 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
 
-  const API_BASE_URL = 'http://nytranoko.infinityfree.me/api/properties';
+  const API_BASE_URL = 'https://nytranoko.infinityfree.me/api/properties';
   // Fonction utilitaire pour gérer les réponses
   const handleResponse = async (response: Response) => {
     const contentType = response.headers.get('content-type');
