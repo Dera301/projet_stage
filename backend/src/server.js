@@ -17,7 +17,7 @@ app.use(cors({
     
     // En production, autoriser les domains Vercel et votre frontend
     const allowedOrigins = [
-      'https://projet-stage-frontend.vercel.app',
+      'https://projet-stage-forntend.vercel.app',
       'https://projet-stage-backend.vercel.app',
       process.env.FRONTEND_URL
     ].filter(Boolean);
@@ -29,7 +29,7 @@ app.use(cors({
       callback(null, true); // 🔥 TEMPORAIREMENT on autorise tout pour debug
     }
   },
-  credentials: true,
+  credentials: false,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));

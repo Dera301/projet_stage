@@ -40,7 +40,7 @@ export const apiGet = async (url: string) => {
     const response = await fetch(fullUrl, {
       method: 'GET',
       headers,
-      credentials: 'include'
+      credentials: 'omit'
     });
     
     console.log('📡 Response status:', response.status);
@@ -72,7 +72,7 @@ export const apiJson = async (url: string, method: string, data?: any) => {
       method,
       headers,
       body: data ? JSON.stringify(data) : undefined,
-      credentials: 'include'
+      credentials: 'omit'
     });
     
     console.log('📡 Response status:', response.status);
