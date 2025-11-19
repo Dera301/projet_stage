@@ -1,17 +1,19 @@
 {
-  "version": 3,
-  "framework": "node",
-  "installCommand": "npm install",
-  "buildCommand": "npm run build",
-  "outputDirectory": ".",
-  "rewrites": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/(.*)",
-      "destination": "src/server.js"
+      "src": "src/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "src/server.js",
+      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"]
     }
   ],
   "env": {
-    "PRISMA_GENERATE_DATAPROXY": "false",
-    "NODE_ENV": "production"
+    "PRISMA_GENERATE_DATAPROXY": "false"
   }
 }
