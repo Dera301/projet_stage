@@ -1,69 +1,98 @@
-// config.ts - VERSION CORRIGÉE AVEC STORAGE SÉPARÉ
-import { getStorage, setStorage, removeStorage } from './utils/storage';
+// config.ts - Version URGENTE corrigée
+const getStorage = (key: string) => {
+  return localStorage.getItem(key);
+};
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const setStorage = (key: string, value: string) => {
+  localStorage.setItem(key, value);
+};
+
+const removeStorage = (key: string) => {
+  localStorage.removeItem(key);
+};
+
+// 🔥 CORRECTION: Supprimer le double slash
+const API_BASE_URL = (process.env.REACT_APP_API_URL || 'https://projet-stage-backend.vercel.app')
+  .replace(/\/+$/, ''); // Supprime les slashs à la fin
+
+console.log('🔗 Configuration API:', {
+  apiUrl: API_BASE_URL,
+  fromEnv: process.env.REACT_APP_API_URL
+});
 
 export const apiGet = async (url: string) => {
-  const token = getStorage('auth_token'); // Utiliser getStorage au lieu de localStorage
+  // Nettoyer l'URL pour éviter les doubles slashs
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  const fullUrl = `${API_BASE_URL}${cleanUrl}`;
   
-  console.log('🔐 Token pour apiGet:', token);
-  console.log('🌐 Port actuel:', window.location.port);
+  console.log('🌐 Fetching GET:', fullUrl);
   
+  const token = getStorage('auth_token');
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
     
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-    console.log('✅ Authorization header ajouté:', headers['Authorization']);
-  } else {
-    console.log('❌ Aucun token trouvé pour le port', window.location.port);
   }
   
-  const response = await fetch(`${API_BASE_URL}${url}`, {
-    method: 'GET',
-    headers,
-    credentials: 'include'
-  });
-  
-  return response;
+  try {
+    const response = await fetch(fullUrl, {
+      method: 'GET',
+      headers,
+      credentials: 'include'
+    });
+    
+    console.log('📡 Response status:', response.status);
+    return response;
+  } catch (error) {
+    console.error('💥 Fetch error:', error);
+    throw error;
+  }
 };
 
 export const apiJson = async (url: string, method: string, data?: any) => {
-  const token = getStorage('auth_token'); // Utiliser getStorage au lieu de localStorage
+  // Nettoyer l'URL pour éviter les doubles slashs
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  const fullUrl = `${API_BASE_URL}${cleanUrl}`;
   
-  console.log('🔐 Token pour apiJson:', token);
-  console.log('🌐 Port actuel:', window.location.port);
+  console.log('🌐 Fetching JSON:', { url: fullUrl, method, data });
   
+  const token = getStorage('auth_token');
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-    console.log('✅ Authorization header ajouté:', headers['Authorization']);
   }
   
-  const response = await fetch(`${API_BASE_URL}${url}`, {
-    method,
-    headers,
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: 'include'
-  });
-  
-  return response;
+  try {
+    const response = await fetch(fullUrl, {
+      method,
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: 'include'
+    });
+    
+    console.log('📡 Response status:', response.status);
+    return response;
+  } catch (error) {
+    console.error('💥 Fetch error:', error);
+    throw error;
+  }
 };
 
 export const setAuthToken = (token: string | null) => {
   if (token) {
-    setStorage('auth_token', token); // Utiliser setStorage au lieu de localStorage
-    console.log('💾 Token enregistré pour le port', window.location.port, ':', token);
+    setStorage('auth_token', token);
+    console.log('🔐 Token stored');
   } else {
-    removeStorage('auth_token'); // Utiliser removeStorage au lieu de localStorage
-    console.log('🗑️ Token supprimé pour le port', window.location.port);
+    removeStorage('auth_token');
+    console.log('🔐 Token removed');
   }
 };
 
 export const getAuthToken = () => {
-  return getStorage('auth_token'); // Utiliser getStorage au lieu de localStorage
+  return getStorage('auth_token');
 };
