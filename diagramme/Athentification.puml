@@ -1,0 +1,10 @@
+@startuml
+title Authentification
+class Utilisateur {
+  +email: String
+  +userType: UserType
+  +password: String?
+  +login(credentials)
+  +validerToken(token)
+}
+@enduml

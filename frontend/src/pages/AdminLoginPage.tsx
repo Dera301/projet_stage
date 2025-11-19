@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { EyeIcon, EyeSlashIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import SimpleCaptcha from '../components/SimpleCaptcha';
@@ -146,9 +146,10 @@ const AdminLoginPage: React.FC = () => {
 
         <div className="mt-6 text-center">
           <p className="text-xs text-dark-500">
-            <a href="/login" className="text-primary-600 hover:text-primary-500">
-              Retour à la connexion utilisateur
-            </a>
+            Vous n'êtes pas administrateur ?{' '}
+            <Link to="/login" className="text-primary-600 hover:text-primary-500 font-medium">
+              Aller à la connexion utilisateur
+            </Link>
           </p>
         </div>
       </div>

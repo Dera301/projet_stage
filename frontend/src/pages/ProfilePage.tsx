@@ -100,10 +100,20 @@ const ProfilePage: React.FC = () => {
     );
   }
 
+  // Calcul de la complétion du profil (même logique que dans DashboardPage)
+  const hasBasicInfo = !!(user.firstName && user.lastName && user.phone);
+  const hasAvatar = !!user.avatar;
+  const hasBio = !!user.bio;
+  const hasCin = !!user.cinVerified;
+
+  const stepsTotal = 4;
+  const completedSteps = [hasBasicInfo, hasAvatar, hasBio, hasCin].filter(Boolean).length;
+  const profileCompletion = Math.round((completedSteps / stepsTotal) * 100);
+
   return (
-    <div className="min-h-screen bg-black py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gray-900 text-gray-100 rounded-lg shadow-sm border border-gray-800 overflow-hidden">
+        <div className="bg-white text-gray-900 rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-primary-600 to-primary-800 px-6 py-8">
             <div className="flex items-center justify-between">
@@ -150,8 +160,8 @@ const ProfilePage: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Informations personnelles */}
               <div className="lg:col-span-2 space-y-6">
-                <div className="card">
-                  <h2 className="text-lg font-semibold text-gray-100 mb-4">Informations personnelles</h2>
+                <div className="card bg-white border border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Informations personnelles</h2>
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -164,10 +174,10 @@ const ProfilePage: React.FC = () => {
                             name="firstName"
                             value={formData.firstName}
                             onChange={handleChange}
-                            className="input-field bg-gray-800 text-gray-100 border-gray-700"
+                            className="input-field"
                           />
                         ) : (
-                          <p className="text-gray-100">{user.firstName}</p>
+                          <p className="text-gray-900">{user.firstName}</p>
                         )}
                       </div>
                       <div>
@@ -183,7 +193,7 @@ const ProfilePage: React.FC = () => {
                             className="input-field"
                           />
                         ) : (
-                          <p className="text-gray-100">{user.lastName}</p>
+                          <p className="text-gray-900">{user.lastName}</p>
                         )}
                       </div>
                     </div>
@@ -194,7 +204,7 @@ const ProfilePage: React.FC = () => {
                       </label>
                       <div className="flex items-center space-x-2">
                         <EnvelopeIcon className="w-5 h-5 text-gray-400" />
-                        <p className="text-gray-100">{user.email}</p>
+                        <p className="text-gray-900">{user.email}</p>
                       </div>
                     </div>
 
@@ -213,7 +223,7 @@ const ProfilePage: React.FC = () => {
                       ) : (
                         <div className="flex items-center space-x-2">
                           <PhoneIcon className="w-5 h-5 text-gray-400" />
-                          <p className="text-gray-100">{user.phone}</p>
+                          <p className="text-gray-900">{user.phone}</p>
                         </div>
                       )}
                     </div>
@@ -232,7 +242,7 @@ const ProfilePage: React.FC = () => {
                           placeholder="Parlez-nous de vous..."
                         />
                       ) : (
-                        <p className="text-gray-100">{user.bio || 'Aucune description disponible'}</p>
+                        <p className="text-gray-700">{user.bio || 'Aucune description disponible'}</p>
                       )}
                     </div>
                     <div>
@@ -267,8 +277,8 @@ const ProfilePage: React.FC = () => {
 
                 {/* Informations spécifiques aux étudiants */}
                 {user.userType === 'student' && (
-                  <div className="card">
-                    <h2 className="text-lg font-semibold text-gray-100 mb-4">Informations académiques</h2>
+                  <div className="card bg-white border border-gray-200">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Informations académiques</h2>
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -291,7 +301,7 @@ const ProfilePage: React.FC = () => {
                         ) : (
                           <div className="flex items-center space-x-2">
                             <AcademicCapIcon className="w-5 h-5 text-gray-400" />
-                            <p className="text-gray-100">{user.university || 'Non spécifié'}</p>
+                            <p className="text-gray-900">{user.university || 'Non spécifié'}</p>
                           </div>
                         )}
                       </div>
@@ -316,7 +326,7 @@ const ProfilePage: React.FC = () => {
                             <option value="Doctorat">Doctorat</option>
                           </select>
                         ) : (
-                          <p className="text-gray-100">{user.studyLevel || 'Non spécifié'}</p>
+                          <p className="text-gray-900">{user.studyLevel || 'Non spécifié'}</p>
                         )}
                       </div>
 
@@ -336,7 +346,7 @@ const ProfilePage: React.FC = () => {
                         ) : (
                           <div className="flex items-center space-x-2">
                             <CurrencyDollarIcon className="w-5 h-5 text-gray-400" />
-                            <p className="text-gray-100">{user.budget ? `${user.budget.toLocaleString()} Ar` : 'Non spécifié'}</p>
+                            <p className="text-gray-900">{user.budget ? `${user.budget.toLocaleString()} Ar` : 'Non spécifié'}</p>
                           </div>
                         )}
                       </div>
@@ -348,8 +358,8 @@ const ProfilePage: React.FC = () => {
               {/* Sidebar */}
               <div className="space-y-6">
                 {/* Statistiques */}
-                <div className="card bg-gray-900 text-gray-100 border border-gray-800">
-                  <h3 className="text-lg font-semibold text-gray-100 mb-4">Statistiques</h3>
+                <div className="card bg-white text-gray-900 border border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistiques</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Membre depuis</span>
@@ -357,7 +367,7 @@ const ProfilePage: React.FC = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Profil complété</span>
-                      <span className="font-medium">85%</span>
+                      <span className="font-medium">{profileCompletion}%</span>
                     </div>
                     {user.userType === 'student' && (
                       <div className="flex justify-between">
@@ -376,8 +386,8 @@ const ProfilePage: React.FC = () => {
 
                 {/* Préférences */}
                 {user.userType === 'student' && (
-                  <div className="card bg-gray-900 text-gray-100 border border-gray-800">
-                    <h3 className="text-lg font-semibold text-gray-100 mb-4">Préférences</h3>
+                  <div className="card bg-white text-gray-900 border border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Préférences</h3>
                     <div className="space-y-2">
                       {user.preferences && user.preferences.length > 0 ? (
                         user.preferences.map((preference, index) => (

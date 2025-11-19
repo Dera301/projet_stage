@@ -1,0 +1,20 @@
+@startuml
+title Créer annonce
+class Utilisateur {
+  +id: Int
+  +createAnnouncement(data)
+}
+class Announcement {
+  +content: String
+  +images: JSON?
+  +contact: String?
+  +publish()
+}
+class Notification {
+  +type: String
+  +content: String
+  +sendToAdmin()
+}
+Utilisateur "1" --> "*" Announcement : créer >
+Utilisateur "1" --> "*" Notification : informer >
+@enduml

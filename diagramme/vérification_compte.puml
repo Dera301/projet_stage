@@ -1,0 +1,14 @@
+@startuml
+title Vérification compte (soumission)
+class Utilisateur {
+  +cinNumber: String?
+  +cinData: JSON?
+  +submitCIN(cinPayload)
+}
+class Notification {
+  +type: String
+  +content: String
+  +sendToAdmin()
+}
+Utilisateur --> Notification : requête de vérification
+@enduml

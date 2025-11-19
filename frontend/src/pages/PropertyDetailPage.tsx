@@ -257,6 +257,11 @@ const PropertyDetailPage: React.FC = () => {
                     <MapPinIcon className="w-5 h-5 mr-2" />
                     <span>{property.address}</span>
                   </div>
+                  {property.latitude && property.longitude && (
+                    <div className="text-xs text-gray-500 mb-2">
+                      <span>Lat: {property.latitude.toFixed(6)} • Lng: {property.longitude.toFixed(6)}</span>
+                    </div>
+                  )}
                   <div className="flex items-center space-x-4">
                     <span className="badge badge-primary">
                       {property.propertyType === 'apartment' ? 'Appartement' : 
@@ -339,19 +344,40 @@ const PropertyDetailPage: React.FC = () => {
               <div className="my-6">
                 <h4 className="text-md font-semibold mb-2">Emplacement sur la carte</h4>
                 <div className="rounded-lg overflow-hidden border border-gray-200">
-                  <iframe
-                    width="100%"
-                    height="300"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    allowFullScreen
-                    title={`Carte montrant la localisation de ${property.title || 'la propriété'} à ${property.address}`}
-                    src={
-                      property.latitude && property.longitude
-                        ? `https://www.google.com/maps?q=${property.latitude},${property.longitude}&z=16&output=embed`
-                        : `https://www.google.com/maps?q=${encodeURIComponent(property.address)}&output=embed`
-                    }
-                  />
+                  <div className="relative w-full h-[300px]">
+                    <iframe
+                      width="100%"
+                      height="300"
+                      className="absolute inset-0 w-full h-full"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      allowFullScreen
+                      title={`Carte montrant la localisation de ${property.title || 'la propriété'} à ${property.address}`}
+                      src={
+                        property.latitude && property.longitude
+                          ? `https://www.google.com/maps?q=${property.latitude},${property.longitude}&z=16&output=embed`
+                          : `https://www.google.com/maps?q=${encodeURIComponent(property.address)}&output=embed`
+                      }
+                    />
+
+                    {property.latitude && property.longitude && (
+                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                        <div className="flex flex-col items-center">
+                          <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center shadow-lg border-2 border-white">
+                            <HomeIcon className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="w-2 h-2 bg-blue-600 rounded-full mt-1 opacity-80" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {property.latitude && property.longitude && (
+                    <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-600 flex justify-between">
+                      <span>Latitude : {property.latitude.toFixed(6)}</span>
+                      <span>Longitude : {property.longitude.toFixed(6)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

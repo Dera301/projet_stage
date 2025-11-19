@@ -105,6 +105,11 @@ const Navbar: React.FC = () => {
     return `${baseClass} ${isActiveLink(path) ? activeClass : inactiveClass}`;
   };
 
+  // Masquer complètement la navbar publique pour les comptes administrateurs
+  if (user && user.userType === 'admin') {
+    return null;
+  }
+
   return (
     <>
       <CINVerificationModal 

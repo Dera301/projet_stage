@@ -48,6 +48,7 @@ declare module '@heroicons/react/24/outline' {
   export const BuildingOfficeIcon: FC<SVGProps<SVGSVGElement>>;
   export const BookOpenIcon: FC<SVGProps<SVGSVGElement>>;
   export const EllipsisHorizontalIcon: FC<SVGProps<SVGSVGElement>>;
+  export const TrashIcon: FC<SVGProps<SVGSVGElement>>;
   
 }
   

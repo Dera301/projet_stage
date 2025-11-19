@@ -45,23 +45,35 @@ const RegisterPage: React.FC = () => {
   };
 
   const validateEmail = async (email: string): Promise<boolean> => {
-    // Vérification basique du format email
+    // 1. Vérification basique du format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return false;
     }
-    
-    // Vérifier si c'est un email Gmail/Google
-    const domain = email.split('@')[1]?.toLowerCase();
-    const googleDomains = ['gmail.com', 'googlemail.com', 'google.com'];
-    
-    if (googleDomains.includes(domain || '')) {
-      // Pour un email Google, on fait une vérification basique
-      // En production, utiliser l'API Google pour vérifier l'existence
+
+    const [localPart, domain] = email.split('@');
+
+    // 2. Longueur raisonnable de la partie locale (avant @)
+    if (!localPart || localPart.length < 3 || localPart.length > 64) {
+      return false;
+    }
+
+    // 3. Quelques cas invalides simples
+    if (localPart.startsWith('.') || localPart.endsWith('.') || localPart.includes('..')) {
+      return false;
+    }
+
+    // 4. Vérifier si c'est un email Google (Gmail)
+    const normalizedDomain = domain?.toLowerCase();
+    const googleDomains = ['gmail.com', 'googlemail.com'];
+
+    if (googleDomains.includes(normalizedDomain || '')) {
+      // Ici on ne peut PAS vérifier réellement si l'adresse existe côté client.
+      // En production, cette vérification doit être faite côté backend via un service tiers ou Google API.
       return true;
     }
-    
-    // Pour les autres domaines, vérification basique du format
+
+    // 5. Pour les autres domaines, on reste sur les vérifications de format
     return true;
   };
 

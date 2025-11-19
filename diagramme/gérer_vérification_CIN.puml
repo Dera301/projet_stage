@@ -1,0 +1,17 @@
+@startuml
+title Gérer vérification valider/rejeter
+class Admin {
+  +verifyCIN(userId, decision, reason?)
+}
+class Utilisateur {
+  +cinVerified: Boolean
+  +setVerification(decision, reason?)
+}
+class Notification {
+  +type: String
+  +content: String
+  +sendToAdmin()
+}
+Admin --> Utilisateur : valide/rejette >
+Utilisateur --> Notification : envoie résultat >
+@enduml

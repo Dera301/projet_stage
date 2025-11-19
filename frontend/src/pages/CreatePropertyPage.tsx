@@ -861,28 +861,30 @@ const CreatePropertyPage: React.FC = () => {
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
                   {coordinates ? (
                     <div className="text-center">
-                      <div className="w-full h-48 bg-blue-100 rounded-lg flex items-center justify-center relative overflow-hidden">
-                        <div 
+                      <div className="w-full h-48 rounded-lg flex items-center justify-center relative overflow-hidden">
+                        {/* Carte Google Maps réelle */}
+                        <iframe
+                          className="absolute inset-0 w-full h-full pointer-events-none"
+                          style={{ border: 0 }}
+                          loading="lazy"
+                          allowFullScreen
+                          title="Carte de localisation du logement"
+                          src={`https://www.google.com/maps?q=${coordinates.lat},${coordinates.lng}&z=16&output=embed`}
+                        />
+
+                        {/* Calque interactif pour ajuster la position */}
+                        <div
                           ref={mapRef}
-                          className="w-full h-full bg-gradient-to-br from-blue-200 to-green-200 cursor-pointer relative"
+                          className="absolute inset-0 cursor-pointer"
                           onClick={handleMapClick}
                         >
-                          <div 
+                          {/* Marqueur centré */}
+                          <div
                             className="absolute w-6 h-6 transform -translate-x-1/2 -translate-y-1/2"
-                            style={{
-                              left: '50%',
-                              top: '50%'
-                            }}
+                            style={{ left: '50%', top: '50%' }}
                           >
                             <div className="w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-lg"></div>
                             <div className="w-2 h-2 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
-                          </div>
-                          
-                          <div className="absolute inset-0 opacity-20">
-                            <div className="w-full h-px bg-gray-400 absolute top-1/3"></div>
-                            <div className="w-full h-px bg-gray-400 absolute top-2/3"></div>
-                            <div className="h-full w-px bg-gray-400 absolute left-1/3"></div>
-                            <div className="h-full w-px bg-gray-400 absolute left-2/3"></div>
                           </div>
                         </div>
                       </div>
@@ -1228,9 +1230,24 @@ const CreatePropertyPage: React.FC = () => {
 
                 <div 
                   ref={mapRef}
-                  className="w-full h-64 bg-gradient-to-br from-blue-200 to-green-200 rounded-lg cursor-pointer relative mb-4 border-2 border-gray-300"
+                  className="w-full h-64 rounded-lg cursor-pointer relative mb-4 border-2 border-gray-300 overflow-hidden"
                   onClick={handleMapClick}
                 >
+                  {/* Carte Google Maps réelle */}
+                  <iframe
+                    className="absolute inset-0 w-full h-full pointer-events-none"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    allowFullScreen
+                    title="Carte d'ajustement de la position"
+                    src={(() => {
+                      const baseLat = tempCoordinates?.lat ?? coordinates?.lat ?? 0;
+                      const baseLng = tempCoordinates?.lng ?? coordinates?.lng ?? 0;
+                      return `https://www.google.com/maps?q=${baseLat},${baseLng}&z=16&output=embed`;
+                    })()}
+                  />
+
+                  {/* Marqueur centré */}
                   {tempCoordinates && (
                     <div 
                       className="absolute w-6 h-6 transform -translate-x-1/2 -translate-y-1/2"
@@ -1243,13 +1260,6 @@ const CreatePropertyPage: React.FC = () => {
                       <div className="w-2 h-2 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
                     </div>
                   )}
-                  
-                  <div className="absolute inset-0 opacity-20">
-                    <div className="w-full h-px bg-gray-400 absolute top-1/3"></div>
-                    <div className="w-full h-px bg-gray-400 absolute top-2/3"></div>
-                    <div className="h-full w-px bg-gray-400 absolute left-1/3"></div>
-                    <div className="h-full w-px bg-gray-400 absolute left-2/3"></div>
-                  </div>
                 </div>
 
                 <div className="flex justify-end space-x-3">

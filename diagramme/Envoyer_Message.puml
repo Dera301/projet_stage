@@ -1,0 +1,16 @@
+@startuml
+title Envoyer message
+class Utilisateur {
+  +id: Int
+  +sendMessage(receiverId, content)
+  +receiveMessage(message)
+}
+class Message {
+  +content: String
+  +isRead: Boolean
+  +createdAt: DateTime
+  +markAsRead()
+}
+Utilisateur "1" --> "*" Message : envoie >
+Message "*" --> "1" Utilisateur : destinataire >
+@enduml

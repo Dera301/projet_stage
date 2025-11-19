@@ -8,7 +8,9 @@ import {
   CheckIcon,
   CheckCircleIcon,
   XMarkIcon,
-  EllipsisHorizontalIcon
+  EllipsisHorizontalIcon,
+  PencilIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -401,9 +403,10 @@ const MessagesPage: React.FC = () => {
                                   )}
                                 </div>
                                 {isOwn && (
-                                  <div className="mt-1 flex justify-end space-x-2 text-xs">
+                                  <div className="mt-1 flex justify-end space-x-1 text-xs">
                                     <button
-                                      className="text-blue-600 hover:underline"
+                                      className="p-1 rounded-full text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                      title="Modifier le message"
                                       onClick={async () => {
                                         const updated = prompt('Modifier le message:', message.content);
                                         if (updated !== null && updated.trim() && updated !== message.content) {
@@ -411,17 +414,18 @@ const MessagesPage: React.FC = () => {
                                         }
                                       }}
                                     >
-                                      Modifier
+                                      <PencilIcon className="w-4 h-4" />
                                     </button>
                                     <button
-                                      className="text-red-600 hover:underline"
+                                      className="p-1 rounded-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                                      title="Supprimer le message"
                                       onClick={async () => {
                                         if (window.confirm('Supprimer ce message ?')) {
                                           try { await deleteMessage(message.id); } catch {}
                                         }
                                       }}
                                     >
-                                      Supprimer
+                                      <TrashIcon className="w-4 h-4" />
                                     </button>
                                   </div>
                                 )}

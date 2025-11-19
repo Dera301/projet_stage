@@ -1,0 +1,17 @@
+@startuml
+title Modifier/Supprimer propriété
+class Owner {
+  +updateProperty(id, data)
+  +deleteProperty(id)
+}
+class Admin {
+  +toggleAvailability(propertyId)
+  +moderateProperty(propertyId)
+}
+class Property {
+  +update(data)
+  +remove()
+}
+Owner "1" --> "*" Property : gère >
+Admin --> Property : contrôle >
+@enduml

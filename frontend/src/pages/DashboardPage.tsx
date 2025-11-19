@@ -72,14 +72,19 @@ const DashboardPage: React.FC = () => {
         if (!res.ok || !data.success) return;
         const s = data.data || {};
         if (user.userType === 'owner') {
+          const totalOwnerProps = userProperties.length || (s.totalProperties || 0);
+          const availableOwnerProps = userProperties.length
+            ? userProperties.filter(p => p.isAvailable).length
+            : (s.availableProperties ?? s.totalProperties ?? 0);
+
           setStats([
             {
               name: 'Logements publiés',
-              value: String((s.totalProperties || 0)),
-              change: (s.availableProperties ?? s.totalProperties ?? 0) > 0 
-                ? `${(s.availableProperties ?? s.totalProperties ?? 0)} disponibles` 
+              value: String(totalOwnerProps),
+              change: availableOwnerProps > 0
+                ? `${availableOwnerProps} disponibles`
                 : 'Aucun disponible',
-              changeType: ((s.totalProperties || 0) > 0) ? 'positive' : 'neutral',
+              changeType: totalOwnerProps > 0 ? 'positive' : 'neutral',
               icon: <HomeIcon className="w-6 h-6" />
             },
             {
@@ -110,7 +115,16 @@ const DashboardPage: React.FC = () => {
       }
     };
     loadStats();
-  }, [user, setStats]);
+  }, [user, setStats, userProperties]);
+
+  // Pagination pour les logements du propriétaire
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const pageSize = 4;
+  const totalPages = Math.max(1, Math.ceil(userProperties.length / pageSize));
+  const paginatedUserProperties = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return userProperties.slice(start, start + pageSize);
+  }, [userProperties, currentPage]);
 
   // Always declare hooks before any conditional returns
   const recentStudentProperties = React.useMemo(() => {
@@ -354,6 +368,30 @@ const DashboardPage: React.FC = () => {
                         )}
                       </div>
                     ))}
+
+                    {userProperties.length > pageSize && (
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                        <button
+                          type="button"
+                          className="text-sm text-gray-600 hover:text-primary-600 disabled:opacity-50"
+                          disabled={currentPage === 1}
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        >
+                          Précédent
+                        </button>
+                        <div className="text-sm text-gray-600">
+                          Page {currentPage} / {totalPages}
+                        </div>
+                        <button
+                          type="button"
+                          className="text-sm text-gray-600 hover:text-primary-600 disabled:opacity-50"
+                          disabled={currentPage === totalPages}
+                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        >
+                          Suivant
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -460,7 +498,7 @@ const DashboardPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {userProperties.map((property) => (
+                    {paginatedUserProperties.map((property) => (
                       <div key={property.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                         <div className="flex flex-col md:flex-row">
                           {/* Property Image */}
@@ -630,41 +668,73 @@ const DashboardPage: React.FC = () => {
             {/* Profile Completion */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Complétion du profil</h2>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">Profil</span>
-                    <span className="text-gray-900">85%</span>
+              {(() => {
+                const hasBasicInfo = !!(user.firstName && user.lastName && user.phone);
+                const hasAvatar = !!user.avatar;
+                const hasBio = !!user.bio;
+                const hasCin = !!user.cinVerified;
+
+                const stepsTotal = 4;
+                const completedSteps = [hasBasicInfo, hasAvatar, hasBio, hasCin].filter(Boolean).length;
+                const completion = Math.round((completedSteps / stepsTotal) * 100);
+
+                return (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-600">Profil</span>
+                        <span className="text-gray-900">{completion}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-primary-600 h-2 rounded-full"
+                          style={{ width: `${completion}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center text-sm">
+                        {(hasBasicInfo ? (
+                          <CheckCircleIcon className="w-4 h-4 text-green-500 mr-2" />
+                        ) : (
+                          <ClockIcon className="w-4 h-4 text-yellow-500 mr-2" />
+                        ))}
+                        <span className="text-gray-600">Informations de base</span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        {(hasAvatar ? (
+                          <CheckCircleIcon className="w-4 h-4 text-green-500 mr-2" />
+                        ) : (
+                          <ClockIcon className="w-4 h-4 text-yellow-500 mr-2" />
+                        ))}
+                        <span className="text-gray-600">Photo de profil</span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        {(hasBio ? (
+                          <CheckCircleIcon className="w-4 h-4 text-green-500 mr-2" />
+                        ) : (
+                          <ClockIcon className="w-4 h-4 text-yellow-500 mr-2" />
+                        ))}
+                        <span className="text-gray-600">Description personnelle</span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        {(hasCin ? (
+                          <CheckCircleIcon className="w-4 h-4 text-green-500 mr-2" />
+                        ) : (
+                          <XCircleIcon className="w-4 h-4 text-gray-400 mr-2" />
+                        ))}
+                        <span className="text-gray-600">Vérification d'identité</span>
+                      </div>
+                    </div>
+                    <Link
+                      to="/profile"
+                      className="block w-full text-center btn-primary text-sm"
+                    >
+                      Compléter le profil
+                    </Link>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-primary-600 h-2 rounded-full" style={{ width: '85%' }}></div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center text-sm">
-                    <CheckCircleIcon className="w-4 h-4 text-green-500 mr-2" />
-                    <span className="text-gray-600">Informations de base</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <CheckCircleIcon className="w-4 h-4 text-green-500 mr-2" />
-                    <span className="text-gray-600">Photo de profil</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <ClockIcon className="w-4 h-4 text-yellow-500 mr-2" />
-                    <span className="text-gray-600">Description personnelle</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <XCircleIcon className="w-4 h-4 text-gray-400 mr-2" />
-                    <span className="text-gray-600">Vérification d'identité</span>
-                  </div>
-                </div>
-                <Link
-                  to="/profile"
-                  className="block w-full text-center btn-primary text-sm"
-                >
-                  Compléter le profil
-                </Link>
-              </div>
+                );
+              })()}
             </div>
           </div>
         </div>

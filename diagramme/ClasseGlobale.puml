@@ -1,0 +1,158 @@
+@startuml
+title Diagramme de classe global (hors services)
+
+class Utilisateur {
+  +id: Int
+  +email: String
+  +password: String?
+  +firstName: String
+  +lastName: String
+  +phone: String
+  +userType: UserType
+  +university: String?
+  +studyLevel: String?
+  +budget: Decimal?
+  +bio: String?
+  +avatar: String?
+  +isVerified: Boolean
+  +cinVerified: Boolean
+  +cinNumber: String?
+  +register(data)
+  +login(credentials)
+  +updateProfile(data)
+  +submitCIN(cinData)
+}
+
+class Student {
+  +id: Int
+  +email: String
+  +password: String?
+  +firstName: String
+  +lastName: String
+  +phone: String
+  +userType: Student
+  +university: String?
+  +studyLevel: String?
+  +budget: Decimal?
+  +bio: String?
+  +avatar: String?
+  +isVerified: Boolean
+  +cinVerified: Boolean
+  +cinNumber: String?
+  +searchProperties(filters)
+  +scheduleAppointment(propertyId, date, message?)
+  +listAppointments()
+  +cancelAppointment(appointmentId)
+}
+
+class Owner {
+  +id: Int
+  +email: String
+  +password: String?
+  +firstName: String
+  +lastName: String
+  +phone: String
+  +userType: Owner
+  +avatar: String?
+  +createProperty(data)
+  +updateProperty(propertyId, data)
+  +deleteProperty(propertyId)
+  +listOwnProperties()
+  +respondAppointment(appointmentId, status)
+}
+
+class Admin {
+  +seedAdmin(data)
+  +listUsers()
+  +updateUserRole(userId, type)
+  +deleteUser(userId)
+  +listAnnouncements()
+  +moderateAnnouncement(announcementId, action, reason?)
+  +listProperties()
+  +toggleAvailability(propertyId)
+  +verifyCIN(userId, decision, reason?)
+  +updatePolicy(text)
+  +receiveNotification(notification)
+}
+
+class Announcement {
+  +id: Int
+  +content: String
+  +images: JSON?
+  +contact: String?
+  +createdAt: DateTime
+  +updatedAt: DateTime
+  +create(data)
+  +update(data)
+  +delete()
+}
+
+class Property {
+  +id: Int
+  +title: String
+  +description: String
+  +address: String
+  +district: String
+  +price: Decimal
+  +deposit: Decimal
+  +availableRooms: Int
+  +totalRooms: Int
+  +propertyType: PropertyType
+  +amenities: JSON?
+  +images: JSON?
+  +isAvailable: Boolean
+  +latitude: Decimal?
+  +longitude: Decimal?
+  +create(data)
+  +update(data)
+  +delete()
+  +search(filters)
+}
+
+class Message {
+  +id: Int
+  +content: String
+  +isRead: Boolean
+  +createdAt: DateTime
+  +send()
+  +markAsRead()
+}
+
+class Appointment {
+  +id: Int
+  +appointmentDate: DateTime
+  +status: AppointmentStatus
+  +message: String?
+  +create()
+  +updateStatus(status)
+  +cancel(reason?)
+}
+
+class Invity {
+  +email: String
+  +firstName: String
+  +lastName: String
+  +confirmRegistration()
+}
+
+class Notification {
+  +type: String
+  +content: String
+  +createdAt: DateTime
+  +sendToAdmin()
+}
+
+Utilisateur <|-- Student
+Utilisateur <|-- Owner
+Utilisateur <|-- Admin
+
+Owner "1" -- "*" Property : possède >
+Utilisateur "1" -- "*" Announcement : publie >
+Student "1" -- "*" Appointment : demande >
+Owner "1" -- "*" Appointment : reçoit >
+Property "1" -- "*" Appointment : concerne >
+Utilisateur "1" -- "*" Message : envoie/reçoit >
+Admin "1" -- "*" Notification : traite >
+Invity "1" --> "0..1" Utilisateur : devient
+
+@enduml

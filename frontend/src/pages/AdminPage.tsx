@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { apiGet, apiJson } from '../config';
 import { 
@@ -17,7 +18,8 @@ import {
   DocumentTextIcon,
   ExclamationTriangleIcon,
   ArrowTrendingUpIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  ArrowRightOnRectangleIcon as LogoutIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -25,7 +27,8 @@ import toast from 'react-hot-toast';
 type ActiveTab = 'dashboard' | 'users' | 'announcements' | 'cin' | 'notifications' | 'properties' | 'settings';
 
 const AdminPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ActiveTab>('users');
   const [users, setUsers] = useState<any[]>([]);
   const [props, setProps] = useState<any[]>([]);
@@ -79,63 +82,46 @@ const AdminPage: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const promises: Promise<Response>[] = [];
+      // Charger toutes les listes une fois pour alimenter les badges de la sidebar
+      const [usersRes, annsRes, propsRes, cinRes] = await Promise.all([
+        apiGet('/api/admin/users_list'),
+        apiGet('/api/admin/announcements_list'),
+        apiGet('/api/admin/properties_list'),
+        apiGet('/api/admin/cin_to_verify')
+      ]);
+
+      const usersText = await usersRes.text();
+      const annsText = await annsRes.text();
+      const propsText = await propsRes.text();
+      const cinText = await cinRes.text();
+
+      const uj = JSON.parse(usersText || '{}');
+      if (uj.success) setUsers(uj.data); else setUsers([]);
+
+      const aj = JSON.parse(annsText || '{}');
+      if (aj.success) setAnns(aj.data); else setAnns([]);
+
+      const pj = JSON.parse(propsText || '{}');
+      if (pj.success) setProps(pj.data); else setProps([]);
+
+      const cj = JSON.parse(cinText || '{}');
+      console.log('Réponse CIN complète:', cj);
       
-      if (activeTab === 'users' || activeTab === 'notifications') {
-        promises.push(apiGet('/api/admin/users_list'));
-      }
-      if (activeTab === 'announcements' || activeTab === 'notifications') {
-        promises.push(apiGet('/api/admin/announcements_list'));
-      }
-      if (activeTab === 'properties' || activeTab === 'notifications') {
-        promises.push(apiGet('/api/admin/properties_list'));
-      }
-      if (activeTab === 'cin' || activeTab === 'notifications') {
-        promises.push(apiGet('/api/admin/cin_to_verify'));
-      }
-  
-      const results = await Promise.all(promises);
-      let index = 0;
-  
-      if (activeTab === 'users' || activeTab === 'notifications') {
-        const ut = await results[index++].text();
-        const uj = JSON.parse(ut || '{}');
-        if (uj.success) setUsers(uj.data); else setUsers([]);
-      }
-  
-      if (activeTab === 'announcements' || activeTab === 'notifications') {
-        const at = await results[index++].text();
-        const aj = JSON.parse(at || '{}');
-        if (aj.success) setAnns(aj.data); else setAnns([]);
-      }
-      
-      if (activeTab === 'properties' || activeTab === 'notifications') {
-        const pt = await results[index++].text();
-        const pj = JSON.parse(pt || '{}');
-        if (pj.success) setProps(pj.data); else setProps([]);
-      }
-  
-      if (activeTab === 'cin' || activeTab === 'notifications') {
-        const ct = await results[index++].text();
-        const cj = JSON.parse(ct || '{}');
-        console.log('📊 Réponse CIN complète:', cj);
-        
-        if (cj.success) {
-          if (cj.data && cj.data.cinToVerify && Array.isArray(cj.data.cinToVerify)) {
-            setCinToVerify(cj.data.cinToVerify);
-          } else if (cj.data && Array.isArray(cj.data)) {
-            setCinToVerify(cj.data);
-          } else if (cj.cinToVerify && Array.isArray(cj.cinToVerify)) {
-            setCinToVerify(cj.cinToVerify);
-          } else if (Array.isArray(cj)) {
-            setCinToVerify(cj);
-          } else {
-            console.warn('Structure de réponse CIN inattendue:', cj);
-            setCinToVerify([]);
-          }
+      if (cj.success) {
+        if (cj.data && cj.data.cinToVerify && Array.isArray(cj.data.cinToVerify)) {
+          setCinToVerify(cj.data.cinToVerify);
+        } else if (cj.data && Array.isArray(cj.data)) {
+          setCinToVerify(cj.data);
+        } else if (cj.cinToVerify && Array.isArray(cj.cinToVerify)) {
+          setCinToVerify(cj.cinToVerify);
+        } else if (Array.isArray(cj)) {
+          setCinToVerify(cj);
         } else {
+          console.warn('Structure de réponse CIN inattendue:', cj);
           setCinToVerify([]);
         }
+      } else {
+        setCinToVerify([]);
       }
     } catch (error) {
       console.error('Erreur chargement:', error);
@@ -246,6 +232,30 @@ const AdminPage: React.FC = () => {
     return diffHours < 24;
   }).length;
 
+  const getUserActivityScore = (u: any) => {
+    const userId = String(u.id);
+    const userPropsCount = props.filter(p => {
+      const ownerId = p.ownerId || p.owner_id || p.userId || p.user_id;
+      return ownerId && String(ownerId) === userId;
+    }).length;
+
+    const userAnnsCount = anns.filter(a => {
+      const authorId = a.author?.id || a.userId || a.user_id;
+      return authorId && String(authorId) === userId;
+    }).length;
+
+    return userPropsCount + userAnnsCount;
+  };
+
+  const handleAdminLogout = async () => {
+    try {
+      await logout();
+      navigate('/admin-login');
+    } catch (e) {
+      console.error('Erreur déconnexion admin:', e);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -262,6 +272,13 @@ const AdminPage: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <button
+                onClick={handleAdminLogout}
+                className="flex items-center space-x-2 px-3 py-2 rounded-lg border border-red-200 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+              >
+                <LogoutIcon className="w-4 h-4" />
+                <span>Déconnexion</span>
+              </button>
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">{user.firstName} {user.lastName}</p>
                 <p className="text-xs text-gray-500">Administrateur</p>
@@ -532,38 +549,67 @@ const AdminPage: React.FC = () => {
 
                 {/* Activité récente */}
                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Activité récente</h3>
-                  <div className="space-y-3">
-                    {users.slice(0, 5).map(user => (
-                      <div key={user.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                            <span className="text-xs font-medium text-gray-700">
-                              {user.firstName[0]}{user.lastName[0]}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">{user.firstName} {user.lastName}</p>
-                            <p className="text-xs text-gray-500">Inscrit le {new Date(user.createdAt).toLocaleDateString('fr-FR')}</p>
-                          </div>
-                        </div>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          user.userType === 'admin' ? 'bg-purple-100 text-purple-800' :
-                          user.userType === 'owner' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {user.userType}
-                        </span>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Activité récente</h3>
+                  <p className="text-xs text-gray-500 mb-4">Histogramme basé sur le nombre de logements et d'annonces par utilisateur.</p>
+                  {(() => {
+                    const recentUsers = users.slice(0, 5);
+                    const maxActivity = recentUsers.reduce((max, u) => {
+                      const score = getUserActivityScore(u);
+                      return score > max ? score : max;
+                    }, 0);
+
+                    return (
+                      <div className="space-y-3">
+                        {recentUsers.map(user => {
+                          const activityScore = getUserActivityScore(user);
+                          const widthPercent = maxActivity > 0 ? (activityScore / maxActivity) * 100 : 0;
+                          return (
+                            <div key={user.id} className="py-3 border-b border-gray-100 last:border-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                    <span className="text-xs font-medium text-gray-700">
+                                      {user.firstName[0]}{user.lastName[0]}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900">{user.firstName} {user.lastName}</p>
+                                    <p className="text-xs text-gray-500">Inscrit le {new Date(user.createdAt).toLocaleDateString('fr-FR')}</p>
+                                  </div>
+                                </div>
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  user.userType === 'admin' ? 'bg-purple-100 text-purple-800' :
+                                  user.userType === 'owner' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-green-100 text-green-800'
+                                }`}>
+                                  {user.userType}
+                                </span>
+                              </div>
+                              <div className="mt-1">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-[11px] text-gray-500">Score activité</span>
+                                  <span className="text-[11px] text-gray-600 font-medium">{activityScore}</span>
+                                </div>
+                                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-2 bg-blue-500 rounded-full transition-all"
+                                    style={{ width: `${widthPercent}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })()}
                 </div>
               </div>
             )}
 
             {/* Tab Content */}
             {activeTab === 'users' && (
-              <div className="card">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                 <h2 className="text-xl font-semibold mb-4 text-gray-900">Gestion des Utilisateurs</h2>
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
@@ -584,10 +630,10 @@ const AdminPage: React.FC = () => {
                           className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
                           onClick={() => setUserModal({ open: true, user: u })}
                         >
-                          <td className="p-3 text-gray-900">{u.id}</td>
-                          <td className="p-3 text-gray-900">{u.email}</td>
-                          <td className="p-3 text-gray-900">{u.firstName} {u.lastName}</td>
-                          <td className="p-3">
+                          <td className="p-3 text-gray-900 bg-white">{u.id}</td>
+                          <td className="p-3 text-gray-900 bg-white">{u.email}</td>
+                          <td className="p-3 text-gray-900 bg-white">{u.firstName} {u.lastName}</td>
+                          <td className="p-3 bg-white">
                             <span className={`badge ${u.userType === 'admin' ? 'badge-primary' : u.userType === 'owner' ? 'badge-warning' : 'badge-success'}`}>
                               {u.userType}
                             </span>
@@ -599,13 +645,13 @@ const AdminPage: React.FC = () => {
                               <span className="badge badge-warning">Non vérifié</span>
                             )}
                           </td>
-                          <td className="p-3 space-x-2" onClick={(e) => e.stopPropagation()}>
+                          <td className="p-3 bg-white" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => setDeleteModal({ open: true, type: 'user', id: u.id, reason: '' })}
-                              className="btn-danger text-xs flex items-center space-x-1"
+                              className="text-red-600 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"
+                              title="Supprimer l'utilisateur"
                             >
-                              <XMarkIcon className="w-4 h-4" />
-                              <span>Supprimer</span>
+                              <XMarkIcon className="w-5 h-5" />
                             </button>
                           </td>
                         </tr>
@@ -617,7 +663,7 @@ const AdminPage: React.FC = () => {
             )}
 
             {activeTab === 'announcements' && (
-              <div className="card">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                 <h2 className="text-xl font-semibold mb-4 text-dark-900">Annonces Étudiantes</h2>
                 {selectedAnnouncement ? (
                   <div className="space-y-4">
@@ -754,7 +800,7 @@ const AdminPage: React.FC = () => {
             )}
 
             {activeTab === 'properties' && (
-              <div className="card">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                 <h2 className="text-xl font-semibold mb-4 text-dark-900">Appartements Publiés</h2>
                 {selectedProperty ? (
                   <div className="space-y-4">
@@ -955,7 +1001,7 @@ const AdminPage: React.FC = () => {
             )}
 
             {activeTab === 'cin' && (
-              <div className="card">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                 <h2 className="text-xl font-semibold mb-4 text-dark-900">CIN à Vérifier</h2>
                 {cinToVerify.length === 0 ? (
                   <p className="text-dark-600 text-center py-8">Aucune CIN en attente de vérification</p>

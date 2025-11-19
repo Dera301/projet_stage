@@ -1,0 +1,35 @@
+@startuml
+title Recherche annonce/logement
+class Utilisateur {
+    +id: Int
+  +email: String
+  +password: String?
+  +firstName: String
+  +lastName: String
+  +phone: String
+  +userType: UserType
+  +university: String?
+  +studyLevel: String?
+  +budget: Decimal?
+  +bio: String?
+  +avatar: String?
+  +searchProperties(filters)
+  +consulterAnnonces()
+}
+class Property {
+  +title: String
+  +district: String
+  +price: Decimal
+  +isAvailable: Boolean
+  +matchFilters(filters)
+}
+class Announcement {
+  +content: String
+  +images: JSON?
+  +contact: String?
+  +isAvailable: Boolean
+  +matchFilters(filters)
+}
+Utilisateur --> Property : consulter >
+Utilisateur --> Announcement : consulter >
+@enduml

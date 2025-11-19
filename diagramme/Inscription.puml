@@ -1,0 +1,25 @@
+@startuml
+title Inscription
+class Utilisateur {
+  +id: Int
+  +email: String
+  +password: String?
+  +firstName: String
+  +lastName: String
+  +phone: String
+  +userType: UserType
+  +university: String?
+  +studyLevel: String?
+  +budget: Decimal?
+  +bio: String?
+  +avatar: String?
+  +register(data)
+  +envoyerConfirmation()
+}
+class Notification {
+  +type: String
+  +content: String
+  +sendToAdmin()
+}
+Utilisateur --> Notification : informer admin
+@enduml
