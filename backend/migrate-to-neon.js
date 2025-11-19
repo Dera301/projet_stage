@@ -59,56 +59,35 @@ async function migrateData() {
     
     // Migrer les tables dans l'ordre pour respecter les contraintes de clés étrangères
     const migrationSteps = [
-      {
-        table: 'user',
-        transform: (item) => {
-          const { id, ...rest } = item;
-          return rest;
-        }
-      },
-      {
-        table: 'property', 
-        transform: (item) => {
-          const { id, ...rest } = item;
-          return rest;
-        }
-      },
-      {
-        table: 'announcement',
-        transform: (item) => {
-          const { id, ...rest } = item;
-          return rest;
-        }
-      },
-      {
-        table: 'contactMessage',
-        transform: (item) => {
-          const { id, ...rest } = item;
-          return rest;
-        }
-      },
-      {
-        table: 'conversation', 
-        transform: (item) => {
-          const { id, ...rest } = item;
-          return rest;
-        }
-      },
-      {
-        table: 'message',
-        transform: (item) => {
-          const { id, ...rest } = item;
-          return rest;
-        }
-      },
-      {
-        table: 'appointment',
-        transform: (item) => {
-          const { id, ...rest } = item;
-          return rest;
-        }
-      }
-    ];
+  {
+    table: 'user',
+    transform: (item) => item   // on ne touche rien
+  },
+  {
+    table: 'property', 
+    transform: (item) => item
+  },
+  {
+    table: 'announcement',
+    transform: (item) => item
+  },
+  {
+    table: 'contactMessage',
+    transform: (item) => item
+  },
+  {
+    table: 'conversation', 
+    transform: (item) => item  // id doit être conservé !
+  },
+  {
+    table: 'message',
+    transform: (item) => item  // idem
+  },
+  {
+    table: 'appointment',
+    transform: (item) => item
+  }
+];
     
     let totalMigrated = 0;
     
