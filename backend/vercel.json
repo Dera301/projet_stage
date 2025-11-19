@@ -6,6 +6,14 @@
   "outputDirectory": ".",
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "src/server.js"
+    },
+    {
+      "source": "/health",
+      "destination": "src/server.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "src/server.js"
     }
