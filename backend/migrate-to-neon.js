@@ -3,132 +3,107 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-// Client pour la base source (locale)
-const sourcePrisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: "postgresql://postgres:dera@localhost:5432/coloc_antananarivo?schema=public"
-    }
-  }
-});
-
-// Client pour la base destination (Neon) - utilise DATABASE_URL du .env
-const targetPrisma = new PrismaClient();
-
-async function migrateTable(tableName, transformFunction = null) {
-  console.log(`📦 Migration de la table: ${tableName}`);
+async function main() {
+  console.log('🚀 Début de la migration et seeding...');
+  
+  const prisma = new PrismaClient();
   
   try {
-    const data = await sourcePrisma[tableName].findMany();
-    console.log(`📊 ${data.length} enregistrements trouvés dans ${tableName}`);
+    // Test de connexion
+    await prisma.$connect();
+    console.log('✅ Connexion à la base de données réussie');
     
-    if (data.length > 0) {
-      let processedData = data;
+    // Vérifier si des données existent déjà
+    const userCount = await prisma.user.count();
+    const propertyCount = await prisma.property.count();
+    
+    console.log(`📊 Données existantes - Users: ${userCount}, Properties: ${propertyCount}`);
+    
+    if (userCount === 0 && propertyCount === 0) {
+      console.log('🌱 Aucune donnée trouvée, création de données de test...');
       
-      // Appliquer une transformation si nécessaire
-      if (transformFunction) {
-        processedData = data.map(transformFunction);
-      }
-      
-      await targetPrisma[tableName].createMany({
-        data: processedData,
-        skipDuplicates: true
+      // Créer un utilisateur admin de test
+      const adminUser = await prisma.user.create({
+        data: {
+          email: 'admin@coloc-tana.com',
+          firstName: 'Admin',
+          lastName: 'System',
+          phone: '+261340000000',
+          userType: 'admin',
+          isVerified: true,
+          password: '$2a$10$exampleHashedPasswordForTesting'
+        }
       });
-      console.log(`✅ ${data.length} enregistrements migrés dans ${tableName}`);
-    }
-    
-    return data.length;
-  } catch (error) {
-    console.error(`❌ Erreur sur la table ${tableName}:`, error.message);
-    return 0;
-  }
-}
-
-async function migrateData() {
-  console.log('🚀 Début de la migration vers Neon...');
-  
-  try {
-    // Test de connexion aux deux bases
-    console.log('🔌 Test de connexion à la base source...');
-    await sourcePrisma.$connect();
-    console.log('✅ Connexion source OK');
-    
-    console.log('🔌 Test de connexion à la base Neon...');
-    await targetPrisma.$connect();
-    console.log('✅ Connexion Neon OK');
-    
-    // Migrer les tables dans l'ordre pour respecter les contraintes de clés étrangères
-    const migrationSteps = [
-      {
-        table: 'user',
-        transform: (item) => {
-          const { id, ...rest } = item;
-          return rest;
-        }
-      },
-      {
-        table: 'property', 
-        transform: (item) => {
-          const { id, ...rest } = item;
-          return rest;
-        }
-      },
-      {
-        table: 'announcement',
-        transform: (item) => {
-          const { id, ...rest } = item;
-          return rest;
-        }
-      },
-      {
-        table: 'contactMessage',
-        transform: (item) => {
-          const { id, ...rest } = item;
-          return rest;
-        }
-      },
-      {
-        table: 'conversation', 
-        transform: (item) => {
-          const { id, ...rest } = item;
-          return rest;
-        }
-      },
-      {
-        table: 'message',
-        transform: (item) => {
-          const { id, ...rest } = item;
-          return rest;
-        }
-      },
-      {
-        table: 'appointment',
-        transform: (item) => {
-          const { id, ...rest } = item;
-          return rest;
-        }
-      }
-    ];
-    
-    let totalMigrated = 0;
-    
-    for (const step of migrationSteps) {
-      const count = await migrateTable(step.table, step.transform);
-      totalMigrated += count;
       
-      // Petite pause entre les tables pour éviter les timeouts
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('✅ Utilisateur admin créé');
+      
+      // Créer des propriétés de test
+      const properties = await prisma.property.createMany({
+        data: [
+          {
+            title: 'Belle colocation à Analakely',
+            description: 'Superbe appartement avec 3 chambres disponibles près du centre ville',
+            address: 'Analakely, Antananarivo',
+            district: 'Analakely',
+            price: 350000,
+            deposit: 100000,
+            availableRooms: 3,
+            totalRooms: 4,
+            propertyType: 'apartment',
+            amenities: 'WiFi, Cuisine équipée, Salons communs',
+            ownerId: adminUser.id,
+            latitude: -18.910012,
+            longitude: 47.525581
+          },
+          {
+            title: 'Maison étudiante à Ankatso',
+            description: 'Maison spacieuse parfaite pour étudiants, proche campus',
+            address: 'Ankatso, Antananarivo',
+            district: 'Ankatso',
+            price: 280000,
+            deposit: 80000,
+            availableRooms: 2,
+            totalRooms: 3,
+            propertyType: 'house',
+            amenities: 'Jardin, Parking, Buanderie',
+            ownerId: adminUser.id,
+            latitude: -18.920000,
+            longitude: 47.560000
+          }
+        ]
+      });
+      
+      console.log('✅ Propriétés de test créées');
+      
+      // Créer des annonces de test
+      await prisma.announcement.createMany({
+        data: [
+          {
+            authorId: adminUser.id,
+            content: 'Je cherche un colocataire pour partager un appartement à Ivandry. Budget 200k Ar/mois.',
+            contact: 'admin@coloc-tana.com'
+          },
+          {
+            authorId: adminUser.id,
+            content: 'Disponible: chambre dans maison étudiante à Anosy. Proche université et transports.',
+            contact: 'admin@coloc-tana.com'
+          }
+        ]
+      });
+      
+      console.log('✅ Annonces de test créées');
+    } else {
+      console.log('ℹ️  Données déjà présentes, pas de seeding nécessaire');
     }
     
-    console.log(`🎉 Migration terminée! ${totalMigrated} enregistrements migrés au total`);
+    console.log('🎉 Migration et seeding terminés avec succès!');
     
   } catch (error) {
     console.error('❌ Erreur lors de la migration:', error);
+    process.exit(1);
   } finally {
-    await sourcePrisma.$disconnect();
-    await targetPrisma.$disconnect();
-    process.exit(0);
+    await prisma.$disconnect();
   }
 }
 
-migrateData();
+main();
