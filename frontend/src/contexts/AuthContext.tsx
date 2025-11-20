@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, AuthContextType, RegisterData, CINVerificationData } from '../types'; // Retirer CINVerificationResult
-import { apiGet, apiJson, setAuthToken } from '../config';
+import { apiGet, apiJson, apiUpload, setAuthToken } from '../config';
 import toast from 'react-hot-toast';
 import { cinVerificationService } from '../services/cinVerificationService';
 import { getStorage, removeStorage, clearStorage } from '../utils/storage';
@@ -213,24 +213,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('📊 Résultat vérification:', verificationResult);
 
     // 2. Upload images first (if needed)
-    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     
     // Upload recto image
     let cinRectoImagePath = null;
     if (verificationData.cinRectoImage) {
       const rectoFormData = new FormData();
       rectoFormData.append('image', verificationData.cinRectoImage);
-      const rectoResponse = await fetch(`${API_BASE_URL}/api/upload/image`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${getStorage('auth_token')}`
-        },
-        body: rectoFormData,
-      });
-      const rectoData = await rectoResponse.json();
-      if (rectoData.success) {
-        cinRectoImagePath = rectoData.data.path;
+      const rectoData = await apiUpload('/api/upload/image', rectoFormData);
+      if (!rectoData.success) {
+        throw new Error(rectoData.message || 'Upload recto échoué');
       }
+      cinRectoImagePath = rectoData.data.path;
     }
 
     // Upload verso image
@@ -238,17 +231,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (verificationData.cinVersoImage) {
       const versoFormData = new FormData();
       versoFormData.append('image', verificationData.cinVersoImage);
-      const versoResponse = await fetch(`${API_BASE_URL}/api/upload/image`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${getStorage('auth_token')}`
-        },
-        body: versoFormData,
-      });
-      const versoData = await versoResponse.json();
-      if (versoData.success) {
-        cinVersoImagePath = versoData.data.path;
+      const versoData = await apiUpload('/api/upload/image', versoFormData);
+      if (!versoData.success) {
+        throw new Error(versoData.message || 'Upload verso échoué');
       }
+      cinVersoImagePath = versoData.data.path;
     }
 
     // 3. Send CIN verification data

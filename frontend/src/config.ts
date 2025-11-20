@@ -1,15 +1,5 @@
 // config.ts
-const getStorage = (key: string) => {
-  return localStorage.getItem(key);
-};
-
-const setStorage = (key: string, value: string) => {
-  localStorage.setItem(key, value);
-};
-
-const removeStorage = (key: string) => {
-  localStorage.removeItem(key);
-};
+import { getStorage, setStorage, removeStorage } from './utils/storage';
 
 // URL de base : On utilise la variable d'env ou la valeur en dur, sans slash final
 const API_BASE_URL = (process.env.REACT_APP_API_URL || 'https://projet-stage-backend.vercel.app').replace(/\/$/, '');
@@ -57,6 +47,43 @@ export const apiGet = async (url: string) => {
     }
   } catch (error) {
     console.error('💥 Fetch error:', error);
+    throw error;
+  }
+};
+
+export const apiUpload = async (url: string, formData: FormData) => {
+  const fullUrl = buildUrl(url);
+  const token = getStorage('auth_token');
+  const headers: HeadersInit = {
+    'Accept': 'application/json'
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  try {
+    const response = await fetch(fullUrl, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Server Error Response:', errorText);
+      throw new Error(`Erreur serveur: ${response.status}`);
+    }
+
+    const text = await response.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error('❌ Invalid JSON received:', text.substring(0, 100));
+      throw new Error('Le serveur a renvoyé un format invalide');
+    }
+  } catch (error) {
+    console.error('💥 Upload error:', error);
     throw error;
   }
 };
