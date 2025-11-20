@@ -22,7 +22,7 @@ console.log('🔗 Configuration API:', {
 
 export const apiGet = async (url: string) => {
   // Nettoyer l'URL pour éviter les doubles slashs
-  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  const cleanUrl = `/${url.replace(/^\/+/, '')}`;
   const fullUrl = `${API_BASE_URL}${cleanUrl}`;
   
   console.log('🌐 Fetching GET:', fullUrl);
