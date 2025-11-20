@@ -8,9 +8,9 @@
   }
   
   body {
-    @apply bg-dark-50 text-dark-900;
-    background-color: #18181b;
-    color: #c0c4d3;
+    @apply bg-white text-gray-900 antialiased;
+    background-color: #f8fafc;
+    color: #1f2937;
     overflow-x: hidden;
   }
 
