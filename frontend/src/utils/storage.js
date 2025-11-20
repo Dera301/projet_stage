@@ -1,8 +1,9 @@
 // src/utils/storage.js
 
 const getStorageKey = (key) => {
-  const port = window.location.port || '3000';
-  return `${key}_${port}`;
+  const { hostname, port } = window.location;
+  const scope = port ? `${hostname}:${port}` : hostname || 'default';
+  return `${key}_${scope}`;
 };
 
 export const setStorage = (key, value) => {
