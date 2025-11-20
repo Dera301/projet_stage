@@ -44,8 +44,7 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
     
     setCheckingAvailability(true);
     try {
-      const res = await apiGet('/api/appointments/get_all');
-      const data = await res.json();
+      const data = await apiGet('/api/appointments/get_all');
       
       if (data.success) {
         setExistingAppointments(data.data || []);
@@ -129,14 +128,12 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({
         });
       } else {
         // Mode création
-        const res = await apiJson('/api/appointments/create', 'POST', {
+        const data = await apiJson('/api/appointments/create', 'POST', {
           propertyId,
           appointmentDate: appointmentDateTime,
           message: message || `Je souhaite visiter le logement "${propertyTitle}"`
         });
 
-        const data = await res.json();
-        
         if (data.success) {
           toast.success('Rendez-vous planifié avec succès !');
           onClose();

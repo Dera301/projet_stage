@@ -150,8 +150,7 @@ const AdminPage: React.FC = () => {
     }
 
     try {
-      const res = await apiJson(`/api/admin/user_delete/${deleteModal.id}`, 'DELETE');
-      const data = await res.json();
+      const data = await apiJson(`/api/admin/user_delete/${deleteModal.id}`, 'DELETE');
       
       if (data.success) {
         toast.success('Utilisateur supprimé avec succès');
@@ -170,10 +169,9 @@ const AdminPage: React.FC = () => {
     }
 
     try {
-      const res = await apiJson(`/api/admin/announcement_delete_with_reason/${deleteModal.id}`, 'DELETE', {
+      const data = await apiJson(`/api/admin/announcement_delete_with_reason/${deleteModal.id}`, 'DELETE', {
         reason: deleteModal.reason
       });
-      const data = await res.json();
       
       if (data.success) {
         toast.success('Annonce supprimée avec succès');
@@ -192,8 +190,7 @@ const AdminPage: React.FC = () => {
     }
 
     try {
-      const res = await apiJson(`/api/properties/delete/${deleteModal.id}`, 'DELETE');
-      const data = await res.json();
+      const data = await apiJson(`/api/properties/delete/${deleteModal.id}`, 'DELETE');
       if (data.success) {
         toast.success('Logement supprimé avec succès');
         setProps(prev => prev.filter(p => p.id !== deleteModal.id));
@@ -209,10 +206,9 @@ const AdminPage: React.FC = () => {
 
   const handleVerifyCIN = async (userId: string, approved: boolean) => {
     try {
-      const res = await apiJson(`/api/admin/cin_verify/${userId}`, 'PUT', {
+      const data = await apiJson(`/api/admin/cin_verify/${userId}`, 'PUT', {
         verified: approved
       });
-      const data = await res.json();
       
       if (data.success) {
         toast.success(approved ? 'CIN vérifiée avec succès' : 'CIN rejetée');
@@ -771,10 +767,7 @@ const AdminPage: React.FC = () => {
                         
                         <div className="flex items-center justify-between mt-3">
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedAnnouncement(a);
-                            }}
+                            onClick={() => setSelectedAnnouncement(a)}
                             className="btn-secondary text-xs"
                           >
                             Détails
@@ -908,15 +901,12 @@ const AdminPage: React.FC = () => {
                         className="border border-dark-200 rounded-lg p-4 hover:bg-dark-50 cursor-pointer transition-shadow hover:shadow-md"
                         onClick={async () => {
                           try {
-                            const res = await apiGet(`/api/properties/get_by_id/${p.id}`);
-                            const data = await res.json();
+                            const data = await apiGet(`/api/properties/get_by_id/${p.id}`);
                             if (data.success) {
                               setSelectedProperty(data.data);
-                            } else {
-                              toast.error('Erreur lors du chargement des détails');
                             }
                           } catch (error) {
-                            toast.error('Erreur lors du chargement des détails');
+                            toast.error('Erreur lors du chargement du logement');
                           }
                         }}
                       >
@@ -966,15 +956,12 @@ const AdminPage: React.FC = () => {
                             onClick={async (e) => {
                               e.stopPropagation();
                               try {
-                                const res = await apiGet(`/api/properties/get_by_id/${p.id}`);
-                                const data = await res.json();
+                                const data = await apiGet(`/api/properties/get_by_id/${p.id}`);
                                 if (data.success) {
                                   setSelectedProperty(data.data);
-                                } else {
-                                  toast.error('Erreur lors du chargement des détails');
                                 }
                               } catch (error) {
-                                toast.error('Erreur lors du chargement des détails');
+                                toast.error('Erreur lors du chargement du logement');
                               }
                             }}
                           >

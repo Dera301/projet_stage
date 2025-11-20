@@ -76,7 +76,7 @@ const HomePage: React.FC = () => {
     const loadStats = async () => {
       try {
         // Utilisation de apiGet pour bénéficier de la gestion d'URL propre
-        const data = await apiGet('/api/properties/stats_public');
+        const data = await apiGet('api/properties/stats_public');
         
         if (data && data.success) {
           setPublicStats(data.data);
