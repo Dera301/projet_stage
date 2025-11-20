@@ -49,8 +49,7 @@ const AppointmentsPage: React.FC = () => {
     
     setLoading(true);
     try {
-      const res = await apiGet('/api/appointments/get_all');
-      const data = await res.json();
+      const data = await apiGet('/api/appointments/get_all');
       
       if (data.success) {
         const items = (data.data || []) as Appointment[];
@@ -66,8 +65,7 @@ const AppointmentsPage: React.FC = () => {
 
   const updateStatus = async (id: string, status: string) => {
     try {
-      const res = await apiJson(`/api/appointments/update_status/${id}`, 'PUT', { status });
-      const data = await res.json();
+      const data = await apiJson(`/api/appointments/update_status/${id}`, 'PUT', { status });
       
       if (data.success) {
         toast.success('Statut mis à jour');
@@ -85,8 +83,7 @@ const AppointmentsPage: React.FC = () => {
 
     try {
       // Note: Les rendez-vous ne sont pas supprimés, mais annulés via update_status
-      const res = await apiJson(`/api/appointments/update_status/${id}`, 'PUT', { status: 'cancelled' });
-      const data = await res.json();
+      const data = await apiJson(`/api/appointments/update_status/${id}`, 'PUT', { status: 'cancelled' });
       
       if (data.success) {
         toast.success('Rendez-vous annulé');
@@ -106,11 +103,10 @@ const AppointmentsPage: React.FC = () => {
   const handleUpdateAppointment = async (updatedData: any) => {
     try {
       // Utiliser update_status pour mettre à jour le rendez-vous
-      const res = await apiJson(`/api/appointments/update_status/${editingAppointment?.id}`, 'PUT', {
+      const data = await apiJson(`/api/appointments/update_status/${editingAppointment?.id}`, 'PUT', {
         status: updatedData.status || editingAppointment?.status,
         message: updatedData.message || editingAppointment?.message
       });
-      const data = await res.json();
       
       if (data.success) {
         toast.success('Rendez-vous modifié');

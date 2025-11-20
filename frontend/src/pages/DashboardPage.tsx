@@ -67,9 +67,8 @@ const DashboardPage: React.FC = () => {
     const loadStats = async () => {
       try {
         const statsPath = user.userType === 'admin' ? '/api/properties/stats' : '/api/properties/stats_public';
-        const res = await apiGet(statsPath);
-        const data = await res.json();
-        if (!res.ok || !data.success) return;
+        const data = await apiGet(statsPath);
+        if (!data.success) return;
         const s = data.data || {};
         if (user.userType === 'owner') {
           const totalOwnerProps = userProperties.length || (s.totalProperties || 0);
