@@ -24,7 +24,6 @@ import { useCINVerification } from '../hooks/useCINVerification';
 import { FadeInOnScroll } from '../utils/animations';
 import { Property } from '../types';
 import toast from 'react-hot-toast';
-import { apiGet } from '../config';
 
 const HomePage: React.FC = () => {
   const { properties, loading } = useProperty();
@@ -75,8 +74,12 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        // Utilisation de apiGet pour bénéficier de la gestion d'URL propre
-        const data = await apiGet('/api/properties/stats_public');
+            const data = await fetch('https://projet-stage-backend.vercel.app/api/properties/stats_public').then(async (res) => {
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const text = await res.text();
+            console.log('Stats raw response:', text);
+            return JSON.parse(text);
+          });
         
         if (data && data.success) {
           setPublicStats(data.data);

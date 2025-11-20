@@ -1,4 +1,4 @@
-// config.ts
+// config.ts - Version FINALE corrigée
 const getStorage = (key: string) => {
   return localStorage.getItem(key);
 };
@@ -11,24 +11,25 @@ const removeStorage = (key: string) => {
   localStorage.removeItem(key);
 };
 
-// URL de base : On utilise la variable d'env ou la valeur en dur, sans slash final
-const API_BASE_URL = (process.env.REACT_APP_API_URL || 'https://projet-stage-backend.vercel.app').replace(/\/$/, '');
+// 🔥 URL de base SANS barre oblique finale
+const API_BASE_URL = 'https://projet-stage-backend.vercel.app';
 
 console.log('🔗 Configuration API:', API_BASE_URL);
 
-const buildUrl = (endpoint: string): string => {
-  // S'assurer que l'endpoint commence par un slash
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  return `${API_BASE_URL}${cleanEndpoint}`;
+const buildUrl = (url: string): string => {
+  // Nettoyer l'URL
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  return `${API_BASE_URL}${cleanUrl}`;
 };
 
 export const apiGet = async (url: string) => {
   const fullUrl = buildUrl(url);
   
+  console.log('🌐 Fetching GET:', fullUrl);
+  
   const token = getStorage('auth_token');
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
-    'Accept': 'application/json' // Force la demande de JSON
   };
     
   if (token) {
@@ -41,19 +42,21 @@ export const apiGet = async (url: string) => {
       headers,
     });
     
-    // Si le serveur renvoie une erreur HTML (404/500), on capture l'erreur ici avant le JSON.parse
+    console.log('📡 Response status:', response.status, response.statusText);
+    
     if (!response.ok) {
-       const errorText = await response.text();
-       console.error('❌ Server Error Response:', errorText);
-       throw new Error(`Erreur serveur: ${response.status}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
     
     const text = await response.text();
+    console.log('📄 Response text:', text.substring(0, 200));
+    
+    // Essayer de parser comme JSON
     try {
       return JSON.parse(text);
     } catch (e) {
-      console.error('❌ Invalid JSON received:', text.substring(0, 100));
-      throw new Error('Le serveur a renvoyé un format invalide (HTML au lieu de JSON)');
+      console.error('❌ JSON parse error:', e);
+      throw new Error('Invalid JSON response from server');
     }
   } catch (error) {
     console.error('💥 Fetch error:', error);
@@ -64,10 +67,11 @@ export const apiGet = async (url: string) => {
 export const apiJson = async (url: string, method: string, data?: any) => {
   const fullUrl = buildUrl(url);
   
+  console.log('🌐 Fetching JSON:', { url: fullUrl, method, data });
+  
   const token = getStorage('auth_token');
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
   };
 
   if (token) {
@@ -81,18 +85,20 @@ export const apiJson = async (url: string, method: string, data?: any) => {
       body: data ? JSON.stringify(data) : undefined,
     });
     
+    console.log('📡 Response status:', response.status, response.statusText);
+    
     if (!response.ok) {
-       const errorText = await response.text();
-       console.error('❌ Server Error Response:', errorText);
-       throw new Error(`Erreur serveur: ${response.status}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
     
     const text = await response.text();
+    console.log('📄 Response text:', text.substring(0, 200));
+    
     try {
       return JSON.parse(text);
     } catch (e) {
-      console.error('❌ Invalid JSON received:', text.substring(0, 100));
-      throw new Error('Le serveur a renvoyé un format invalide');
+      console.error('❌ JSON parse error:', e);
+      throw new Error('Invalid JSON response from server');
     }
   } catch (error) {
     console.error('💥 Fetch error:', error);
@@ -103,8 +109,10 @@ export const apiJson = async (url: string, method: string, data?: any) => {
 export const setAuthToken = (token: string | null) => {
   if (token) {
     setStorage('auth_token', token);
+    console.log('🔐 Token stored');
   } else {
     removeStorage('auth_token');
+    console.log('🔐 Token removed');
   }
 };
 
