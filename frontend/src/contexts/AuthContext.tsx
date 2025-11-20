@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, AuthContextType, RegisterData, CINVerificationData } from '../types'; // Retirer CINVerificationResult
-import { apiGet, apiJson, apiUpload, setAuthToken } from '../config';
+import { apiGet, apiJson, setAuthToken } from '../config';
 import toast from 'react-hot-toast';
 import { cinVerificationService } from '../services/cinVerificationService';
 import {getStorage, removeStorage, clearStorage } from '../utils/storage';
@@ -37,14 +37,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   (async () => {
     try {
       console.log('🔄 Tentative de récupération du profil...');
-      const data = await apiGet('/api/auth/me');
-      console.log('📡 Réponse me:', data);
+      const res = await apiGet('/api/auth/me');
+      
+      console.log('📡 Réponse me - Status:', res.status);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const data = await res.json();
 
       if (data.success && data.data) {
         console.log('✅ Profil récupéré avec succès:', data.data);
         setUser(mapApiUserToFront(data.data));
       } else {
-        console.error('❌ Erreur dans la réponse me:', data?.message);
+        console.error('❌ Erreur dans la réponse me:', data.message);
         setAuthToken(null);
         removeStorage('auth_token'); // Utiliser removeStorage
       }
@@ -63,9 +70,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string): Promise<void> => {
   setIsLoading(true);
   try {
-    const data = await apiJson('/api/auth/login', 'POST', { email, password });
+    const res = await apiJson('/api/auth/login', 'POST', { email, password });
+    const data = await res.json();
     
-    if (!data.success) {
+    if (!res.ok || !data.success) {
       throw new Error(data.message || 'Erreur de connexion');
     }
     
@@ -92,10 +100,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(mapApiUserToFront(data.data));
       } else {
         try {
-          const meData = await apiGet('/api/auth/me');
-          if (meData.success) {
-            setUser(mapApiUserToFront(meData.data));
-            console.log('👤 Utilisateur connecté via me:', meData.data);
+          const meRes = await apiGet('/api/auth/me');
+          if (meRes.ok) {
+            const meData = await meRes.json();
+            if (meData.success) {
+              setUser(mapApiUserToFront(meData.data));
+              console.log('👤 Utilisateur connecté via me:', meData.data);
+            }
           }
         } catch (meError) {
           console.warn('⚠️ Impossible de charger le profil via me:', meError);
@@ -116,7 +127,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
     try {
-      const data = await apiJson('/api/auth/register', 'POST', {
+      const res = await apiJson('/api/auth/register', 'POST', {
         email: userData.email,
         password: userData.password,
         firstName: userData.firstName,
@@ -127,8 +138,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         studyLevel: userData.studyLevel,
         budget: typeof (userData as any).budget === 'number' ? (userData as any).budget : Number((userData as any).budget) || null,
       });
-
-      if (!data.success) {
+      
+      const data = await res.json();
+      
+      if (!res.ok || !data.success) {
         throw new Error(data.message || 'Erreur lors de l\'inscription');
       }
 
@@ -139,10 +152,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (token && profileImage) {
         setAuthToken(token);
         try {
+          const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
           const form = new FormData();
           form.append('image', profileImage);
-          const uploadData = await apiUpload('/api/upload/image', form);
-          if (uploadData.success) {
+          const uploadRes = await fetch(`${API_BASE_URL}/api/upload/image`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: form,
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadRes.ok && uploadData.success) {
             const avatarUrl = uploadData.data.url;
             await apiJson('/api/users/me', 'PUT', { avatar: avatarUrl });
             // Met à jour le user local si on l'a déjà
@@ -177,9 +196,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const updateProfile = async (profileData: Partial<User>): Promise<void> => {
     try {
-      const data = await apiJson('/api/users/me', 'PUT', profileData);
+      const res = await apiJson('/api/users/me', 'PUT', profileData);
       
-      if (!data.success) {
+      const data = await res.json();
+      
+      if (!res.ok || !data.success) {
         throw new Error(data.message || 'Erreur lors de la mise à jour');
       }
       
@@ -207,12 +228,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('📊 Résultat vérification:', verificationResult);
 
     // 2. Upload images first (if needed)
+    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    
     // Upload recto image
     let cinRectoImagePath = null;
     if (verificationData.cinRectoImage) {
       const rectoFormData = new FormData();
       rectoFormData.append('image', verificationData.cinRectoImage);
-      const rectoData = await apiUpload('/api/upload/image', rectoFormData);
+      const rectoResponse = await fetch(`${API_BASE_URL}/api/upload/image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${getStorage('auth_token')}`
+        },
+        body: rectoFormData,
+      });
+      const rectoData = await rectoResponse.json();
       if (rectoData.success) {
         cinRectoImagePath = rectoData.data.path;
       }
@@ -223,21 +253,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (verificationData.cinVersoImage) {
       const versoFormData = new FormData();
       versoFormData.append('image', verificationData.cinVersoImage);
-      const versoData = await apiUpload('/api/upload/image', versoFormData);
+      const versoResponse = await fetch(`${API_BASE_URL}/api/upload/image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${getStorage('auth_token')}`
+        },
+        body: versoFormData,
+      });
+      const versoData = await versoResponse.json();
       if (versoData.success) {
         cinVersoImagePath = versoData.data.path;
       }
     }
 
     // 3. Send CIN verification data
-    const backendData = await apiJson('/api/auth/verify_cin', 'POST', {
+    const response = await apiJson('/api/auth/verify_cin', 'POST', {
       cinNumber: verificationData.cinNumber,
       cinRectoImagePath,
       cinVersoImagePath,
       cinData: (verificationResult as any).cinData || null
     });
 
-    if (!backendData.success) {
+    const backendData = await response.json();
+    
+    if (!response.ok || !backendData.success) {
       throw new Error(backendData.message || 'Erreur lors de la vérification CIN');
     }
 
