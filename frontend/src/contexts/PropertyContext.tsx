@@ -37,12 +37,11 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
 
-  // Récupérer toutes les propriétés
+  // Récupérer toutes les propriétés - CORRIGÉ
   const fetchProperties = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await apiGet('/api/properties/get_all');
-      const data = await response.json();
+      const data = await apiGet('/api/properties/get_all');
       
       if (data.success && data.data) {
         const propertiesData = Array.isArray(data.data) ? data.data : [];
@@ -59,11 +58,10 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
     }
   }, []);
 
-  // Récupérer une propriété par ID
+  // Récupérer une propriété par ID - CORRIGÉ
   const fetchPropertyById = async (id: string): Promise<Property | null> => {
     try {
-      const response = await apiGet(`/api/properties/get_by_id/${id}`);
-      const data = await response.json();
+      const data = await apiGet(`/api/properties/get_by_id/${id}`);
       
       if (data.success && data.data) {
         return data.data;
@@ -77,7 +75,7 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
     }
   };
 
-  // Créer une nouvelle propriété
+  // Créer une nouvelle propriété - CORRIGÉ
   const createProperty = async (propertyData: CreatePropertyData) => {
     setLoading(true);
     try {
@@ -90,10 +88,9 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
         ownerId: user.id
       });
 
-      const response = await apiJson('/api/properties/create', 'POST', propertyData);
-      const data = await response.json();
+      const data = await apiJson('/api/properties/create', 'POST', propertyData);
       
-      if (!response.ok || !data.success) {
+      if (!data.success) {
         throw new Error(data.message || 'Erreur lors de la création');
       }
       
@@ -112,7 +109,7 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
     }
   };
 
-  // Récupérer les propriétés de l'utilisateur (version externe)
+  // Récupérer les propriétés de l'utilisateur - CORRIGÉ
   const fetchUserProperties = useCallback(async () => {
     if (!user) {
       setUserProperties([]);
@@ -121,8 +118,7 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
 
     setLoading(true);
     try {
-      const response = await apiGet('/api/properties/get_by_user');
-      const data = await response.json();
+      const data = await apiGet('/api/properties/get_by_user');
       
       if (data.success && data.data) {
         const propertiesData = Array.isArray(data.data) ? data.data : [];
@@ -139,14 +135,13 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
     }
   }, [user]);
 
-  // Modifier une propriété
+  // Modifier une propriété - CORRIGÉ
   const updateProperty = async (propertyId: string, updates: Partial<Property>): Promise<Property> => {
     setLoading(true);
     try {
-      const response = await apiJson(`/api/properties/update/${propertyId}`, 'PUT', updates);
-      const data = await response.json();
+      const data = await apiJson(`/api/properties/update/${propertyId}`, 'PUT', updates);
       
-      if (!response.ok || !data.success) {
+      if (!data.success) {
         throw new Error(data.message || 'Erreur lors de la mise à jour');
       }
       
@@ -165,14 +160,13 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
     }
   };
 
-  // Supprimer une propriété
+  // Supprimer une propriété - CORRIGÉ
   const deleteProperty = async (propertyId: string): Promise<void> => {
     setLoading(true);
     try {
-      const response = await apiJson(`/api/properties/delete/${propertyId}`, 'DELETE');
-      const data = await response.json();
+      const data = await apiJson(`/api/properties/delete/${propertyId}`, 'DELETE');
       
-      if (!response.ok || !data.success) {
+      if (!data.success) {
         throw new Error(data.message || 'Erreur lors de la suppression');
       }
       
@@ -188,7 +182,7 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
     }
   };
 
-  // Rechercher des propriétés avec filtres
+  // Rechercher des propriétés avec filtres - CORRIGÉ
   const searchProperties = async (filters: SearchFilters = {}): Promise<Property[]> => {
     setLoading(true);
     try {
@@ -205,8 +199,7 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
       });
 
       const url = `/api/properties/search?${queryParams.toString()}`;
-      const response = await apiGet(url);
-      const data = await response.json();
+      const data = await apiGet(url);
       
       if (data.success && data.data) {
         return Array.isArray(data.data) ? data.data : [];
@@ -221,41 +214,14 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
     }
   };
 
-  // Effet pour charger toutes les propriétés
+  // Effets
   useEffect(() => {
     fetchProperties();
   }, [fetchProperties]);
 
-  // Effet pour charger les propriétés de l'utilisateur - CORRIGÉ
   useEffect(() => {
-    const loadUserProperties = async () => {
-      if (!user) {
-        setUserProperties([]);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const response = await apiGet('/api/properties/get_by_user');
-        const data = await response.json();
-        
-        if (data.success && data.data) {
-          const propertiesData = Array.isArray(data.data) ? data.data : [];
-          setUserProperties(propertiesData);
-        } else {
-          setUserProperties([]);
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement des propriétés utilisateur:', error);
-        toast.error('Erreur lors du chargement de vos propriétés');
-        setUserProperties([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUserProperties();
-  }, [user]); // Seulement user en dépendance
+    fetchUserProperties();
+  }, [fetchUserProperties]);
 
   const value: PropertyContextType = {
     properties,

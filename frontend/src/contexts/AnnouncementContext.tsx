@@ -31,8 +31,8 @@ interface AnnouncementContextType {
   fetchAnnouncements: () => Promise<void>;
   fetchUserAnnouncements: () => Promise<void>;
   createAnnouncement: (data: CreateAnnouncementData) => Promise<void>;
-  updateAnnouncement: (id: number, updates: Partial<CreateAnnouncementData>) => Promise<void>; // id: number
-  deleteAnnouncement: (id: number) => Promise<void>; // id: number
+  updateAnnouncement: (id: number, updates: Partial<CreateAnnouncementData>) => Promise<void>;
+  deleteAnnouncement: (id: number) => Promise<void>;
 }
 
 const AnnouncementContext = createContext<AnnouncementContextType | undefined>(undefined);
@@ -52,8 +52,7 @@ export const AnnouncementProvider: React.FC<{ children: ReactNode }> = ({ childr
   const fetchAnnouncements = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiGet('/api/announcements/get_all');
-      const data = await res.json();
+      const data = await apiGet('/api/announcements/get_all');
       if (data.success && data.data) {
         setAnnouncements(Array.isArray(data.data) ? data.data : []);
       } else {
@@ -70,8 +69,7 @@ export const AnnouncementProvider: React.FC<{ children: ReactNode }> = ({ childr
     if (!user) { setUserAnnouncements([]); return; }
     setLoading(true);
     try {
-      const res = await apiGet('/api/announcements/get_by_user');
-      const data = await res.json();
+      const data = await apiGet('/api/announcements/get_by_user');
       if (data.success && data.data) {
         setUserAnnouncements(Array.isArray(data.data) ? data.data : []);
       } else {
@@ -88,9 +86,8 @@ export const AnnouncementProvider: React.FC<{ children: ReactNode }> = ({ childr
     if (!user) throw new Error('Non connecté');
     setLoading(true);
     try {
-      const res = await apiJson('/api/announcements/create', 'POST', data);
-      const responseData = await res.json();
-      if (!res.ok || !responseData.success) {
+      const responseData = await apiJson('/api/announcements/create', 'POST', data);
+      if (!responseData.success) {
         throw new Error(responseData.message || 'Erreur lors de la création');
       }
       const created = responseData.data;
@@ -108,9 +105,8 @@ export const AnnouncementProvider: React.FC<{ children: ReactNode }> = ({ childr
   const updateAnnouncement = async (id: number, updates: Partial<CreateAnnouncementData>) => {
     setLoading(true);
     try {
-      const res = await apiJson(`/api/announcements/update/${id}`, 'PUT', updates);
-      const responseData = await res.json();
-      if (!res.ok || !responseData.success) {
+      const responseData = await apiJson(`/api/announcements/update/${id}`, 'PUT', updates);
+      if (!responseData.success) {
         throw new Error(responseData.message || 'Erreur lors de la mise à jour');
       }
       const updated = responseData.data;
@@ -126,9 +122,8 @@ export const AnnouncementProvider: React.FC<{ children: ReactNode }> = ({ childr
   const deleteAnnouncement = async (id: number) => {
     setLoading(true);
     try {
-      const res = await apiJson(`/api/announcements/delete/${id}`, 'DELETE');
-      const responseData = await res.json();
-      if (!res.ok || !responseData.success) {
+      const responseData = await apiJson(`/api/announcements/delete/${id}`, 'DELETE');
+      if (!responseData.success) {
         throw new Error(responseData.message || 'Erreur lors de la suppression');
       }
       setAnnouncements(prev => prev.filter(a => a.id !== id));

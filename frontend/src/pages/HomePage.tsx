@@ -71,31 +71,27 @@ const HomePage: React.FC = () => {
   }, [announcements]);
 
   // Dans HomePage.tsx - Modifiez le useEffect des stats
-useEffect(() => {
-  const loadStats = async () => {
-    try {
-      // 🔥 Utilisez directement l'URL complète
-      const res = await fetch('https://projet-stage-backend.vercel.app/api/properties/stats_public');
-      
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const data = await fetch('https://projet-stage-backend.vercel.app/api/properties/stats_public')
+          .then(async (res) => {
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const text = await res.text();
+            console.log('Stats raw response:', text);
+            return JSON.parse(text);
+          });
+        
+        if (data && data.success) {
+          setPublicStats(data.data);
+        }
+      } catch (e) {
+        console.error('Error loading stats:', e);
+        // ignore pour la page d'accueil
       }
-      
-      const text = await res.text();
-      console.log('Stats response:', text);
-      
-      const data = JSON.parse(text);
-      
-      if (data && data.success) {
-        setPublicStats(data.data);
-      }
-    } catch (e) {
-      console.error('Error loading stats:', e);
-      // ignore pour la page d'accueil
-    }
-  };
-  loadStats();
-}, []);
+    };
+    loadStats();
+  }, []);
 
   const features = [
     {
