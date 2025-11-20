@@ -1,3 +1,4 @@
+// CORRECTION dans server.js
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -6,27 +7,42 @@ dotenv.config();
 
 const app = express();
 
-// 🔥 CORRECTION CORS - Configuration spécifique
+// 🔥 CORRECTION CORS COMPLÈTE
+const allowedOrigins = [
+  'https://projet-stage-forntend.vercel.app',
+  'https://projet-stage-frontend.vercel.app',
+  'http://localhost:3000'
+];
+
 app.use(cors({
-  origin: [
-    'https://projet-stage-forntend.vercel.app',
-    'https://projet-stage-frontend.vercel.app',
-    'http://localhost:3000'
-  ],
-  credentials: false,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 
+// Handle preflight requests
 app.options('*', cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Middleware de logging
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Middleware de logging amélioré
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl} - Origin: ${req.headers.origin}`);
+  console.log('Headers:', req.headers);
   next();
 });
+
 
 // Routes API
 app.use('/api/auth', require('./routes/auth'));

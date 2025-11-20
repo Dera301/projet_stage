@@ -74,8 +74,7 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const data = await fetch('https://projet-stage-backend.vercel.app/api/properties/stats_public')
-          .then(async (res) => {
+            const data = await fetch('https://projet-stage-backend.vercel.app/api/properties/stats_public').then(async (res) => {
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const text = await res.text();
             console.log('Stats raw response:', text);
