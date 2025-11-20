@@ -1,25 +1,35 @@
 // services/imageUploadService.ts
-import { apiUpload } from '../config';
+import { getAuthToken } from '../config';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 export const uploadImageToServer = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('image', file);
-
+  
   try {
-    const data = await apiUpload('/api/upload/image', formData);
-
-    if (!data?.success) {
-      throw new Error(data?.message || 'Erreur lors de l\'upload');
+    const token = getAuthToken();
+    const headers: HeadersInit = {};
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
-
-    const payload = data.data || {};
-    const imageUrl = payload.url || payload.path || data.imageUrl;
-
-    if (!imageUrl) {
-      throw new Error('Réponse serveur invalide : URL manquante');
+    
+    const response = await fetch(`${API_BASE_URL}api/upload/image`, {
+      method: 'POST',
+      headers,
+      body: formData,
+      credentials: 'include'
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Erreur lors de l\'upload');
     }
-
-    return imageUrl;
+    
+    // Retourner l'URL complète de l'image
+    return data.data?.url || data.data?.path || data.imageUrl;
   } catch (error) {
     console.error('Erreur upload:', error);
     throw new Error('Impossible d\'uploader l\'image');
