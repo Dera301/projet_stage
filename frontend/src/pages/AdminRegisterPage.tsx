@@ -60,15 +60,13 @@ const AdminRegisterPage: React.FC = () => {
 
     try {
       // Utiliser l'endpoint seed_admin ou créer un endpoint dédié
-      const res = await apiJson('/api/admin/seed_admin', 'POST', {
+      const data = await apiJson('/api/admin/seed_admin', 'POST', {
         email: formData.email,
         password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName,
         phone: formData.phone
       });
-      
-      const data = await res.json();
       
       if (data.success === false && data.message) {
         // Admin déjà existant
