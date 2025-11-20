@@ -13,8 +13,8 @@ const removeStorage = (key: string) => {
 
 // 🔥 CORRECTION: Supprimer le double slash
 const API_BASE_URL = (process.env.REACT_APP_API_URL || 'https://projet-stage-backend.vercel.app')
-  .replace(/\/+$/, ''); // Supprime les slashs à la fin
-
+  .replace(/\/+$/, '') // Supprime les slashs à la fin
+  .replace(/\/\//g, '/'); // Supprime les doubles slashs
 console.log('🔗 Configuration API:', {
   apiUrl: API_BASE_URL,
   fromEnv: process.env.REACT_APP_API_URL
@@ -22,8 +22,8 @@ console.log('🔗 Configuration API:', {
 
 export const apiGet = async (url: string) => {
   // Nettoyer l'URL pour éviter les doubles slashs
-  const cleanUrl = `/${url.replace(/^\/+/, '')}`;
-  const fullUrl = `${API_BASE_URL}${cleanUrl}`;
+  const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
+  const fullUrl = `${API_BASE_URL}/${cleanUrl}`.replace(/\/\//g, '/');
   
   console.log('🌐 Fetching GET:', fullUrl);
   
@@ -53,8 +53,8 @@ export const apiGet = async (url: string) => {
 
 export const apiJson = async (url: string, method: string, data?: any) => {
   // Nettoyer l'URL pour éviter les doubles slashs
-  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
-  const fullUrl = `${API_BASE_URL}${cleanUrl}`;
+  const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
+  const fullUrl = `${API_BASE_URL}/${cleanUrl}`.replace(/\/\//g, '/');
   
   console.log('🌐 Fetching JSON:', { url: fullUrl, method, data });
   

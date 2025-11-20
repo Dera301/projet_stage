@@ -2,19 +2,11 @@
   "version": 3,
   "framework": "node",
   "installCommand": "npm install",
-  "buildCommand": "npm run build",
+  "buildCommand": "echo no-build",
   "outputDirectory": ".",
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "src/server.js"
-    },
-    {
-      "source": "/health",
-      "destination": "src/server.js"
-    },
-    {
-      "source": "/(.*)",
       "destination": "src/server.js"
     }
   ],
