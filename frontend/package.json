@@ -1,6 +1,5 @@
 {
   "name": "colocation-antananarivo",
-  "homepage": ".",
   "version": "1.0.0",
   "description": "Plateforme web de mise en relation pour la colocation étudiante à Antananarivo",
   "private": true,

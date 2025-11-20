@@ -212,6 +212,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     console.log('📊 Résultat vérification:', verificationResult);
 
+    if (!verificationResult.success) {
+      const errorMessage = verificationResult.message || 'Validation CIN locale échouée';
+      throw new Error(errorMessage);
+    }
+
     // 2. Upload images first (if needed)
     
     // Upload recto image
