@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "framework": "create-react-app",
   "env": {
     "REACT_APP_API_URL": "https://projet-stage-backend.vercel.app"

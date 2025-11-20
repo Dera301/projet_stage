@@ -1,4 +1,4 @@
-// config.ts - Version URGENTE corrigée
+// config.ts - Version FINALE corrigée
 const getStorage = (key: string) => {
   return localStorage.getItem(key);
 };
@@ -11,19 +11,19 @@ const removeStorage = (key: string) => {
   localStorage.removeItem(key);
 };
 
-// 🔥 CORRECTION: Supprimer le double slash
-const API_BASE_URL = (process.env.REACT_APP_API_URL || 'https://projet-stage-backend.vercel.app')
-  .replace(/\/+$/, '') // Supprime les slashs à la fin
-  .replace(/\/\//g, '/'); // Supprime les doubles slashs
-console.log('🔗 Configuration API:', {
-  apiUrl: API_BASE_URL,
-  fromEnv: process.env.REACT_APP_API_URL
-});
+// 🔥 URL de base SANS barre oblique finale
+const API_BASE_URL = 'https://projet-stage-backend.vercel.app';
+
+console.log('🔗 Configuration API:', API_BASE_URL);
+
+const buildUrl = (url: string): string => {
+  // Nettoyer l'URL
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+  return `${API_BASE_URL}${cleanUrl}`;
+};
 
 export const apiGet = async (url: string) => {
-  // Nettoyer l'URL pour éviter les doubles slashs
-  const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
-  const fullUrl = `${API_BASE_URL}/${cleanUrl}`.replace(/\/\//g, '/');
+  const fullUrl = buildUrl(url);
   
   console.log('🌐 Fetching GET:', fullUrl);
   
@@ -40,11 +40,24 @@ export const apiGet = async (url: string) => {
     const response = await fetch(fullUrl, {
       method: 'GET',
       headers,
-      credentials: 'omit'
     });
     
-    console.log('📡 Response status:', response.status);
-    return response;
+    console.log('📡 Response status:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const text = await response.text();
+    console.log('📄 Response text:', text.substring(0, 200));
+    
+    // Essayer de parser comme JSON
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error('❌ JSON parse error:', e);
+      throw new Error('Invalid JSON response from server');
+    }
   } catch (error) {
     console.error('💥 Fetch error:', error);
     throw error;
@@ -52,9 +65,7 @@ export const apiGet = async (url: string) => {
 };
 
 export const apiJson = async (url: string, method: string, data?: any) => {
-  // Nettoyer l'URL pour éviter les doubles slashs
-  const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
-  const fullUrl = `${API_BASE_URL}/${cleanUrl}`.replace(/\/\//g, '/');
+  const fullUrl = buildUrl(url);
   
   console.log('🌐 Fetching JSON:', { url: fullUrl, method, data });
   
@@ -72,11 +83,23 @@ export const apiJson = async (url: string, method: string, data?: any) => {
       method,
       headers,
       body: data ? JSON.stringify(data) : undefined,
-      credentials: 'omit'
     });
     
-    console.log('📡 Response status:', response.status);
-    return response;
+    console.log('📡 Response status:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const text = await response.text();
+    console.log('📄 Response text:', text.substring(0, 200));
+    
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error('❌ JSON parse error:', e);
+      throw new Error('Invalid JSON response from server');
+    }
   } catch (error) {
     console.error('💥 Fetch error:', error);
     throw error;

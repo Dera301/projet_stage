@@ -70,20 +70,32 @@ const HomePage: React.FC = () => {
     }
   }, [announcements]);
 
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/properties/stats_public`);
-        const data = await res.json();
-        if (res.ok && data && data.success) {
-          setPublicStats(data.data);
-        }
-      } catch (e) {
-        // ignore pour la page d'accueil
+  // Dans HomePage.tsx - Modifiez le useEffect des stats
+useEffect(() => {
+  const loadStats = async () => {
+    try {
+      // 🔥 Utilisez directement l'URL complète
+      const res = await fetch('https://projet-stage-backend.vercel.app/api/properties/stats_public');
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
       }
-    };
-    loadStats();
-  }, []);
+      
+      const text = await res.text();
+      console.log('Stats response:', text);
+      
+      const data = JSON.parse(text);
+      
+      if (data && data.success) {
+        setPublicStats(data.data);
+      }
+    } catch (e) {
+      console.error('Error loading stats:', e);
+      // ignore pour la page d'accueil
+    }
+  };
+  loadStats();
+}, []);
 
   const features = [
     {
