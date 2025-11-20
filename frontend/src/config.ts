@@ -1,13 +1,5 @@
 // config.ts
-const getStorage = (key: string) => localStorage.getItem(key);
-
-const setStorage = (key: string, value: string) => {
-  localStorage.setItem(key, value);
-};
-
-const removeStorage = (key: string) => {
-  localStorage.removeItem(key);
-};
+import { getStorage, setStorage, removeStorage } from './utils/storage';
 
 // URL de base : On utilise la variable d'env ou la valeur en dur, sans slash final
 const API_BASE_URL = (process.env.REACT_APP_API_URL ?? 'https://projet-stage-backend.vercel.app').replace(/\/$/, '');
@@ -71,7 +63,6 @@ export const apiUpload = (endpoint: string, formData: FormData) =>
   apiRequest(endpoint, {
     method: 'POST',
     body: formData,
-    headers: { 'Content-Type': undefined as unknown as string },
   });
 
 export const setAuthToken = (token: string | null) => {
