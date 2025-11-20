@@ -2,7 +2,7 @@
 import { getStorage, setStorage, removeStorage } from './utils/storage';
 
 // URL de base : On utilise la variable d'env ou la valeur en dur, sans slash final
-const API_BASE_URL = (process.env.REACT_APP_API_URL ?? 'https://projet-stage-backend.vercel.app').replace(/\/$/, '');
+const API_BASE_URL = (process.env.REACT_APP_API_URL || 'https://projet-stage-backend.vercel.app').replace(/\/$/, '');
 
 console.log('🔗 Configuration API:', API_BASE_URL);
 
