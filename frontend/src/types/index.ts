@@ -132,12 +132,13 @@ export interface SearchFilters {
 // Context Types
 export interface AuthContextType {
   user: User | null;
+  setUser: (user: User | null) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => void;
-  updateProfile?: (profileData: Partial<User>) => Promise<void>;
+  updateProfile: (profileData: Partial<User>) => Promise<void>;
   isLoading: boolean;
-  verifyCIN: (verificationData: CINVerificationData) => Promise<void>; // Nouvelle méthode
+  verifyCIN: (verificationData: CINVerificationData) => Promise<void>;
 }
 
 export interface PropertyContextType {

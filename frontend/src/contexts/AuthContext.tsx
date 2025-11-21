@@ -282,24 +282,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 };
 
-  const value: AuthContextType = {
-    user,
-    login,
-    register,
-    logout,
-    updateProfile,
-    isLoading,
-    verifyCIN,
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
-  function mapApiUserToFront(apiUser: any): User {
+  const mapApiUserToFront = (apiUser: any): User => {
     // Logique améliorée pour déterminer cinVerified
     let isCinVerified = false;
     
@@ -317,14 +300,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const hasCinImages = !!(apiUser.cin_recto_image_path || apiUser.cin_verso_image_path);
     const hasPendingStatus = apiUser.cinPending !== undefined ? Boolean(apiUser.cinPending) : false;
     const cinPending = (hasCinImages && !isCinVerified) || hasPendingStatus;
-
-    console.log('🔍 Mapping user - cinVerified:', isCinVerified, 'cinPending:', cinPending, 'raw data:', {
-      cinVerified: apiUser.cinVerified,
-      cin_verified: apiUser.cin_verified,
-      cin_verified_at: apiUser.cin_verified_at,
-      cin_recto_image_path: apiUser.cin_recto_image_path,
-      cin_verso_image_path: apiUser.cin_verso_image_path
-    });
 
     return {
       id: String(apiUser.id),
@@ -350,4 +325,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       createdAt: apiUser.createdAt ? new Date(apiUser.createdAt) : (apiUser.created_at ? new Date(apiUser.created_at) : new Date()),
       updatedAt: apiUser.updatedAt ? new Date(apiUser.updatedAt) : (apiUser.updated_at ? new Date(apiUser.updated_at) : new Date()),
     };
-  }
+  };
+
+  const value: AuthContextType = {
+    user,
+    setUser,
+    login,
+    register,
+    logout,
+    updateProfile,
+    isLoading,
+    verifyCIN
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};

@@ -14,7 +14,7 @@ import { uploadImageToServer } from '../services/imageUploadService';
 import { Link } from 'react-router-dom';
 
 const ProfilePage: React.FC = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, setUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
@@ -60,18 +60,37 @@ const ProfilePage: React.FC = () => {
     fileInputRef.current?.click();
   };
 
+  const [isUploading, setIsUploading] = useState(false);
+
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    setIsUploading(true);
+    const toastId = 'avatar-upload';
+    
     try {
+      // Show loading toast
+      toast.loading('Téléchargement de la photo...', { id: toastId });
+      
+      // Upload the image
       const url = await uploadImageToServer(file);
+      
+      // Update the profile with the new avatar URL
       if (updateProfile) {
-        await updateProfile({ avatar: url } as any);
+        await updateProfile({ avatar: url });
+        // Update local user state immediately for better UX
+        if (user) {
+          setUser({ ...user, avatar: url });
+        }
       }
-      toast.success('Photo de profil mise à jour');
-    } catch (err) {
-      toast.error('Échec du téléchargement de la photo');
+      
+      toast.success('Photo de profil mise à jour avec succès', { id: toastId });
+    } catch (error: any) {
+      console.error('Error updating avatar:', error);
+      toast.error(error.message || 'Échec du téléchargement de la photo', { id: toastId });
     } finally {
+      setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -120,16 +139,48 @@ const ProfilePage: React.FC = () => {
               <div className="flex items-center space-x-4">
                 <div className="relative">
                   <div className="w-24 h-24 bg-white rounded-full overflow-hidden flex items-center justify-center">
-                    {user.avatar ? (
-                      <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
+                    {isUploading ? (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                      </div>
+                    ) : user.avatar ? (
+                      <img 
+                        src={user.avatar} 
+                        alt="Avatar" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // Fallback to default avatar if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = '/default-avatar.png';
+                        }}
+                      />
                     ) : (
                       <UserIcon className="w-12 h-12 text-primary-600" />
                     )}
                   </div>
-                  <button onClick={handleAvatarClick} className="absolute bottom-0 right-0 bg-primary-600 text-white p-2 rounded-full hover:bg-primary-700 transition-colors">
-                    <CameraIcon className="w-4 h-4" />
+                  <button 
+                    onClick={handleAvatarClick} 
+                    disabled={isUploading}
+                    className={`absolute bottom-0 right-0 ${isUploading ? 'bg-gray-400' : 'bg-primary-600 hover:bg-primary-700'} text-white p-2 rounded-full transition-colors`}
+                  >
+                    {isUploading ? (
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <CameraIcon className="w-4 h-4" />
+                    )}
                   </button>
-                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                  <input 
+                    ref={fileInputRef} 
+                    type="file" 
+                    accept="image/jpeg,image/png,image/webp" 
+                    className="hidden" 
+                    onChange={handleAvatarChange}
+                    disabled={isUploading}
+                  />
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-white">
