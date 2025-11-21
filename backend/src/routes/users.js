@@ -83,6 +83,24 @@ router.put('/me', verifyJWT, async (req, res) => {
     const userId = req.user.id;
     const updateData = req.body;
 
+    // Validation des longueurs maximales
+    const fieldLimits = {
+      firstName: 100,
+      lastName: 100,
+      phone: 20,
+      university: 255,
+      studyLevel: 100,
+      bio: 1000, // Ajout d'une limite pour la bio
+      avatar: 255
+    };
+
+    // Vérification des longueurs
+    for (const [field, maxLength] of Object.entries(fieldLimits)) {
+      if (updateData[field] && updateData[field].length > maxLength) {
+        return sendError(res, `Le champ ${field} ne peut pas dépasser ${maxLength} caractères`, 400);
+      }
+    }
+
     const data = {};
     if (updateData.firstName) data.firstName = updateData.firstName;
     if (updateData.lastName) data.lastName = updateData.lastName;
