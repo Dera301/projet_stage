@@ -80,56 +80,52 @@ const AdminPage: React.FC = () => {
   };
 
   const loadData = async () => {
-    setLoading(true);
-    try {
-      // Charger toutes les listes une fois pour alimenter les badges de la sidebar
-      const [usersRes, annsRes, propsRes, cinRes] = await Promise.all([
-        apiGet('/api/admin/users_list'),
-        apiGet('/api/admin/announcements_list'),
-        apiGet('/api/admin/properties_list'),
-        apiGet('/api/admin/cin_to_verify')
-      ]);
+  setLoading(true);
+  try {
+    // Charger toutes les listes une fois pour alimenter les badges de la sidebar
+    const [usersData, annsData, propsData, cinData] = await Promise.all([
+      apiGet('/api/admin/users_list'),
+      apiGet('/api/admin/announcements_list'),
+      apiGet('/api/admin/properties_list'),
+      apiGet('/api/admin/cin_to_verify')
+    ]);
 
-      const usersText = await usersRes.text();
-      const annsText = await annsRes.text();
-      const propsText = await propsRes.text();
-      const cinText = await cinRes.text();
+    // Les données sont déjà parsées par apiGet, pas besoin de .text() ou JSON.parse()
+    console.log('Données utilisateurs:', usersData);
+    console.log('Données annonces:', annsData);
+    console.log('Données propriétés:', propsData);
+    console.log('Données CIN:', cinData);
 
-      const uj = JSON.parse(usersText || '{}');
-      if (uj.success) setUsers(uj.data); else setUsers([]);
+    if (usersData.success) setUsers(usersData.data); else setUsers([]);
+    if (annsData.success) setAnns(annsData.data); else setAnns([]);
+    if (propsData.success) setProps(propsData.data); else setProps([]);
 
-      const aj = JSON.parse(annsText || '{}');
-      if (aj.success) setAnns(aj.data); else setAnns([]);
-
-      const pj = JSON.parse(propsText || '{}');
-      if (pj.success) setProps(pj.data); else setProps([]);
-
-      const cj = JSON.parse(cinText || '{}');
-      console.log('Réponse CIN complète:', cj);
-      
-      if (cj.success) {
-        if (cj.data && cj.data.cinToVerify && Array.isArray(cj.data.cinToVerify)) {
-          setCinToVerify(cj.data.cinToVerify);
-        } else if (cj.data && Array.isArray(cj.data)) {
-          setCinToVerify(cj.data);
-        } else if (cj.cinToVerify && Array.isArray(cj.cinToVerify)) {
-          setCinToVerify(cj.cinToVerify);
-        } else if (Array.isArray(cj)) {
-          setCinToVerify(cj);
-        } else {
-          console.warn('Structure de réponse CIN inattendue:', cj);
-          setCinToVerify([]);
-        }
+    // Gestion spécifique pour les données CIN
+    console.log('Réponse CIN complète:', cinData);
+    
+    if (cinData.success) {
+      if (cinData.data && cinData.data.cinToVerify && Array.isArray(cinData.data.cinToVerify)) {
+        setCinToVerify(cinData.data.cinToVerify);
+      } else if (cinData.data && Array.isArray(cinData.data)) {
+        setCinToVerify(cinData.data);
+      } else if (cinData.cinToVerify && Array.isArray(cinData.cinToVerify)) {
+        setCinToVerify(cinData.cinToVerify);
+      } else if (Array.isArray(cinData)) {
+        setCinToVerify(cinData);
       } else {
+        console.warn('Structure de réponse CIN inattendue:', cinData);
         setCinToVerify([]);
       }
-    } catch (error) {
-      console.error('Erreur chargement:', error);
-      toast.error('Erreur lors du chargement des données');
-    } finally {
-      setLoading(false);
+    } else {
+      setCinToVerify([]);
     }
-  };
+  } catch (error) {
+    console.error('Erreur chargement:', error);
+    toast.error('Erreur lors du chargement des données');
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Fonction pour obtenir l'URL de l'image
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';

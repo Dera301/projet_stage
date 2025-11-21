@@ -10,8 +10,7 @@ import {
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { uploadAvatar } from '../services/avatarUploadService'; // ← Importer le service avatar
-
+import { apiUpload } from '../config'; // ← Importer apiUpload directement
 import { Link } from 'react-router-dom';
 
 const ProfilePage: React.FC = () => {
@@ -63,9 +62,38 @@ const ProfilePage: React.FC = () => {
 
   const [isUploading, setIsUploading] = useState(false);
 
+  // MÊME FONCTION QUE DANS CreateAnnouncementPage
+  const uploadImageToServer = async (file: File): Promise<string> => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const data = await apiUpload('/api/upload/image', formData);
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Erreur lors de l\'upload');
+      }
+      
+      return data.data?.url || data.data?.path || '';
+    } catch (error: any) {
+      console.error('Erreur upload:', error);
+      throw new Error(error.message || 'Erreur lors de l\'upload');
+    }
+  };
+
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    // APPLIQUER LES MÊMES CONDITIONS QUE DANS CreateAnnouncementPage
+    if (!file.type.startsWith('image/')) { 
+      toast.error(`${file.name} n'est pas une image valide`); 
+      return; 
+    }
+    if (file.size > 5 * 1024 * 1024) { 
+      toast.error(`${file.name} est trop volumineux (max 5MB)`); 
+      return; 
+    }
     
     setIsUploading(true);
     const toastId = 'avatar-upload';
@@ -73,8 +101,8 @@ const ProfilePage: React.FC = () => {
     try {
       toast.loading('Téléchargement de la photo...', { id: toastId });
       
-      // Utiliser le service spécifique pour avatar
-      const url = await uploadAvatar(file);
+      // UTILISER LA MÊME FONCTION D'UPLOAD QUE CreateAnnouncementPage
+      const url = await uploadImageToServer(file);
       
       // Update the profile with the new avatar URL
       if (updateProfile) {
