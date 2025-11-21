@@ -6,7 +6,7 @@ export const uploadImageToServer = async (file: File): Promise<string> => {
   formData.append('image', file);
   
   try {
-    const data = await apiUpload('/api/upload/image', formData);
+    const data = await apiUpload('api/upload/image', formData);
     
     if (!data.success) {
       throw new Error(data.message || 'Erreur lors de l\'upload');
