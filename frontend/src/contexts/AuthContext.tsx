@@ -116,6 +116,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
     try {
+      // D'abord uploader l'image si elle existe
+      let avatarUrl = null;
+      const profileImage: File | undefined = (userData as any).profileImage;
+      
+      if (profileImage) {
+        try {
+          const form = new FormData();
+          form.append('image', profileImage);
+          const uploadData = await apiUpload('/api/upload/image', form);
+          
+          if (uploadData.success) {
+            avatarUrl = uploadData.data?.url || uploadData.data?.path;
+            
+            // Vérifier la longueur de l'URL
+            if (avatarUrl && avatarUrl.length > 1000) {
+              console.warn('URL de l\'avatar très longue:', avatarUrl.length, 'caractères');
+            }
+          } else {
+            console.warn('Échec de l\'upload de l\'image de profil, continuation sans image');
+          }
+        } catch (uploadError) {
+          console.error('Erreur lors de l\'upload de l\'image de profil:', uploadError);
+          // On continue même en cas d'échec de l'upload de l'image
+        }
+      }
+
+      // Ensuite, créer l'utilisateur avec l'URL de l'avatar
       const data = await apiJson('/api/auth/register', 'POST', {
         email: userData.email,
         password: userData.password,
@@ -126,35 +153,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         university: userData.university,
         studyLevel: userData.studyLevel,
         budget: typeof (userData as any).budget === 'number' ? (userData as any).budget : Number((userData as any).budget) || null,
+        avatar: avatarUrl // Inclure l'URL de l'avatar dans la requête d'inscription
       });
       
       if (!data.success) {
         throw new Error(data.message || 'Erreur lors de l\'inscription');
       }
 
-      // Si une image de profil a été fournie, utiliser le token retourné pour uploader et mettre à jour l'avatar
+      // Mettre à jour le token d'authentification
       const token = data?.data?.token || data?.token;
-      const createdUser = data?.data?.user || data?.user;
-      const profileImage: File | undefined = (userData as any).profileImage;
-      if (token && profileImage) {
+      if (token) {
         setAuthToken(token);
-        try {
-          const form = new FormData();
-          form.append('image', profileImage);
-          const uploadData = await apiUpload('/api/upload/image', form);
-          if (uploadData.success) {
-            const avatarUrl = uploadData.data?.url || uploadData.data?.path;
-            await apiJson('/api/users/me', 'PUT', { avatar: avatarUrl });
-            // Met à jour le user local si on l'a déjà
-            if (createdUser) {
-              setUser(prev => prev ? { ...prev, avatar: avatarUrl } : prev);
-            }
-          }
-        } catch (e) {
-          console.warn('Upload avatar après inscription échoué:', e);
-        }
       }
+      
+      // Mettre à jour l'utilisateur connecté
+      const createdUser = data?.data?.user || data?.user;
+      if (createdUser) {
+        setUser(mapApiUserToFront(createdUser));
+      }
+      
+      // Afficher un message de succès
+      toast.success('Inscription réussie !');
     } catch (error: any) {
+      console.error('Erreur lors de l\'inscription:', error);
       toast.error(error.message || 'Erreur lors de l\'inscription');
       throw error;
     } finally {

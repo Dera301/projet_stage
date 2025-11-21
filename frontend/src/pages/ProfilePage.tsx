@@ -10,7 +10,8 @@ import {
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { uploadImageToServer } from '../services/imageUploadService';
+import { uploadAvatar } from '../services/avatarUploadService'; // ← Importer le service avatar
+
 import { Link } from 'react-router-dom';
 
 const ProfilePage: React.FC = () => {
@@ -70,16 +71,14 @@ const ProfilePage: React.FC = () => {
     const toastId = 'avatar-upload';
     
     try {
-      // Show loading toast
       toast.loading('Téléchargement de la photo...', { id: toastId });
       
-      // Upload the image
-      const url = await uploadImageToServer(file);
+      // Utiliser le service spécifique pour avatar
+      const url = await uploadAvatar(file);
       
       // Update the profile with the new avatar URL
       if (updateProfile) {
         await updateProfile({ avatar: url });
-        // Update local user state immediately for better UX
         if (user) {
           setUser({ ...user, avatar: url });
         }
