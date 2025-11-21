@@ -5,8 +5,6 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import SimpleCaptcha from '../components/SimpleCaptcha';
 import toast from 'react-hot-toast';
 
-const logoSrc = `${process.env.PUBLIC_URL}/logo_colo.svg`;
-
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -50,7 +48,7 @@ const LoginPage: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <img src={logoSrc} alt="ColocAntananarivo" className="h-12 w-auto" />
+            <img src="/logo_colo.svg" alt="ColocAntananarivo" className="h-12 w-auto" />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Connexion à votre compte
