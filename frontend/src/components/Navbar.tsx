@@ -125,7 +125,7 @@ const Navbar: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <img src="/frontend/public/logo_colo.svg" alt="ColocAntananarivo" className="h-12 w-auto" />
+              <img src="/logo_colo.svg" alt="ColocAntananarivo" className="h-12 w-auto" />
             </Link>
           </div>
 
