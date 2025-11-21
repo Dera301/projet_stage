@@ -226,59 +226,59 @@ const EditPropertyPage: React.FC = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!user || !property) {
-      toast.error('Erreur: utilisateur non connecté ou propriété non chargée');
-      return;
-    }
+  e.preventDefault();
+  
+  if (!user || !property) {
+    toast.error('Erreur: utilisateur non connecté ou propriété non chargée');
+    return;
+  }
 
-    // Validation
-    if (!formData.title.trim()) {
-      toast.error('Le titre est requis');
-      return;
-    }
-    
-    if (!formData.description.trim()) {
-      toast.error('La description est requise');
-      return;
-    }
-    
-    if (!formData.address.trim()) {
-      toast.error('L\'adresse est requise');
-      return;
-    }
-    
-    if (!formData.district) {
-      toast.error('Le quartier est requis');
-      return;
-    }
-    
-    if (formData.price <= 0) {
-      toast.error('Le prix doit être supérieur à 0');
-      return;
-    }
+  // Validation
+  if (!formData.title.trim()) {
+    toast.error('Le titre est requis');
+    return;
+  }
+  
+  if (!formData.description.trim()) {
+    toast.error('La description est requise');
+    return;
+  }
+  
+  if (!formData.address.trim()) {
+    toast.error('L\'adresse est requise');
+    return;
+  }
+  
+  if (!formData.district) {
+    toast.error('Le quartier est requis');
+    return;
+  }
+  
+  if (formData.price <= 0) {
+    toast.error('Le prix doit être supérieur à 0');
+    return;
+  }
 
-    try {
+  try {
     let finalImageUrls = [...existingImages];
 
     // Upload des nouvelles images si présentes
     if (imageFiles.length > 0) {
-        toast.loading('Upload des nouvelles images...');
-        const newImageUrls = await uploadNewImages();
-        finalImageUrls = [...existingImages, ...newImageUrls];
-        toast.dismiss();
+      toast.loading('Upload des nouvelles images...');
+      const newImageUrls = await uploadNewImages();
+      finalImageUrls = [...existingImages, ...newImageUrls];
+      toast.dismiss();
     }
 
     const updateData = { ...formData, images: finalImageUrls };
 
-    // Requête vers le backend
+    // CORRECTION: apiJson retourne directement les données parsées
     const { apiJson } = await import('../config');
-    const response = await apiJson(`/api/properties/update/${property.id}`, 'PUT', updateData);
-    const data = await response.json();
+    const data = await apiJson(`/api/properties/update/${property.id}`, 'PUT', updateData);
 
-    if (!response.ok || !data.success) {
-        throw new Error(data.message || "Erreur inconnue lors de la mise à jour");
+    // Vérifier directement le succès
+    if (!data.success) {
+      throw new Error(data.message || "Erreur inconnue lors de la mise à jour");
     }
 
     // Nettoyage
@@ -286,18 +286,18 @@ const EditPropertyPage: React.FC = () => {
     toast.success('Propriété modifiée avec succès !');
     navigate('/dashboard');
     
-    } catch (error) {
-      console.error("Erreur lors de la modification:", error);
+  } catch (error) {
+    console.error("Erreur lors de la modification:", error);
 
-      // Vérifie que l'erreur est bien une instance d'Error
-      if (error instanceof Error) {
-        toast.error(`Erreur: ${error.message}`);
-      } else {
-        // Si c'est autre chose (ex: string ou objet brut)
-        toast.error(`Erreur inconnue: ${String(error)}`);
-      }
+    // Vérifie que l'erreur est bien une instance d'Error
+    if (error instanceof Error) {
+      toast.error(`Erreur: ${error.message}`);
+    } else {
+      // Si c'est autre chose (ex: string ou objet brut)
+      toast.error(`Erreur inconnue: ${String(error)}`);
     }
-  };
+  }
+};
 
   // Utilise la fonction centralisée getImageUrl de config
 
