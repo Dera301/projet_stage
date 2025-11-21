@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "users" ALTER COLUMN "avatar" SET DATA TYPE VARCHAR(1000000);
