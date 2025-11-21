@@ -9,10 +9,18 @@ console.log('🔗 Configuration API:', API_BASE_URL);
 const buildUrl = (endpoint: string): string => {
   // Nettoyer l'endpoint : enlever tous les slashes en début et fin
   const cleanEndpoint = endpoint.replace(/^\/+|\/+$/g, '');
-  // S'assurer qu'il n'y a qu'un seul slash entre API_BASE_URL et l'endpoint
-  const baseUrl = API_BASE_URL.replace(/\/+$/, '');
-  // Construire l'URL finale sans double slash
-  const finalUrl = `${baseUrl}/${cleanEndpoint}`.replace(/\/+/g, '/').replace(/https:\//, 'https://').replace(/http:\//, 'http://');
+  // Nettoyer l'URL de base : enlever le slash de fin s'il existe
+  const cleanBaseUrl = API_BASE_URL.replace(/\/+$/, '');
+  // Construire l'URL finale en évitant les doubles slashes
+  let finalUrl = `${cleanBaseUrl}/${cleanEndpoint}`;
+  
+  // Remplacer tous les séquences de plus d'un slash par un seul
+  finalUrl = finalUrl.replace(/([^:])\/\//g, '$1/');
+  
+  // S'assurer que le protocole est correct (http:// ou https://)
+  finalUrl = finalUrl.replace(/(https?:)\/+/g, '$1//');
+  
+  console.log('URL construite:', finalUrl); // Pour le débogage
   return finalUrl;
 };
 
