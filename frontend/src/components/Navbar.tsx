@@ -13,6 +13,8 @@ import {
   PlusIcon
 } from '@heroicons/react/24/outline';
 
+const logoSrc = `${process.env.PUBLIC_URL}/logo_colo.svg`;
+
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const { conversations } = useMessage();
@@ -125,7 +127,7 @@ const Navbar: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <img src="/logo_colo.svg" alt="ColocAntananarivo" className="h-12 w-auto" />
+              <img src={logoSrc} alt="ColocAntananarivo" className="h-12 w-auto" />
             </Link>
           </div>
 
