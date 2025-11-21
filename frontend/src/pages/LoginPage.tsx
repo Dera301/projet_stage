@@ -48,7 +48,7 @@ const LoginPage: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <img src="/logo_colo.svg" alt="ColocAntananarivo" className="h-16 w-auto" />
+            <img src="/frontend/public/logo_colo.svg" alt="ColocAntananarivo" className="h-12 w-auto" />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Connexion à votre compte
