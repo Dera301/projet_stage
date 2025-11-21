@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 120" width="420" height="120" role="img" aria-label="colocAntananarivo logo">
+  <!-- Icon -->
+  <g transform="translate(20,10)">
+    <!-- pin shape -->
+    <path d="M60 0C37 0 18 19 18 42c0 27 42 78 42 78s42-51 42-78C102 19 83 0 60 0z" fill="#1E88E5"/>
+    
+    <!-- inner white circle -->
+    <circle cx="60" cy="42" r="18" fill="#ffffff"/>
+
+    <!-- house -->
+    <g transform="translate(45,30)">
+      <rect x="6" y="10" width="18" height="12" rx="1" ry="1" fill="#1E88E5"/>
+      <polygon points="0,10 15,0 30,10" fill="#0D47A1"/>
+      <rect x="16" y="16" width="4" height="6" fill="#0D47A1"/>
+    </g>
+    
+    <!-- graduation cap -->
+    <g transform="translate(86,18) scale(0.9)">
+      <polygon points="0,10 12,4 24,10 12,16" fill="#0D47A1"/>
+      <rect x="10" y="12" width="4" height="8" fill="#1E88E5"/>
+      <line x1="12" y1="4" x2="12" y2="-6" stroke="#1E88E5" stroke-width="1.2"/>
+      <circle cx="12" cy="-8" r="1.6" fill="#1E88E5"/>
+    </g>
+  </g>
+
+  <!-- Text -->
+  <g transform="translate(140,48)">
+    <text x="0" y="0" font-family="Poppins, Arial, sans-serif" font-size="28" font-weight="700" fill="#0D47A1">coloc</text>
+    <text x="72" y="0" font-family="Poppins, Arial, sans-serif" font-size="28" font-weight="700" fill="#1E88E5">Antananarivo</text>
+    <text x="0" y="26" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6B7280">Plateforme de colocation &amp; logements universitaires</text>
+  </g>
+</svg>
