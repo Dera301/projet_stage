@@ -14,7 +14,7 @@ const Footer: React.FC = () => {
           {/* Logo et description */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center mb-4">
-              <img src="/frontend/public/logo_colo.svg" alt="" className="h-12 w-auto" />
+              <img src="/logo_colo.svg" alt="ColocAntananarivo" className="h-20 w-auto" />
             </div>
             <p className="text-gray-300 mb-6 max-w-md">
               La plateforme de référence pour la colocation étudiante à Antananarivo. 
