@@ -297,8 +297,9 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
     refreshConversations,
     refreshMessages,
     loading,
-    // Champs additionnels non typés dans MessageContextType original
-    ...( { editMessage, deleteMessage, deleteConversation } as any )
+    editMessage,
+    deleteMessage,
+    deleteConversation
   };
 
   return (

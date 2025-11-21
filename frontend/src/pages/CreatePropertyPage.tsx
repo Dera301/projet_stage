@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import CINVerificationModal from '../components/CINVerificationModal';
 import { useProperty } from '../contexts/PropertyContext';
 import { CreatePropertyData, ImageFile } from '../types';
-import { getAuthToken } from '../config';
+import { apiUpload } from '../config';
 import { 
   PhotoIcon,
   PlusIcon,
@@ -21,41 +21,24 @@ interface Coordinates {
   lng: number;
 }
 
-// Fonction d'upload d'image
+// Fonction d'upload d'image - utilise la config centralisée
 const uploadImageToServer = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('image', file);
   
   try {
-    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    const token = getAuthToken();
-    const headers: HeadersInit = {};
+    const data = await apiUpload('/api/upload/image', formData);
     
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const response = await fetch(`${API_BASE_URL}/api/upload/image`, {
-      method: 'POST',
-      headers,
-      body: formData
-    });
-    
-    console.log('📤 Status upload:', response.status);
-    
-    const data = await response.json();
-    console.log('📤 Réponse upload:', data);
-    
-    if (!response.ok || !data.success) {
+    if (!data.success) {
       throw new Error(data.message || 'Erreur lors de l\'upload');
     }
     
-    // Retourner l'URL de l'image
+    // Retourner l'URL de l'image (peut être base64 sur Vercel)
     return data.data?.url || data.data?.path || '';
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Erreur upload:', error);
-    throw new Error('Impossible d\'uploader l\'image: ' + (error as Error).message);
+    throw new Error(error.message || 'Impossible d\'uploader l\'image');
   }
 };
 const uploadMultipleImages = async (files: File[]): Promise<string[]> => {

@@ -2,14 +2,18 @@
 import { getStorage, setStorage, removeStorage } from './utils/storage';
 
 // URL de base : On utilise la variable d'env ou la valeur en dur, sans slash final
-const API_BASE_URL = (process.env.REACT_APP_API_URL || 'https://projet-stage-backend.vercel.app').replace(/\/$/, '');
+const API_BASE_URL = (process.env.REACT_APP_API_URL || 'https://projet-stage-backend.vercel.app').replace(/\/+$/, '');
 
 console.log('🔗 Configuration API:', API_BASE_URL);
 
 const buildUrl = (endpoint: string): string => {
-  // S'assurer que l'endpoint commence par un slash
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  return `${API_BASE_URL}${cleanEndpoint}`;
+  // Nettoyer l'endpoint : enlever tous les slashes en début et fin
+  const cleanEndpoint = endpoint.replace(/^\/+|\/+$/g, '');
+  // S'assurer qu'il n'y a qu'un seul slash entre API_BASE_URL et l'endpoint
+  const baseUrl = API_BASE_URL.replace(/\/+$/, '');
+  // Construire l'URL finale sans double slash
+  const finalUrl = `${baseUrl}/${cleanEndpoint}`.replace(/\/+/g, '/').replace(/https:\//, 'https://').replace(/http:\//, 'http://');
+  return finalUrl;
 };
 
 export const apiGet = async (url: string) => {

@@ -155,11 +155,13 @@ export interface MessageContextType {
   messages: Message[];
   sendMessage: (receiverId: string, content: string) => Promise<void>;
   markAsRead: (messageId: string) => Promise<void>;
-  getConversationMessages?: (conversationId: string) => Promise<Message[]>;
-  refreshConversations?: () => void;
-  refreshMessages?: () => void;
+  getConversationMessages: (conversationId: string) => Promise<Message[]>;
+  refreshConversations: () => void;
+  refreshMessages: () => void;
   loading: boolean;
-  
+  editMessage: (messageId: string, content: string) => Promise<void>;
+  deleteMessage: (messageId: string) => Promise<void>;
+  deleteConversation: (conversationId: string) => Promise<void>;
 }
 export interface CINVerificationData {
   cinNumber: string;
