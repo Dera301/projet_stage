@@ -4,7 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'; // Ajouter Link
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Property } from '../types';
-import { apiUpload, getImageUrl } from '../config';
+import { apiUpload, getImageUrl, apiJson } from '../config';
 import { 
   PhotoIcon,
   ArrowLeftIcon,
@@ -272,10 +272,8 @@ const EditPropertyPage: React.FC = () => {
 
     const updateData = { ...formData, images: finalImageUrls };
 
-    // CORRECTION: apiJson retourne directement les données parsées
-    const { apiJson } = await import('../config');
+    // Utilisation directe de l'import statique
     const data = await apiJson(`/api/properties/update/${property.id}`, 'PUT', updateData);
-
     // Vérifier directement le succès
     if (!data.success) {
       throw new Error(data.message || "Erreur inconnue lors de la mise à jour");

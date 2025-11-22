@@ -80,45 +80,65 @@ const AdminPage: React.FC = () => {
   };
 
   const loadData = async () => {
-  setLoading(true);
-  try {
-    // Charger toutes les listes une fois pour alimenter les badges de la sidebar
-    const [usersData, annsData, propsData, cinData] = await Promise.all([
-      apiGet('/api/admin/users_list'),
-      apiGet('/api/admin/announcements_list'),
-      apiGet('/api/admin/properties_list'),
-      apiGet('/api/admin/cin_to_verify')
-    ]);
-
-    // Les données sont déjà parsées par apiGet, pas besoin de .text() ou JSON.parse()
-    console.log('Données utilisateurs:', usersData);
-    console.log('Données annonces:', annsData);
-    console.log('Données propriétés:', propsData);
-    console.log('Données CIN:', cinData);
-
-    if (usersData.success) setUsers(usersData.data); else setUsers([]);
-    if (annsData.success) setAnns(annsData.data); else setAnns([]);
-    if (propsData.success) setProps(propsData.data); else setProps([]);
-
-    // Gestion spécifique pour les données CIN
-    console.log('Réponse CIN complète:', cinData);
-    
-    if (cinData.success) {
-      if (cinData.data && cinData.data.cinToVerify && Array.isArray(cinData.data.cinToVerify)) {
-        setCinToVerify(cinData.data.cinToVerify);
-      } else if (cinData.data && Array.isArray(cinData.data)) {
-        setCinToVerify(cinData.data);
-      } else if (cinData.cinToVerify && Array.isArray(cinData.cinToVerify)) {
-        setCinToVerify(cinData.cinToVerify);
-      } else if (Array.isArray(cinData)) {
-        setCinToVerify(cinData);
-      } else {
-        console.warn('Structure de réponse CIN inattendue:', cinData);
+    setLoading(true);
+    try {
+      // Gestion séparée pour chaque appel API pour un meilleur débogage
+      let usersData, annsData, propsData, cinData;
+      
+      try {
+        usersData = await apiGet('/api/admin/users_list');
+        console.log('Réponse utilisateurs:', usersData);
+        if (usersData.success) setUsers(usersData.data || []);
+        else setUsers([]);
+      } catch (error) {
+        console.error('Erreur lors du chargement des utilisateurs:', error);
+        setUsers([]);
+      }
+      
+      try {
+        annsData = await apiGet('/api/admin/announcements_list');
+        console.log('Réponse annonces:', annsData);
+        if (annsData?.success) setAnns(annsData.data || []);
+        else setAnns([]);
+      } catch (error) {
+        console.error('Erreur lors du chargement des annonces:', error);
+        setAnns([]);
+      }
+      
+      try {
+        propsData = await apiGet('/api/admin/properties_list');
+        console.log('Réponse propriétés:', propsData);
+        if (propsData?.success) setProps(propsData.data || []);
+        else setProps([]);
+      } catch (error) {
+        console.error('Erreur lors du chargement des propriétés:', error);
+        setProps([]);
+      }
+      
+      try {
+        cinData = await apiGet('/api/admin/cin_to_verify');
+        console.log('Réponse CIN complète:', cinData);
+        
+        if (cinData?.success) {
+          if (cinData.data?.cinToVerify && Array.isArray(cinData.data.cinToVerify)) {
+            setCinToVerify(cinData.data.cinToVerify);
+          } else if (cinData.data && Array.isArray(cinData.data)) {
+            setCinToVerify(cinData.data);
+          } else if (cinData.cinToVerify && Array.isArray(cinData.cinToVerify)) {
+            setCinToVerify(cinData.cinToVerify);
+          } else if (Array.isArray(cinData)) {
+            setCinToVerify(cinData);
+          } else {
+            console.warn('Structure de réponse CIN inattendue:', cinData);
+            setCinToVerify([]);
+          }
+        } else {
+          setCinToVerify([]);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des CIN à vérifier:', error);
         setCinToVerify([]);
       }
-    } else {
-      setCinToVerify([]);
-    }
   } catch (error) {
     console.error('Erreur chargement:', error);
     toast.error('Erreur lors du chargement des données');

@@ -62,22 +62,24 @@ const ProfilePage: React.FC = () => {
 
   const [isUploading, setIsUploading] = useState(false);
 
-  // MÊME FONCTION QUE DANS CreateAnnouncementPage
+  // Fonction d'upload d'image - utilise la config centralisée
   const uploadImageToServer = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-      
       const data = await apiUpload('/api/upload/image', formData);
       
       if (!data.success) {
         throw new Error(data.message || 'Erreur lors de l\'upload');
       }
       
+      // Retourner l'URL de l'image (peut être base64 sur Vercel)
       return data.data?.url || data.data?.path || '';
+      
     } catch (error: any) {
-      console.error('Erreur upload:', error);
-      throw new Error(error.message || 'Erreur lors de l\'upload');
+      console.error('❌ Erreur upload:', error);
+      throw new Error(error.message || 'Impossible d\'uploader l\'image');
     }
   };
 
