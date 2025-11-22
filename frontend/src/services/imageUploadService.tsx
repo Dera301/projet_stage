@@ -1,107 +1,170 @@
-// services/imageUploadService.ts
-import { getAuthToken, apiUpload } from '../config';
+// services/imageUploadService.tsx
+import { apiUpload, apiDelete } from '../config';
 
-// Helper function to compress images
-const compressImage = (file: File): Promise<File> => {
+type ImageType = 'property' | 'announcement' | 'avatar';
+
+interface UploadResult {
+  url: string;
+  publicId: string;
+  format: string;
+  width: number;
+  height: number;
+  bytes: number;
+}
+
+// Fonction utilitaire pour compresser les images avant l'upload
+const compressImage = (file: File, maxWidth: number, maxHeight: number, quality = 0.8): Promise<File> => {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
         
+        // Calculer les nouvelles dimensions en conservant le ratio
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
         if (!ctx) {
-          resolve(file); // Retourne le fichier original si le contexte n'est pas disponible
+          resolve(file);
           return;
         }
         
-        // Dessiner l'image sans redimensionnement
-        ctx.drawImage(img, 0, 0);
+        // Dessiner l'image redimensionnée
+        ctx.drawImage(img, 0, 0, width, height);
         
         // Convertir en blob avec les paramètres de qualité
         canvas.toBlob(
           (blob) => {
             if (!blob) {
-              resolve(file); // Retourne le fichier original en cas d'échec
+              resolve(file);
               return;
             }
-            // Créer un nouveau fichier avec le blob
-            const compressedFile = new File([blob], file.name, {
-              type: 'image/jpeg',
-              lastModified: Date.now(),
-            });
+            
+            const compressedFile = new File(
+              [blob], 
+              file.name.replace(/\.[^/.]+$/, '.jpg'), // Remplacer l'extension par .jpg
+              { type: 'image/jpeg', lastModified: Date.now() }
+            );
+            
             resolve(compressedFile);
           },
           'image/jpeg',
-          0.8 // Qualité de compression (0.8 = 80%)
+          quality
         );
       };
-      img.onerror = () => {
-        resolve(file); // Retourne le fichier original en cas d'erreur
-      };
+      
+      img.onerror = () => resolve(file);
       img.src = event.target?.result as string;
     };
-    reader.onerror = () => {
-      resolve(file); // Retourne le fichier original en cas d'erreur
-    };
+    
+    reader.onerror = () => resolve(file);
     reader.readAsDataURL(file);
   });
 };
 
-export const uploadImageToServer = async (file: File): Promise<string> => {
-  // Vérifier uniquement le type de fichier
+// Fonction générique pour uploader une image
+const uploadImage = async (
+  file: File, 
+  type: ImageType = 'property', 
+  options: { maxWidth?: number; maxHeight?: number; quality?: number } = {}
+): Promise<UploadResult> => {
+  // Vérification du type de fichier
   const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
   if (!validTypes.includes(file.type)) {
     throw new Error('Format d\'image non supporté. Utilisez JPEG, PNG ou WebP');
   }
 
-  // Compresser l'image pour optimiser la taille
+  // Paramètres par défaut selon le type
+  const defaults = {
+    property: { maxWidth: 1200, maxHeight: 800, quality: 0.8 },
+    announcement: { maxWidth: 1000, maxHeight: 800, quality: 0.8 },
+    avatar: { maxWidth: 400, maxHeight: 400, quality: 0.9 }
+  };
+  
+  const { maxWidth, maxHeight, quality } = { ...defaults[type], ...options };
+  
+  // Compression de l'image
   let processedFile = file;
   try {
-    processedFile = await compressImage(file);
+    processedFile = await compressImage(file, maxWidth, maxHeight, quality);
   } catch (error) {
     console.warn('Échec de la compression, envoi de l\'image originale', error);
   }
-
+  
+  // Préparation du formulaire
   const formData = new FormData();
-  formData.append('image', processedFile);
+  formData.append('file', processedFile);
   
   try {
-    const data = await apiUpload('api/upload/image', formData);
+    // Appel à l'API appropriée selon le type
+    const endpoint = `api/upload/${type}`;
+    const response = await apiUpload(endpoint, formData);
     
-    if (!data.success) {
-      throw new Error(data.message || 'Erreur lors de l\'upload');
+    if (!response || !response.url) {
+      throw new Error('Réserve invalide du serveur');
     }
     
-    // Return the first available URL
-    const imageUrl = data.data?.url || data.data?.path || data.imageUrl;
+    return {
+      url: response.url,
+      publicId: response.publicId,
+      format: response.format || file.type.split('/')[1],
+      width: response.width || 0,
+      height: response.height || 0,
+      bytes: response.bytes || file.size
+    };
     
-    if (!imageUrl) {
-      throw new Error('Aucune URL d\'image valide reçue du serveur');
-    }
-
-    // Avertissement si l'URL est très longue
-    if (imageUrl.length > 1000000) {
-      console.warn('L\'URL de l\'image est très longue:', imageUrl.length, 'caractères');
-      throw new Error('L\'URL de l\'image est trop longue. Veuillez essayer avec une image plus petite ou un format différent.');
-    }
-
-    return imageUrl;
   } catch (error: any) {
-    console.error('Erreur upload:', error);
-    throw new Error(error.message || 'Impossible d\'uploader l\'image');
+    console.error(`Erreur lors de l'upload de l'image (${type}):`, error);
+    throw new Error(error.message || `Impossible d'uploader l'image de type ${type}`);
   }
 };
 
-export const uploadMultipleImages = async (files: File[]): Promise<string[]> => {
+// Upload d'image de propriété
+export const uploadPropertyImage = (file: File) => uploadImage(file, 'property');
+
+// Upload d'image d'annonce
+export const uploadAnnouncementImage = (file: File) => uploadImage(file, 'announcement');
+
+// Upload d'avatar
+export const uploadAvatar = (file: File) => uploadImage(file, 'avatar');
+
+// Upload multiple d'images
+export const uploadMultipleImages = async (
+  files: File[], 
+  type: ImageType = 'property'
+): Promise<UploadResult[]> => {
   try {
-    const uploadPromises = files.map(file => uploadImageToServer(file));
+    const uploadPromises = files.map(file => uploadImage(file, type));
     return await Promise.all(uploadPromises);
   } catch (error) {
-    console.error('Error in uploadMultipleImages:', error);
+    console.error('Erreur lors de l\'upload multiple:', error);
     throw error;
+  }
+};
+
+// Suppression d'image
+export const deleteImage = async (publicId: string): Promise<void> => {
+  if (!publicId) return;
+  
+  try {
+    await apiDelete(`api/upload/${publicId}`);
+  } catch (error) {
+    console.error('Erreur lors de la suppression de l\'image:', error);
+    throw new Error(error instanceof Error ? error.message : 'Impossible de supprimer l\'image');
   }
 };

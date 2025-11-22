@@ -74,8 +74,21 @@ const ProfilePage: React.FC = () => {
         throw new Error(data.message || 'Erreur lors de l\'upload');
       }
       
-      // Retourner l'URL de l'image (peut être base64 sur Vercel)
-      return data.data?.url || data.data?.path || '';
+      // Vérifier si l'image est en base64 (cas Vercel)
+      if (data.isBase64 && data.url) {
+        return data.url; // Retourner directement l'URL en base64
+      }
+      
+      // Pour les URLs normales, s'assurer qu'elles sont complètes
+      let imageUrl = data.data?.url || data.data?.path || '';
+      
+      // Si l'URL est relative, ajouter l'URL de base de l'API
+      if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
+        const baseUrl = process.env.REACT_APP_API_URL || 'https://projet-stage-backend.vercel.app';
+        imageUrl = `${baseUrl.replace(/\/+$/, '')}/${imageUrl.replace(/^\/+/, '')}`;
+      }
+      
+      return imageUrl;
       
     } catch (error: any) {
       console.error('❌ Erreur upload:', error);
@@ -87,11 +100,13 @@ const ProfilePage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // APPLIQUER LES MÊMES CONDITIONS QUE DANS CreateAnnouncementPage
+    // Vérifier le type de fichier
     if (!file.type.startsWith('image/')) { 
       toast.error(`${file.name} n'est pas une image valide`); 
       return; 
     }
+    
+    // Vérifier la taille du fichier (max 5MB)
     if (file.size > 5 * 1024 * 1024) { 
       toast.error(`${file.name} est trop volumineux (max 5MB)`); 
       return; 
@@ -103,11 +118,18 @@ const ProfilePage: React.FC = () => {
     try {
       toast.loading('Téléchargement de la photo...', { id: toastId });
       
-      // UTILISER LA MÊME FONCTION D'UPLOAD QUE CreateAnnouncementPage
+      // Télécharger l'image
       const url = await uploadImageToServer(file);
       
-      // Update the profile with the new avatar URL
+      if (!url) {
+        throw new Error('Aucune URL valide retournée après l\'upload');
+      }
+      
+      console.log('URL de l\'image uploadée:', url);
+      
+      // Mettre à jour le profil avec la nouvelle URL d'avatar
       if (updateProfile) {
+        console.log('Mise à jour du profil avec l\'URL:', url);
         await updateProfile({ avatar: url });
         if (user) {
           setUser({ ...user, avatar: url });
@@ -116,8 +138,24 @@ const ProfilePage: React.FC = () => {
       
       toast.success('Photo de profil mise à jour avec succès', { id: toastId });
     } catch (error: any) {
-      console.error('Error updating avatar:', error);
-      toast.error(error.message || 'Échec du téléchargement de la photo', { id: toastId });
+      console.error('Erreur lors de la mise à jour de l\'avatar:', error);
+      
+      // Afficher un message d'erreur plus détaillé
+      let errorMessage = 'Échec du téléchargement de la photo';
+      
+      if (error.message) {
+        if (error.message.includes('400') || error.message.includes('Bad Request')) {
+          errorMessage = 'Erreur de validation. Veuillez réessayer avec une autre image.';
+        } else if (error.message.includes('413') || error.message.includes('trop volumineux')) {
+          errorMessage = 'L\'image est trop volumineuse. Taille maximale: 5MB';
+        } else if (error.message.includes('500') || error.message.includes('Erreur serveur')) {
+          errorMessage = 'Erreur du serveur. Veuillez réessayer plus tard.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      toast.error(errorMessage, { id: toastId, duration: 5000 });
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
