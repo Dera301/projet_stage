@@ -126,18 +126,19 @@ model Message {
 }
 
 model Appointment {
-  id              Int               @id @default(autoincrement())
-  propertyId      Int
-  studentId       Int
-  ownerId         Int
-  appointmentDate DateTime
-  status          AppointmentStatus @default(pending)
-  message         String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  owner           User              @relation("OwnerAppointments", fields: [ownerId], references: [id], onDelete: Cascade)
-  property        Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  student         User              @relation("StudentAppointments", fields: [studentId], references: [id], onDelete: Cascade)
+  id                 Int               @id @default(autoincrement())
+  propertyId         Int
+  studentId          Int
+  ownerId            Int
+  appointmentDate    DateTime
+  status             AppointmentStatus @default(pending)
+  message            String?
+  cancellationReason String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  owner              User              @relation("OwnerAppointments", fields: [ownerId], references: [id], onDelete: Cascade)
+  property           Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  student            User              @relation("StudentAppointments", fields: [studentId], references: [id], onDelete: Cascade)
 
   @@map("appointments")
 }

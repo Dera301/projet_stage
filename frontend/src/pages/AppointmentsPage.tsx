@@ -37,6 +37,9 @@ const AppointmentsPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null);
 
   const loadAppointments = useCallback(async () => {
     if (!user) return;
@@ -63,17 +66,44 @@ const AppointmentsPage: React.FC = () => {
     }
   }, [user, loadAppointments]);
 
-  const updateStatus = async (id: string, status: string) => {
+  const updateStatus = async (id: string, status: string, cancellationReason?: string) => {
     try {
-      const data = await apiJson(`/api/appointments/update_status/${id}`, 'PUT', { status });
+      const payload: any = { status };
+      if (cancellationReason) {
+        payload.cancellationReason = cancellationReason;
+      }
+      const data = await apiJson(`/api/appointments/update_status/${id}`, 'PUT', payload);
       
       if (data.success) {
         toast.success('Statut mis à jour');
         setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: status as any } : a));
+        if (status === 'cancelled') {
+          setAppointments(prev => prev.filter(a => a.id !== id));
+        }
       }
-    } catch (error) {
-      toast.error('Erreur lors de la mise à jour');
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de la mise à jour');
     }
+  };
+
+  const handleCancelClick = (appointment: Appointment) => {
+    setAppointmentToCancel(appointment);
+    setShowCancelModal(true);
+    setCancelReason('');
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!appointmentToCancel) return;
+    
+    if (!cancelReason.trim()) {
+      toast.error('Veuillez saisir une raison d\'annulation');
+      return;
+    }
+
+    await updateStatus(appointmentToCancel.id, 'cancelled', cancelReason);
+    setShowCancelModal(false);
+    setAppointmentToCancel(null);
+    setCancelReason('');
   };
 
   const deleteAppointment = async (id: string) => {
@@ -273,7 +303,7 @@ const AppointmentsPage: React.FC = () => {
                             <span>Confirmer</span>
                           </button>
                           <button
-                            onClick={() => updateStatus(appointment.id, 'cancelled')}
+                            onClick={() => handleCancelClick(appointment)}
                             className="flex-1 btn-secondary text-sm flex items-center justify-center space-x-1 py-2"
                           >
                             <XMarkIcon className="w-4 h-4" />
@@ -291,13 +321,22 @@ const AppointmentsPage: React.FC = () => {
                         </button>
                       )}
                       {appointment.status === 'confirmed' && user.userType === 'owner' && (
-                        <button
-                          onClick={() => updateStatus(appointment.id, 'completed')}
-                          className="flex-1 btn-primary text-sm flex items-center justify-center space-x-1 py-2"
-                        >
-                          <CheckIcon className="w-4 h-4" />
-                          <span>Terminé</span>
-                        </button>
+                        <>
+                          <button
+                            onClick={() => updateStatus(appointment.id, 'completed')}
+                            className="flex-1 btn-primary text-sm flex items-center justify-center space-x-1 py-2"
+                          >
+                            <CheckIcon className="w-4 h-4" />
+                            <span>Terminé</span>
+                          </button>
+                          <button
+                            onClick={() => handleCancelClick(appointment)}
+                            className="flex-1 btn-secondary text-sm flex items-center justify-center space-x-1 py-2"
+                          >
+                            <XMarkIcon className="w-4 h-4" />
+                            <span>Annuler</span>
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -322,6 +361,44 @@ const AppointmentsPage: React.FC = () => {
           appointment={editingAppointment}
           onUpdate={handleUpdateAppointment}
         />
+      )}
+
+      {/* Modal d'annulation avec raison */}
+      {showCancelModal && appointmentToCancel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-semibold mb-4">Annuler le rendez-vous</h2>
+            <p className="text-gray-600 mb-4">
+              Vous êtes sur le point d'annuler le rendez-vous pour "{appointmentToCancel.propertyTitle}".
+              Veuillez indiquer la raison de cette annulation :
+            </p>
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ex: Indisponibilité, changement de planning, etc."
+              className="w-full p-3 border border-gray-300 rounded-lg mb-4 min-h-[100px]"
+              required
+            />
+            <div className="flex space-x-3">
+              <button
+                onClick={handleConfirmCancel}
+                className="flex-1 btn-primary"
+              >
+                Confirmer l'annulation
+              </button>
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setAppointmentToCancel(null);
+                  setCancelReason('');
+                }}
+                className="flex-1 btn-secondary"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

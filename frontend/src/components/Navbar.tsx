@@ -254,6 +254,28 @@ const Navbar: React.FC = () => {
                     >
                       Mon profil
                     </Link>
+                    {/* Afficher le statut de vérification CIN */}
+                    {user.userType === 'owner' && (
+                      <>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        {user.cinVerified ? (
+                          <div className="px-4 py-2 text-xs text-green-600 bg-green-50">
+                            ✓ CIN Vérifiée
+                          </div>
+                        ) : user.cinPending || (user as any).cin_verification_requested_at ? (
+                          <div className="px-4 py-2 text-xs text-blue-600 bg-blue-50">
+                            ⏳ Vérification en cours
+                          </div>
+                        ) : (
+                          <Link
+                            to="/cin-verification"
+                            className="block px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 transition-colors"
+                          >
+                            Vérifier ma CIN
+                          </Link>
+                        )}
+                      </>
+                    )}
                     <div className="border-t border-gray-100 my-1"></div>
                     <button
                       onClick={handleLogout}

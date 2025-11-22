@@ -284,14 +284,37 @@ router.get('/get_all', verifyJWT, async (req, res) => {
 router.put('/update_status/:id', verifyJWT, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { status } = req.body;
+    const { status, cancellationReason } = req.body;
 
     if (!status || !['pending', 'confirmed', 'cancelled', 'completed'].includes(status)) {
       return sendError(res, 'Statut invalide', 400);
     }
 
     const appointment = await prisma.appointment.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        student: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        },
+        owner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        },
+        property: {
+          select: {
+            title: true,
+            address: true
+          }
+        }
+      }
     });
 
     if (!appointment) {
@@ -308,9 +331,21 @@ router.put('/update_status/:id', verifyJWT, async (req, res) => {
       return sendError(res, 'Vous n\'êtes pas autorisé à modifier ce rendez-vous', 403);
     }
 
+    // Si le propriétaire annule, exiger une raison
+    if (status === 'cancelled' && isOwnerOrAdmin && !isStudentCancellingOwn) {
+      if (!cancellationReason || cancellationReason.trim().length === 0) {
+        return sendError(res, 'Une raison d\'annulation est obligatoire', 400);
+      }
+    }
+
+    const updateData = { status };
+    if (cancellationReason) {
+      updateData.cancellationReason = cancellationReason;
+    }
+
     const updatedAppointment = await prisma.appointment.update({
       where: { id },
-      data: { status },
+      data: updateData,
       include: {
         property: {
           select: {
@@ -340,6 +375,62 @@ router.put('/update_status/:id', verifyJWT, async (req, res) => {
       }
     });
 
+    // Si le propriétaire annule, envoyer un message automatique à l'étudiant
+    if (status === 'cancelled' && isOwnerOrAdmin && !isStudentCancellingOwn && cancellationReason) {
+      try {
+        // Trouver ou créer la conversation
+        let conversation = await prisma.conversation.findFirst({
+          where: {
+            OR: [
+              { user1Id: appointment.ownerId, user2Id: appointment.studentId },
+              { user1Id: appointment.studentId, user2Id: appointment.ownerId }
+            ]
+          }
+        });
+
+        if (!conversation) {
+          conversation = await prisma.conversation.create({
+            data: {
+              user1Id: appointment.ownerId,
+              user2Id: appointment.studentId,
+              unreadCount: 0
+            }
+          });
+        } else {
+          await prisma.conversation.update({
+            where: { id: conversation.id },
+            data: { updatedAt: new Date() }
+          });
+        }
+
+        // Créer le message avec la raison d'annulation
+        const messageContent = `Bonjour ${appointment.student.firstName},\n\nJe vous informe que le rendez-vous pour la visite de "${appointment.property.title}" prévu le ${new Date(appointment.appointmentDate).toLocaleDateString('fr-FR')} a été annulé.\n\nRaison : ${cancellationReason}\n\nCordialement,\n${appointment.owner.firstName} ${appointment.owner.lastName}`;
+
+        await prisma.message.create({
+          data: {
+            conversationId: conversation.id,
+            senderId: appointment.ownerId,
+            receiverId: appointment.studentId,
+            content: messageContent,
+            isRead: false
+          }
+        });
+
+        // Incrémenter le compteur de messages non lus
+        await prisma.conversation.update({
+          where: { id: conversation.id },
+          data: {
+            unreadCount: {
+              increment: 1
+            }
+          }
+        });
+      } catch (msgError) {
+        console.error('Erreur lors de l\'envoi du message automatique:', msgError);
+        // Ne pas faire échouer la requête si l'envoi du message échoue
+      }
+    }
+
     const formattedAppointment = {
       id: updatedAppointment.id.toString(),
       propertyId: updatedAppointment.propertyId.toString(),
@@ -348,6 +439,7 @@ router.put('/update_status/:id', verifyJWT, async (req, res) => {
       appointmentDate: updatedAppointment.appointmentDate.toISOString(),
       status: updatedAppointment.status,
       message: updatedAppointment.message,
+      cancellationReason: updatedAppointment.cancellationReason,
       propertyTitle: updatedAppointment.property.title,
       address: updatedAppointment.property.address,
       studentFirstName: updatedAppointment.student.firstName,

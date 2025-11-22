@@ -39,6 +39,8 @@ import AdminPage from './pages/AdminPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminRegisterPage from './pages/AdminRegisterPage';
 import AppointmentsPage from './pages/AppointmentsPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 function AppContent() {
   const location = useLocation();
@@ -112,6 +114,20 @@ function AppContent() {
                 <PageTransition>
                   <div className="w-full overflow-x-hidden">
                     <ContactPage />
+                  </div>
+                </PageTransition>
+              } />
+              <Route path="/terms" element={
+                <PageTransition>
+                  <div className="w-full overflow-x-hidden">
+                    <TermsPage />
+                  </div>
+                </PageTransition>
+              } />
+              <Route path="/privacy" element={
+                <PageTransition>
+                  <div className="w-full overflow-x-hidden">
+                    <PrivacyPage />
                   </div>
                 </PageTransition>
               } />

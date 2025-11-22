@@ -97,18 +97,21 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Copyright */}
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-          <p className="text-gray-400">
-            © 2025 ColocAntananarivo. Tous droits réservés. | 
-            <a href="/privacy" className="hover:text-white transition-colors ml-2">
-              Politique de confidentialité
-            </a>
-            <span className="mx-2">|</span>
-            <a href="/terms" className="hover:text-white transition-colors">
-              Conditions d'utilisation
-            </a>
-          </p>
+        {/* Copyright et liens légaux */}
+        <div className="border-t border-gray-800 mt-8 pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-400 text-sm mb-4 md:mb-0">
+              © {new Date().getFullYear()} ColocAntananarivo. Tous droits réservés.
+            </p>
+            <div className="flex space-x-6">
+              <Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">
+                Conditions d'utilisation
+              </Link>
+              <Link to="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">
+                Politique de confidentialité
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
