@@ -62,40 +62,25 @@ const ProfilePage: React.FC = () => {
 
   const [isUploading, setIsUploading] = useState(false);
 
-  // Fonction d'upload d'image - utilise la config centralisée
   const uploadImageToServer = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('image', file);
-    
     try {
+      const formData = new FormData();
+      formData.append('image', file);
+      
       const data = await apiUpload('/api/upload/image', formData);
       
       if (!data.success) {
         throw new Error(data.message || 'Erreur lors de l\'upload');
       }
       
-      // Vérifier si l'image est en base64 (cas Vercel)
-      if (data.isBase64 && data.url) {
-        return data.url; // Retourner directement l'URL en base64
-      }
-      
-      // Pour les URLs normales, s'assurer qu'elles sont complètes
-      let imageUrl = data.data?.url || data.data?.path || '';
-      
-      // Si l'URL est relative, ajouter l'URL de base de l'API
-      if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
-        const baseUrl = process.env.REACT_APP_API_URL || 'https://projet-stage-backend.vercel.app';
-        imageUrl = `${baseUrl.replace(/\/+$/, '')}/${imageUrl.replace(/^\/+/, '')}`;
-      }
-      
-      return imageUrl;
-      
+      return data.data?.url || data.data?.path || '';
     } catch (error: any) {
-      console.error('❌ Erreur upload:', error);
-      throw new Error(error.message || 'Impossible d\'uploader l\'image');
+      console.error('Erreur upload:', error);
+      throw new Error(error.message || 'Erreur lors de l\'upload');
     }
   };
 
+  
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
