@@ -12,6 +12,7 @@ import {
 import toast from 'react-hot-toast';
 import { apiUpload } from '../config'; // ← Importer apiUpload directement
 import { Link } from 'react-router-dom';
+import { uploadAvatar } from '../services/imageUploadService';
 
 const ProfilePage: React.FC = () => {
   const { user, updateProfile, setUser } = useAuth();
@@ -81,6 +82,7 @@ const ProfilePage: React.FC = () => {
   };
 
   
+  // Dans ProfilePage.tsx
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -91,9 +93,9 @@ const ProfilePage: React.FC = () => {
       return; 
     }
     
-    // Vérifier la taille du fichier (max 5MB)
-    if (file.size > 5 * 1024 * 1024) { 
-      toast.error(`${file.name} est trop volumineux (max 5MB)`); 
+    // Vérifier la taille du fichier (max 6MB)
+    if (file.size > 6 * 1024 * 1024) { 
+      toast.error(`${file.name} est trop volumineux (max 6MB)`); 
       return; 
     }
     
@@ -103,14 +105,15 @@ const ProfilePage: React.FC = () => {
     try {
       toast.loading('Téléchargement de la photo...', { id: toastId });
       
-      // Télécharger l'image
-      const url = await uploadImageToServer(file);
+      // Utiliser le service d'upload d'avatar
+      const uploadResult = await uploadAvatar(file);
+      const url = uploadResult.url;
       
       if (!url) {
         throw new Error('Aucune URL valide retournée après l\'upload');
       }
       
-      console.log('URL de l\'image uploadée:', url);
+      console.log('URL de l\'avatar uploadé:', url);
       
       // Mettre à jour le profil avec la nouvelle URL d'avatar
       if (updateProfile) {
@@ -125,14 +128,13 @@ const ProfilePage: React.FC = () => {
     } catch (error: any) {
       console.error('Erreur lors de la mise à jour de l\'avatar:', error);
       
-      // Afficher un message d'erreur plus détaillé
       let errorMessage = 'Échec du téléchargement de la photo';
       
       if (error.message) {
         if (error.message.includes('400') || error.message.includes('Bad Request')) {
           errorMessage = 'Erreur de validation. Veuillez réessayer avec une autre image.';
         } else if (error.message.includes('413') || error.message.includes('trop volumineux')) {
-          errorMessage = 'L\'image est trop volumineuse. Taille maximale: 5MB';
+          errorMessage = 'L\'image est trop volumineuse. Taille maximale: 6MB';
         } else if (error.message.includes('500') || error.message.includes('Erreur serveur')) {
           errorMessage = 'Erreur du serveur. Veuillez réessayer plus tard.';
         } else {

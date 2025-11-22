@@ -8,31 +8,24 @@ interface UploadResult {
   width: number;
   height: number;
   bytes: number;
-  isBase64: boolean;
 }
 
-// Fonction générique pour uploader une image vers Cloudinary
-export const uploadImage = async (
-  file: File, 
-  type: 'property' | 'announcement' | 'avatar' = 'property'
-): Promise<UploadResult> => {
-  // Vérification du type de fichier
+// Fonction pour uploader un avatar
+export const uploadAvatar = async (file: File): Promise<UploadResult> => {
   const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
   if (!validTypes.includes(file.type)) {
     throw new Error('Format d\'image non supporté. Utilisez JPEG, PNG ou WebP');
   }
 
-  // Vérification de la taille
-  if (file.size > 10 * 1024 * 1024) {
-    throw new Error('Fichier trop volumineux (max 10MB)');
+  if (file.size > 6 * 1024 * 1024) {
+    throw new Error('Fichier trop volumineux (max 6MB)');
   }
 
   const formData = new FormData();
-  formData.append('image', file);
-  formData.append('type', type + 's'); // 'properties', 'announcements', 'avatars'
+  formData.append('file', file); // ← Changer 'image' par 'file'
 
   try {
-    const response = await apiUpload('/api/upload/image', formData);
+    const response = await apiUpload('/api/upload/avatar', formData); // ← Utiliser la route spécifique
     
     if (!response || !response.url) {
       throw new Error('Réponse invalide du serveur');
@@ -41,38 +34,43 @@ export const uploadImage = async (
     return {
       url: response.url,
       publicId: response.publicId,
-      format: response.format || file.type.split('/')[1],
-      width: response.width || 0,
-      height: response.height || 0,
-      bytes: response.bytes || file.size,
-      isBase64: response.isBase64 || false
+      format: response.format,
+      width: response.width,
+      height: response.height,
+      bytes: response.bytes
     };
     
   } catch (error: any) {
-    console.error(`Erreur lors de l'upload de l'image (${type}):`, error);
-    throw new Error(error.message || `Impossible d'uploader l'image de type ${type}`);
+    console.error('Erreur lors de l\'upload de l\'avatar:', error);
+    throw new Error(error.message || 'Impossible d\'uploader l\'avatar');
   }
 };
 
-// Upload d'image de propriété
-export const uploadPropertyImage = (file: File) => uploadImage(file, 'property');
+// Fonction pour uploader une image de propriété
+export const uploadPropertyImage = async (file: File): Promise<UploadResult> => {
+  const formData = new FormData();
+  formData.append('file', file);
 
-// Upload d'image d'annonce
-export const uploadAnnouncementImage = (file: File) => uploadImage(file, 'announcement');
+  const response = await apiUpload('/api/upload/property', formData);
+  
+  return {
+    url: response.url,
+    publicId: response.publicId,
+    format: response.format,
+    width: response.width,
+    height: response.height,
+    bytes: response.bytes
+  };
+};
 
-// Upload d'avatar
-export const uploadAvatar = (file: File) => uploadImage(file, 'avatar');
-
-// Upload multiple d'images
+// Upload multiple
 export const uploadMultipleImages = async (
   files: File[], 
-  type: 'property' | 'announcement' | 'avatar' = 'property'
+  type: 'property' | 'announcement' = 'property'
 ): Promise<UploadResult[]> => {
-  try {
-    const uploadPromises = files.map(file => uploadImage(file, type));
-    return await Promise.all(uploadPromises);
-  } catch (error) {
-    console.error('Erreur lors de l\'upload multiple:', error);
-    throw error;
-  }
+  const formData = new FormData();
+  files.forEach(file => formData.append('files', file));
+
+  const response = await apiUpload(`/api/upload/multiple?type=${type}`, formData);
+  return response;
 };
