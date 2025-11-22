@@ -2,42 +2,54 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const { 
-  cloudinary,
-  deleteImage 
-} = require('../utils/cloudinary');
+const fs = require('fs');
 const { sendResponse, sendError } = require('../utils/response');
 const { verifyJWT } = require('../utils/auth');
 
-// Configuration commune pour multer (mémoire)
-const memoryStorage = multer.memoryStorage();
+// Configure multer for file uploads
+// Sur Vercel, utiliser /tmp car le système de fichiers est en lecture seule
+const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+const uploadDir = isVercel 
+  ? '/tmp/uploads' 
+  : path.join(__dirname, '../../uploads');
 
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|webp/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
-
-  if (mimetype && extname) {
-    return cb(null, true);
-  } else {
-    cb(new Error('Seules les images sont autorisées (jpeg, jpg, png, webp)'));
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   }
-};
-
-// Configuration pour le stockage en mémoire avant upload vers Cloudinary
-const upload = multer({ 
-  storage: memoryStorage,
-  fileFilter,
-  limits: { fileSize: 6 * 1024 * 1024 } // 6MB max
 });
 
-// Gestion des erreurs d'upload
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Seules les images sont autorisées (jpeg, jpg, png, gif, webp)'));
+    }
+  }
+});
+
 const handleMulterError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
-      return sendError(res, 'Fichier trop volumineux (max 6MB)', 400);
+      return sendError(res, 'Fichier trop volumineux (max 5MB)', 400);
     }
-    return sendError(res, `Erreur upload: ${err.message}`, 400);
+    return sendError(res, 'Erreur upload: ' + err.message, 400);
   }
   if (err) {
     return sendError(res, err.message, 400);
@@ -45,161 +57,52 @@ const handleMulterError = (err, req, res, next) => {
   next();
 };
 
-// Fonction utilitaire pour uploader vers Cloudinary
-const uploadToCloudinary = async (file, folder) => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { 
-        folder: `projet-stage/${folder}`,
-        resource_type: 'auto',
-        quality: 'auto:good',
-        ...(folder === 'avatars' ? {
-          width: 400,
-          height: 400,
-          gravity: 'face',
-          crop: 'thumb'
-        } : {
-          width: folder === 'properties' ? 1200 : 1000,
-          height: 800,
-          crop: 'limit'
-        })
-      },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result);
-      }
-    );
-
-    stream.end(file.buffer);
-  });
-};
-
-// Upload d'avatar
-router.post('/avatar', verifyJWT, upload.single('file'), handleMulterError, async (req, res) => {
+// Upload image
+router.post('/image', verifyJWT, upload.single('image'), handleMulterError, (req, res) => {
   try {
     if (!req.file) {
-      return sendError(res, 'Aucun fichier fourni', 400);
+      return sendError(res, 'Aucun fichier uploadé', 400);
     }
 
-    const result = await uploadToCloudinary(req.file, 'avatars');
-
-    return sendResponse(res, {
-      url: result.secure_url,
-      publicId: result.public_id,
-      format: result.format,
-      width: result.width,
-      height: result.height,
-      bytes: result.bytes
-    }, 'Avatar uploadé avec succès');
-
+    // Pour Vercel, on convertit l'image en base64 ou on utilise un service cloud
+    // Pour l'instant, on retourne une URL temporaire
+    // NOTE: Sur Vercel, les fichiers dans /tmp sont temporaires
+    // En production, il faudrait utiliser Cloudinary, AWS S3, ou similaire
+    
+    const filePath = `/uploads/${req.file.filename}`;
+    let fullUrl;
+    
+    if (isVercel) {
+      // Sur Vercel, lire le fichier et le convertir en base64 ou utiliser un service cloud
+      // Pour l'instant, on retourne juste le nom du fichier
+      // TODO: Intégrer Cloudinary ou AWS S3 pour le stockage permanent
+      const fileBuffer = fs.readFileSync(req.file.path);
+      const base64Image = fileBuffer.toString('base64');
+      const dataUrl = `data:${req.file.mimetype};base64,${base64Image}`;
+      
+      return sendResponse(res, {
+        path: filePath,
+        url: dataUrl,
+        filename: req.file.filename,
+        size: req.file.size,
+        isBase64: true
+      }, 'Image uploadée avec succès');
+    } else {
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      fullUrl = `${baseUrl}${filePath}`;
+      
+      return sendResponse(res, {
+        path: filePath,
+        url: fullUrl,
+        filename: req.file.filename,
+        size: req.file.size
+      }, 'Image uploadée avec succès');
+    }
   } catch (error) {
-    console.error('Erreur upload avatar:', error);
-    return sendError(res, 'Erreur lors de l\'upload de l\'avatar', 500);
-  }
-});
-
-// Upload d'image de propriété
-router.post('/property', verifyJWT, upload.single('file'), handleMulterError, async (req, res) => {
-  try {
-    if (!req.file) {
-      return sendError(res, 'Aucun fichier fourni', 400);
-    }
-
-    const result = await uploadToCloudinary(req.file, 'properties');
-
-    return sendResponse(res, {
-      url: result.secure_url,
-      publicId: result.public_id,
-      format: result.format,
-      width: result.width,
-      height: result.height,
-      bytes: result.bytes
-    }, 'Image de propriété uploadée avec succès');
-
-  } catch (error) {
-    console.error('Erreur upload propriété:', error);
-    return sendError(res, 'Erreur lors de l\'upload de l\'image de propriété', 500);
-  }
-});
-
-// Upload d'image d'annonce
-router.post('/announcement', verifyJWT, upload.single('file'), handleMulterError, async (req, res) => {
-  try {
-    if (!req.file) {
-      return sendError(res, 'Aucun fichier fourni', 400);
-    }
-
-    const result = await uploadToCloudinary(req.file, 'announcements');
-
-    return sendResponse(res, {
-      url: result.secure_url,
-      publicId: result.public_id,
-      format: result.format,
-      width: result.width,
-      height: result.height,
-      bytes: result.bytes
-    }, 'Image d\'annonce uploadée avec succès');
-
-  } catch (error) {
-    console.error('Erreur upload annonce:', error);
-    return sendError(res, 'Erreur lors de l\'upload de l\'image d\'annonce', 500);
-  }
-});
-
-// Upload multiple d'images
-router.post('/multiple', verifyJWT, upload.array('files', 10), handleMulterError, async (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return sendError(res, 'Aucun fichier fourni', 400);
-    }
-
-    const type = req.query.type || 'properties'; // Par défaut: propriétés
-    const results = [];
-
-    for (const file of req.files) {
-      try {
-        const result = await uploadToCloudinary(file, type);
-        results.push({
-          url: result.secure_url,
-          publicId: result.public_id,
-          format: result.format,
-          width: result.width,
-          height: result.height,
-          bytes: result.bytes
-        });
-      } catch (error) {
-        console.error(`Erreur upload fichier ${file.originalname}:`, error);
-        // On continue avec les autres fichiers
-      }
-    }
-
-    if (results.length === 0) {
-      return sendError(res, 'Aucun fichier n\'a pu être uploadé', 500);
-    }
-
-    return sendResponse(res, results, `${results.length} fichier(s) uploadé(s) avec succès`);
-
-  } catch (error) {
-    console.error('Erreur upload multiple:', error);
-    return sendError(res, 'Erreur lors de l\'upload des fichiers', 500);
-  }
-});
-
-// Suppression d'image
-router.delete('/:publicId', verifyJWT, async (req, res) => {
-  try {
-    const { publicId } = req.params;
-    if (!publicId) {
-      return sendError(res, 'ID public manquant', 400);
-    }
-
-    await deleteImage(publicId);
-    return sendResponse(res, null, 'Image supprimée avec succès');
-
-  } catch (error) {
-    console.error('Erreur suppression image:', error);
-    return sendError(res, 'Erreur lors de la suppression de l\'image', 500);
+    console.error('Upload image error:', error);
+    return sendError(res, 'Erreur lors de l\'upload: ' + error.message, 500);
   }
 });
 
 module.exports = router;
+

@@ -129,10 +129,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (uploadData.success) {
             avatarUrl = uploadData.data?.url || uploadData.data?.path;
             
-            // Vérifier la longueur de l'URL
-            if (avatarUrl && avatarUrl.length > 1000) {
-              console.warn('URL de l\'avatar très longue:', avatarUrl.length, 'caractères');
-            }
+            // L'URL de l'avatar peut être aussi longue que nécessaire (TEXT dans la DB)
+            // Pas de limite comme pour les images des annonces
           } else {
             console.warn('Échec de l\'upload de l\'image de profil, continuation sans image');
           }
@@ -198,6 +196,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const updateProfile = async (profileData: Partial<User>): Promise<void> => {
     try {
+      // Pas de normalisation nécessaire - l'avatar est TEXT dans la DB (pas de limite de 255)
       const data = await apiJson('/api/users/me', 'PUT', profileData);
       
       if (!data.success) {

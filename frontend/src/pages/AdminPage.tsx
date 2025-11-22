@@ -82,70 +82,54 @@ const AdminPage: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Gestion séparée pour chaque appel API pour un meilleur débogage
-      let usersData, annsData, propsData, cinData;
+      // Charger toutes les listes une fois pour alimenter les badges de la sidebar
+      const [usersRes, annsRes, propsRes, cinRes] = await Promise.all([
+        apiGet('/api/admin/users_list'),
+        apiGet('/api/admin/announcements_list'),
+        apiGet('/api/admin/properties_list'),
+        apiGet('/api/admin/cin_to_verify')
+      ]);
+
+      const usersText = await usersRes.text();
+      const annsText = await annsRes.text();
+      const propsText = await propsRes.text();
+      const cinText = await cinRes.text();
+
+      const uj = JSON.parse(usersText || '{}');
+      if (uj.success) setUsers(uj.data); else setUsers([]);
+
+      const aj = JSON.parse(annsText || '{}');
+      if (aj.success) setAnns(aj.data); else setAnns([]);
+
+      const pj = JSON.parse(propsText || '{}');
+      if (pj.success) setProps(pj.data); else setProps([]);
+
+      const cj = JSON.parse(cinText || '{}');
+      console.log('Réponse CIN complète:', cj);
       
-      try {
-        usersData = await apiGet('/api/admin/users_list');
-        console.log('Réponse utilisateurs:', usersData);
-        if (usersData.success) setUsers(usersData.data || []);
-        else setUsers([]);
-      } catch (error) {
-        console.error('Erreur lors du chargement des utilisateurs:', error);
-        setUsers([]);
-      }
-      
-      try {
-        annsData = await apiGet('/api/admin/announcements_list');
-        console.log('Réponse annonces:', annsData);
-        if (annsData?.success) setAnns(annsData.data || []);
-        else setAnns([]);
-      } catch (error) {
-        console.error('Erreur lors du chargement des annonces:', error);
-        setAnns([]);
-      }
-      
-      try {
-        propsData = await apiGet('/api/admin/properties_list');
-        console.log('Réponse propriétés:', propsData);
-        if (propsData?.success) setProps(propsData.data || []);
-        else setProps([]);
-      } catch (error) {
-        console.error('Erreur lors du chargement des propriétés:', error);
-        setProps([]);
-      }
-      
-      try {
-        cinData = await apiGet('/api/admin/cin_to_verify');
-        console.log('Réponse CIN complète:', cinData);
-        
-        if (cinData?.success) {
-          if (cinData.data?.cinToVerify && Array.isArray(cinData.data.cinToVerify)) {
-            setCinToVerify(cinData.data.cinToVerify);
-          } else if (cinData.data && Array.isArray(cinData.data)) {
-            setCinToVerify(cinData.data);
-          } else if (cinData.cinToVerify && Array.isArray(cinData.cinToVerify)) {
-            setCinToVerify(cinData.cinToVerify);
-          } else if (Array.isArray(cinData)) {
-            setCinToVerify(cinData);
-          } else {
-            console.warn('Structure de réponse CIN inattendue:', cinData);
-            setCinToVerify([]);
-          }
+      if (cj.success) {
+        if (cj.data && cj.data.cinToVerify && Array.isArray(cj.data.cinToVerify)) {
+          setCinToVerify(cj.data.cinToVerify);
+        } else if (cj.data && Array.isArray(cj.data)) {
+          setCinToVerify(cj.data);
+        } else if (cj.cinToVerify && Array.isArray(cj.cinToVerify)) {
+          setCinToVerify(cj.cinToVerify);
+        } else if (Array.isArray(cj)) {
+          setCinToVerify(cj);
         } else {
+          console.warn('Structure de réponse CIN inattendue:', cj);
           setCinToVerify([]);
         }
-      } catch (error) {
-        console.error('Erreur lors du chargement des CIN à vérifier:', error);
+      } else {
         setCinToVerify([]);
       }
-  } catch (error) {
-    console.error('Erreur chargement:', error);
-    toast.error('Erreur lors du chargement des données');
-  } finally {
-    setLoading(false);
-  }
-};
+    } catch (error) {
+      console.error('Erreur chargement:', error);
+      toast.error('Erreur lors du chargement des données');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Fonction pour obtenir l'URL de l'image
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
