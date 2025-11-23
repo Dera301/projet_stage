@@ -115,35 +115,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
+    const profileImage: File | undefined = (userData as any).profileImage;
+    
     try {
-      // D'abord uploader l'image si elle existe
-      let avatarUrl = null;
-      const profileImage: File | undefined = (userData as any).profileImage;
-      
-      if (profileImage) {
-        try {
-          const form = new FormData();
-          form.append('image', profileImage);
-          const uploadData = await apiUpload('/api/upload/image', form);
-          
-          if (uploadData.success) {
-            avatarUrl = uploadData.data?.url || uploadData.data?.path;
-            
-            // Vérifier la longueur de l'URL
-            if (avatarUrl && avatarUrl.length > 1000000) {
-              console.warn('URL de l\'avatar très longue:', avatarUrl.length, 'caractères');
-            }
-          } else {
-            console.warn('Échec de l\'upload de l\'image de profil, continuation sans image');
-          }
-        } catch (uploadError) {
-          console.error('Erreur lors de l\'upload de l\'image de profil:', uploadError);
-          // On continue même en cas d'échec de l'upload de l'image
-        }
-      }
-
-      // Ensuite, créer l'utilisateur avec l'URL de l'avatar
-      const data = await apiJson('/api/auth/register', 'POST', {
+      // D'abord créer l'utilisateur sans l'avatar
+      const registerData = {
         email: userData.email,
         password: userData.password,
         firstName: userData.firstName,
@@ -153,21 +129,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         university: userData.university,
         studyLevel: userData.studyLevel,
         budget: typeof (userData as any).budget === 'number' ? (userData as any).budget : Number((userData as any).budget) || null,
-        avatar: avatarUrl // Inclure l'URL de l'avatar dans la requête d'inscription
-      });
+      };
+      
+      const data = await apiJson('/api/auth/register', 'POST', registerData);
       
       if (!data.success) {
         throw new Error(data.message || 'Erreur lors de l\'inscription');
       }
-
-      // SUPPRIMER ces lignes qui connectent automatiquement l'utilisateur :
-      // setAuthToken(data.data?.token);
-      // const createdUser = data?.data?.user || data?.user;
-      // if (createdUser) {
-      //   setUser(mapApiUserToFront(createdUser));
-      // }
       
-      // Afficher un message de succès sans connecter l'utilisateur
+      // Si l'inscription réussit et qu'il y a une image de profil, on l'upload maintenant
+      if (profileImage && data.data?.token) {
+        try {
+          // Définir le token d'authentification pour les requêtes suivantes
+          setAuthToken(data.data.token);
+          
+          const form = new FormData();
+          form.append('image', profileImage);
+          
+          const uploadData = await apiUpload('/api/upload/image', form);
+          
+          if (uploadData.success && uploadData.data?.url) {
+            // Mettre à jour le profil de l'utilisateur avec l'URL de l'avatar
+            await apiJson('/api/users/me', 'PUT', {
+              avatar: uploadData.data.url
+            });
+          }
+        } catch (uploadError) {
+          console.error('Erreur lors de l\'upload de l\'image de profil:', uploadError);
+          // Ne pas échouer l'inscription à cause de l'échec de l'upload de l'image
+        } finally {
+          // Se déconnecter après l'upload
+          setAuthToken(null);
+        }
+      }
+      
+      // Afficher un message de succès
       toast.success('Inscription réussie ! Vous pouvez maintenant vous connecter.');
       
     } catch (error: any) {

@@ -4,28 +4,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import SimpleCaptcha from '../components/SimpleCaptcha';
-import { apiUpload } from '../config';
 
 
 const logoSrc = `${process.env.PUBLIC_URL}/logo_colo.svg`;
 
-const uploadImageToServer = async (file: File): Promise<string> => {
-  try {
-    const formData = new FormData();
-    formData.append('image', file);
-    
-    const data = await apiUpload('/api/upload/image', formData);
-    
-    if (!data.success) {
-      throw new Error(data.message || 'Erreur lors de l\'upload');
-    }
-    
-    return data.data?.url || data.data?.path || '';
-  } catch (error: any) {
-    console.error('Erreur upload:', error);
-    throw new Error(error.message || 'Erreur lors de l\'upload');
-  }
-};
+// L'upload d'image est maintenant géré dans le contexte d'authentification
 
 const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -45,7 +28,6 @@ const RegisterPage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [captchaVerified, setCaptchaVerified] = useState(false);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -80,22 +62,6 @@ const RegisterPage: React.FC = () => {
     }
   };
 
-  const uploadProfileImage = async (): Promise<string | null> => {
-    if (!formData.profileImage) return null;
-    
-    setIsUploadingImage(true);
-    try {
-      const imageUrl = await uploadImageToServer(formData.profileImage);
-      toast.success('Image de profil uploadée avec succès');
-      return imageUrl;
-    } catch (error: any) {
-      console.error('Erreur upload image profil:', error);
-      toast.error('Erreur lors de l\'upload de l\'image de profil');
-      throw error; // Propager l'erreur pour l'arrêter
-    } finally {
-      setIsUploadingImage(false);
-    }
-  };
 
   const validateEmail = async (email: string): Promise<boolean> => {
     // 1. Vérification basique du format
@@ -156,22 +122,11 @@ const RegisterPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      let avatarUrl = null;
+      // Préparer les données d'inscription
+      const { confirmPassword, ...registerData } = formData;
       
-      // Upload de l'image de profil si elle existe
-      if (formData.profileImage) {
-        avatarUrl = await uploadProfileImage();
-      }
-
-      const { confirmPassword, profileImage, ...registerData } = formData;
-      
-      // Ajouter l'URL de l'avatar aux données d'inscription
-      const finalRegisterData = {
-        ...registerData,
-        avatar: avatarUrl // Ajouter l'URL de l'image uploadée
-      };
-
-      await register(finalRegisterData);
+      // Inscrire l'utilisateur (l'upload de l'image est géré dans le contexte d'authentification)
+      await register(registerData);
       navigate('/login');
       toast.success('Inscription réussie ! Veuillez vous connecter.');
     } catch (error) {
