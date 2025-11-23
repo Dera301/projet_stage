@@ -13,7 +13,6 @@ router.put('/update_profile', verifyJWT, async (req, res) => {
   try {
     const userId = req.user.id;
     const updateData = req.body;
-
     // Prepare update data
     const data = {};
     if (updateData.firstName) data.firstName = updateData.firstName;

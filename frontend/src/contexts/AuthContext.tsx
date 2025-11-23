@@ -160,20 +160,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error(data.message || 'Erreur lors de l\'inscription');
       }
 
-      // Mettre à jour le token d'authentification
-      const token = data?.data?.token || data?.token;
-      if (token) {
-        setAuthToken(token);
-      }
+      // SUPPRIMER ces lignes qui connectent automatiquement l'utilisateur :
+      // setAuthToken(data.data?.token);
+      // const createdUser = data?.data?.user || data?.user;
+      // if (createdUser) {
+      //   setUser(mapApiUserToFront(createdUser));
+      // }
       
-      // Mettre à jour l'utilisateur connecté
-      const createdUser = data?.data?.user || data?.user;
-      if (createdUser) {
-        setUser(mapApiUserToFront(createdUser));
-      }
+      // Afficher un message de succès sans connecter l'utilisateur
+      toast.success('Inscription réussie ! Vous pouvez maintenant vous connecter.');
       
-      // Afficher un message de succès
-      toast.success('Inscription réussie !');
     } catch (error: any) {
       console.error('Erreur lors de l\'inscription:', error);
       toast.error(error.message || 'Erreur lors de l\'inscription');
@@ -182,7 +178,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(false);
     }
   };
-
   const logout = async () => {
   try {
     await apiJson('/api/auth/logout', 'POST');
