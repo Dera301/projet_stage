@@ -62,6 +62,13 @@ const AdminPage: React.FC = () => {
     loadData();
     loadStats();
   }, [activeTab]);
+  
+  const [cinRejectModal, setCinRejectModal] = useState<{open: boolean, userId: string | null, reason: string}>({
+    open: false,
+    userId: null,
+    reason: ''
+  });
+
 
   const loadStats = async () => {
     try {
@@ -204,13 +211,6 @@ const AdminPage: React.FC = () => {
       toast.error('Erreur lors de la suppression');
     }
   };
-
-  const [cinRejectModal, setCinRejectModal] = useState<{open: boolean, userId: string | null, reason: string}>({
-    open: false,
-    userId: null,
-    reason: ''
-  });
-
   const handleVerifyCIN = async (userId: string, approved: boolean, reason?: string) => {
     try {
       const payload: any = { verified: approved };
