@@ -119,13 +119,22 @@ const Navbar: React.FC = () => {
         }}
         backButtonText="Fermer"
       />
-      <nav className="bg-white shadow-lg border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+      <nav className="bg-white shadow-lg border-b border-gray-200 fixed top-0 left-0 right-0 z-50 w-full">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 w-full">
+        <div className="flex justify-between items-center h-16 sm:h-20 w-full">
           {/* Logo */}
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center">
-              <img src="/logo_colo.svg" alt="ColocAntananarivo" className="h-20 w-auto" />
+          <div className="flex-shrink-0 flex items-center">
+            <Link to="/" className="flex items-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 rounded-md">
+              <img 
+                src="/logo_colo.svg" 
+                alt="ColocAntananarivo" 
+                className="h-12 w-auto sm:h-14 md:h-16 transition-all duration-200" 
+                style={{
+                  maxWidth: 'min(180px, 30vw)',
+                  height: 'auto',
+                  objectFit: 'contain'
+                }}
+              />
             </Link>
           </div>
 
