@@ -66,4 +66,33 @@ router.post('/image', verifyJWT, upload.single('image'), handleMulterError, asyn
   }
 });
 
+// Upload image publique pour l'inscription (sans authentification)
+router.post('/image/public', upload.single('image'), handleMulterError, async (req, res) => {
+  try {
+    if (!req.file) {
+      return sendError(res, 'Aucun fichier uploadé', 400);
+    }
+
+    // Upload vers Cloudinary (utilise le dossier avatars pour les photos de profil)
+    const result = await uploadBuffer(req.file.buffer, 'avatars', {
+      transformation: [
+        { width: 400, height: 400, gravity: 'face', crop: 'thumb' },
+        { quality: 'auto:good' }
+      ]
+    });
+
+    // Retourner l'URL Cloudinary
+    return sendResponse(res, {
+      path: result.secure_url,
+      url: result.secure_url,
+      public_id: result.public_id,
+      filename: req.file.originalname,
+      size: req.file.size
+    }, 'Image uploadée avec succès');
+  } catch (error) {
+    console.error('Upload image public error:', error);
+    return sendError(res, 'Erreur lors de l\'upload: ' + error.message, 500);
+  }
+});
+
 module.exports = router;

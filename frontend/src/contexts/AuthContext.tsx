@@ -126,7 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
     try {
-      // D'abord uploader l'image si elle existe
+      // D'abord uploader l'image si elle existe (utiliser la route publique pour l'inscription)
       let avatarUrl = null;
       const profileImage: File | undefined = (userData as any).profileImage;
       
@@ -134,19 +134,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           const form = new FormData();
           form.append('image', profileImage);
-          const uploadData = await apiUpload('/api/upload/image', form);
+          // Utiliser la route publique d'upload pour l'inscription (sans authentification)
+          const uploadData = await apiUpload('/api/upload/image/public', form);
           
           if (uploadData.success) {
             avatarUrl = uploadData.data?.url || uploadData.data?.path;
+            console.log('✅ Avatar uploadé avec succès:', avatarUrl);
             
             // L'URL de l'avatar peut être aussi longue que nécessaire (TEXT dans la DB)
             // Pas de limite comme pour les images des annonces
           } else {
             console.warn('Échec de l\'upload de l\'image de profil, continuation sans image');
           }
-        } catch (uploadError) {
+        } catch (uploadError: any) {
           console.error('Erreur lors de l\'upload de l\'image de profil:', uploadError);
           // On continue même en cas d'échec de l'upload de l'image
+          // Mais on affiche un avertissement
+          if (uploadError.message && !uploadError.message.includes('401')) {
+            toast.error('Impossible d\'uploader la photo de profil, continuation sans photo');
+          }
         }
       }
 

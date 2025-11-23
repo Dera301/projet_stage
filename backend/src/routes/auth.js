@@ -59,6 +59,10 @@ router.post('/register', async (req, res) => {
     const accountActivationDeadline = new Date();
     accountActivationDeadline.setHours(accountActivationDeadline.getHours() + 24);
 
+    // Récupérer l'avatar depuis le body
+    const avatar = req.body.avatar || null;
+    console.log('📸 Avatar reçu lors de l\'inscription:', avatar ? 'Oui' : 'Non', avatar ? `(${avatar.length} caractères)` : '');
+
     // Create user in database
     const userData = {
       email,
@@ -73,7 +77,7 @@ router.post('/register', async (req, res) => {
       clerkId: clerkId,
       isVerified: false,
       accountActivationDeadline,
-      avatar: req.body.avatar || null  // Ajout du champ avatar
+      avatar: avatar  // Inclure l'avatar dans les données utilisateur
     };
 
     const user = await prisma.user.create({
@@ -88,6 +92,7 @@ router.post('/register', async (req, res) => {
         university: true,
         studyLevel: true,
         budget: true,
+        avatar: true,
         isVerified: true,
         createdAt: true
       }
