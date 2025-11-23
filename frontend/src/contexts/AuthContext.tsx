@@ -149,19 +149,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const uploadData = await apiUpload('/api/upload/image', form);
           
           if (uploadData.success && uploadData.data?.url) {
-            // Vérifier la longueur de l'URL et la tronquer si nécessaire (max 255 caractères)
-            let avatarUrl = uploadData.data.url;
-            if (avatarUrl.length > 255) {
-              // Si l'URL est trop longue, on la tronque en gardant le début et la fin
-              const maxLength = 255;
-              const partLength = Math.floor((maxLength - 3) / 2);
-              avatarUrl = `${avatarUrl.substring(0, partLength)}...${avatarUrl.substring(avatarUrl.length - partLength)}`;
-              console.warn('L\'URL de l\'avatar a été tronquée pour respecter la limite de 255 caractères');
-            }
+            // Utiliser l'URL complète de Cloudinary
+            const cloudinaryUrl = uploadData.data.url;
             
-            // Mettre à jour le profil de l'utilisateur avec l'URL de l'avatar
+            // Stocker l'URL complète dans la base de données
+            // La validation côté serveur devrait accepter cette URL
             await apiJson('/api/users/me', 'PUT', {
-              avatar: avatarUrl
+              avatar: cloudinaryUrl
             });
           }
         } catch (uploadError) {
