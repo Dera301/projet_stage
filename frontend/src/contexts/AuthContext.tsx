@@ -3,6 +3,7 @@ import { User, AuthContextType, RegisterData, CINVerificationData } from '../typ
 import { apiGet, apiJson, apiUpload, setAuthToken, setUnauthorizedCallback } from '../config';
 import toast from 'react-hot-toast';
 import { cinVerificationService } from '../services/cinVerificationService';
+import { uploadAvatarPublic } from '../services/avatarUploadService';
 import { getStorage, removeStorage, clearStorage } from '../utils/storage';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -126,37 +127,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
     try {
-      // D'abord uploader l'image si elle existe (utiliser la route publique pour l'inscription)
+      // Uploader l'image si elle existe (même méthode que les annonces/propriétés)
       let avatarUrl = null;
       const profileImage: File | undefined = (userData as any).profileImage;
       
       if (profileImage) {
         try {
-          const form = new FormData();
-          form.append('image', profileImage);
-          // Utiliser la route publique d'upload pour l'inscription (sans authentification)
-          const uploadData = await apiUpload('/api/upload/image/public', form);
+          // Uploader l'image (même méthode que les annonces/propriétés, mais via route publique pour l'inscription)
+          avatarUrl = await uploadAvatarPublic(profileImage);
+          console.log('✅ Avatar uploadé avec succès:', avatarUrl ? 'Oui' : 'Non');
           
-          if (uploadData.success) {
-            avatarUrl = uploadData.data?.url || uploadData.data?.path;
-            console.log('✅ Avatar uploadé avec succès:', avatarUrl);
-            
-            // L'URL de l'avatar peut être aussi longue que nécessaire (TEXT dans la DB)
-            // Pas de limite comme pour les images des annonces
-          } else {
-            console.warn('Échec de l\'upload de l\'image de profil, continuation sans image');
+          if (!avatarUrl) {
+            throw new Error('L\'upload de l\'image a échoué');
           }
-        } catch (uploadError: any) {
-          console.error('Erreur lors de l\'upload de l\'image de profil:', uploadError);
-          // On continue même en cas d'échec de l'upload de l'image
-          // Mais on affiche un avertissement
-          if (uploadError.message && !uploadError.message.includes('401')) {
-            toast.error('Impossible d\'uploader la photo de profil, continuation sans photo');
-          }
+        } catch (imageError: any) {
+          console.error('Erreur lors de l\'upload de l\'image:', imageError);
+          // Si l'image est fournie mais qu'il y a une erreur, on fait échouer l'inscription
+          throw new Error(`Erreur avec l'image de profil: ${imageError.message}`);
         }
       }
 
-      // Ensuite, créer l'utilisateur avec l'URL de l'avatar
+      // Créer l'utilisateur avec l'URL de l'avatar (même méthode que les annonces/propriétés)
       const data = await apiJson('/api/auth/register', 'POST', {
         email: userData.email,
         password: userData.password,
@@ -167,7 +158,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         university: userData.university,
         studyLevel: userData.studyLevel,
         budget: typeof (userData as any).budget === 'number' ? (userData as any).budget : Number((userData as any).budget) || null,
-        avatar: avatarUrl // Inclure l'URL de l'avatar dans la requête d'inscription
+        avatar: avatarUrl // Stocker l'URL comme TEXT dans la DB (pas de limite, comme les annonces/propriétés)
       });
       
       if (!data.success) {

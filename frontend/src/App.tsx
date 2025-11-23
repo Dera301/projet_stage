@@ -45,6 +45,11 @@ import PrivacyPage from './pages/PrivacyPage';
 function AppContent() {
   const location = useLocation();
   const isAdminAuthPage = location.pathname.startsWith('/admin/login') || location.pathname.startsWith('/admin/register');
+  
+  // Ajouter un padding-top pour compenser la navbar fixe
+  React.useEffect(() => {
+    document.documentElement.style.setProperty('--navbar-height', '64px');
+  }, []);
 
   // Smooth scroll to top on route change
   React.useEffect(() => {
@@ -61,7 +66,7 @@ function AppContent() {
       {!isAdminAuthPage && <CINVerificationBanner />}
       
       {/* 🔥 CORRECTION : Main container avec gestion du débordement */}
-      <main className="flex-grow w-full overflow-x-hidden">
+      <main className="flex-grow w-full overflow-x-hidden pt-16">
         <div className="w-full max-w-full overflow-x-hidden">
           <AnimatePresence mode="wait" initial={false}>
             <Routes location={location} key={location.pathname}>

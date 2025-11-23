@@ -10,7 +10,7 @@ import {
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { uploadAvatar } from '../services/avatarUploadService'; // ← Importer le service avatar
+import { uploadAvatar } from '../services/avatarUploadService'; // Même service que les annonces/propriétés
 
 import { Link } from 'react-router-dom';
 
@@ -73,14 +73,15 @@ const ProfilePage: React.FC = () => {
     try {
       toast.loading('Téléchargement de la photo...', { id: toastId });
       
-      // Utiliser le service spécifique pour avatar
-      const url = await uploadAvatar(file);
+      // Utiliser exactement la même méthode que les annonces/propriétés
+      const avatarUrl = await uploadAvatar(file);
       
-      // Update the profile with the new avatar URL (sans limite de longueur, comme pour les annonces)
+      // Update the profile with the new avatar URL (stocké comme TEXT dans la DB, pas de limite)
+      // Même méthode que pour les annonces et propriétés
       if (updateProfile) {
-        await updateProfile({ avatar: url });
+        await updateProfile({ avatar: avatarUrl });
         if (user) {
-          setUser({ ...user, avatar: url });
+          setUser({ ...user, avatar: avatarUrl });
         }
       }
       
