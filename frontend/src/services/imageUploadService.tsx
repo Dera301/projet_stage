@@ -1,5 +1,5 @@
 // services/imageUploadService.tsx
-import { apiUpload } from '../config';
+import { apiUpload, apiJson } from '../config';
 
 type ImageType = 'property' | 'announcement' | 'avatar';
 
@@ -162,7 +162,7 @@ export const deleteImage = async (publicId: string): Promise<void> => {
   if (!publicId) return;
   
   try {
-    await apiUpload(`api/upload/${publicId}`, {}, 'DELETE');
+    await apiJson(`api/upload/${publicId}`, 'DELETE');
   } catch (error) {
     console.error('Erreur lors de la suppression de l\'image:', error);
     throw new Error('Impossible de supprimer l\'image');
