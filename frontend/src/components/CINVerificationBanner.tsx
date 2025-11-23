@@ -57,7 +57,7 @@ const CINVerificationBanner: React.FC = () => {
           <div className="flex items-center">
             <ClockIcon className="h-5 w-5 text-blue-400" />
             <p className="ml-3 text-sm text-blue-700">
-              <strong>Vérification en cours :</strong> Votre demande est en attente de validation.
+              <strong>Vérification en cours :</strong> Votre demande est en attente de validation. Si la demande est envoyée, vous serez notifié par email.
               {' '}
               <Link to="/profile" className="font-medium underline text-blue-700 hover:text-blue-600">
                 Voir mon profil →

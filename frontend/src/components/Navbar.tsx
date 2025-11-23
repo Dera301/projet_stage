@@ -13,8 +13,6 @@ import {
   PlusIcon
 } from '@heroicons/react/24/outline';
 
-const logoSrc = `${process.env.PUBLIC_URL}/logo_colo.svg`;
-
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const { conversations } = useMessage();
@@ -145,6 +143,12 @@ const Navbar: React.FC = () => {
               <Link 
                 to="/dashboard" 
                 className={getLinkClass('/dashboard')}
+                onClick={(e) => {
+                  if (requiresVerification) {
+                    e.preventDefault();
+                    setShowVerificationModal(true);
+                  }
+                }}
               >
                 Dashboard
               </Link>

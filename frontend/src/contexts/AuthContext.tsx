@@ -127,13 +127,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
     try {
-      // Uploader l'image si elle existe (même méthode que les annonces/propriétés)
+      // Uploader l'image si elle existe
       let avatarUrl = null;
       const profileImage: File | undefined = (userData as any).profileImage;
       
       if (profileImage) {
         try {
-          // Uploader l'image (même méthode que les annonces/propriétés, mais via route publique pour l'inscription)
           avatarUrl = await uploadAvatarPublic(profileImage);
           console.log('✅ Avatar uploadé avec succès:', avatarUrl ? 'Oui' : 'Non');
           
@@ -142,12 +141,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         } catch (imageError: any) {
           console.error('Erreur lors de l\'upload de l\'image:', imageError);
-          // Si l'image est fournie mais qu'il y a une erreur, on fait échouer l'inscription
           throw new Error(`Erreur avec l'image de profil: ${imageError.message}`);
         }
       }
 
-      // Créer l'utilisateur avec l'URL de l'avatar (même méthode que les annonces/propriétés)
+      // Créer l'utilisateur
       const data = await apiJson('/api/auth/register', 'POST', {
         email: userData.email,
         password: userData.password,
@@ -158,27 +156,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         university: userData.university,
         studyLevel: userData.studyLevel,
         budget: typeof (userData as any).budget === 'number' ? (userData as any).budget : Number((userData as any).budget) || null,
-        avatar: avatarUrl // Stocker l'URL comme TEXT dans la DB (pas de limite, comme les annonces/propriétés)
+        avatar: avatarUrl
       });
       
       if (!data.success) {
         throw new Error(data.message || 'Erreur lors de l\'inscription');
       }
-
-      // Mettre à jour le token d'authentification
-      const token = data?.data?.token || data?.token;
-      if (token) {
-        setAuthToken(token);
-      }
       
-      // Mettre à jour l'utilisateur connecté
-      const createdUser = data?.data?.user || data?.user;
-      if (createdUser) {
-        setUser(mapApiUserToFront(createdUser));
-      }
+      // Ne pas connecter automatiquement l'utilisateur
+      // Réinitialiser l'état d'authentification
+      setUser(null);
+      setAuthToken(null);
       
-      // Afficher un message de succès
-      toast.success('Inscription réussie !');
+      toast.success('Inscription réussie ! Veuillez vous connecter.');
     } catch (error: any) {
       console.error('Erreur lors de l\'inscription:', error);
       toast.error(error.message || 'Erreur lors de l\'inscription');
