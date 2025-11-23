@@ -13,6 +13,7 @@ router.put('/update_profile', verifyJWT, async (req, res) => {
   try {
     const userId = req.user.id;
     const updateData = req.body;
+
     // Prepare update data
     const data = {};
     if (updateData.firstName) data.firstName = updateData.firstName;
@@ -21,7 +22,11 @@ router.put('/update_profile', verifyJWT, async (req, res) => {
     if (updateData.university) data.university = updateData.university;
     if (updateData.studyLevel) data.studyLevel = updateData.studyLevel;
     if (updateData.bio) data.bio = updateData.bio;
-    if (updateData.avatar) data.avatar = updateData.avatar;
+    // Avatar field is TEXT in database, no length limit - accept any length URL
+    if (updateData.avatar !== undefined) {
+      // Ensure avatar is a string and handle long URLs (TEXT field supports unlimited length)
+      data.avatar = String(updateData.avatar);
+    }
     if (updateData.budget !== undefined) data.budget = updateData.budget ? parseFloat(updateData.budget) : null;
 
     // Update password if provided
@@ -89,7 +94,11 @@ router.put('/me', verifyJWT, async (req, res) => {
     if (updateData.university) data.university = updateData.university;
     if (updateData.studyLevel) data.studyLevel = updateData.studyLevel;
     if (updateData.bio) data.bio = updateData.bio;
-    if (updateData.avatar) data.avatar = updateData.avatar;
+    // Avatar field is TEXT in database, no length limit - accept any length URL
+    if (updateData.avatar !== undefined) {
+      // Ensure avatar is a string and handle long URLs (TEXT field supports unlimited length)
+      data.avatar = String(updateData.avatar);
+    }
     if (updateData.budget !== undefined) data.budget = updateData.budget ? parseFloat(updateData.budget) : null;
 
     if (updateData.password) {

@@ -59,6 +59,10 @@ router.post('/register', async (req, res) => {
     const accountActivationDeadline = new Date();
     accountActivationDeadline.setHours(accountActivationDeadline.getHours() + 24);
 
+    // Récupérer l'avatar depuis le body
+    const avatar = req.body.avatar || null;
+    console.log('📸 Avatar reçu lors de l\'inscription:', avatar ? 'Oui' : 'Non', avatar ? `(${avatar.length} caractères)` : '');
+
     // Create user in database
     const userData = {
       email,
@@ -73,7 +77,7 @@ router.post('/register', async (req, res) => {
       clerkId: clerkId,
       isVerified: false,
       accountActivationDeadline,
-      avatar: req.body.avatar || null  // Ajout du champ avatar
+      avatar: avatar  // Inclure l'avatar dans les données utilisateur
     };
 
     const user = await prisma.user.create({
@@ -88,6 +92,7 @@ router.post('/register', async (req, res) => {
         university: true,
         studyLevel: true,
         budget: true,
+        avatar: true,
         isVerified: true,
         createdAt: true
       }
@@ -226,12 +231,13 @@ router.post('/verify_cin', verifyJWT, async (req, res) => {
     }
 
     // Update user with CIN information
+    // Les champs cinRectoImagePath et cinVersoImagePath sont TEXT dans la DB, pas de limite de longueur
     const user = await prisma.user.update({
       where: { id: userId },
       data: {
         cinNumber,
-        cinRectoImagePath: cinRectoImagePath || null,
-        cinVersoImagePath: cinVersoImagePath || null,
+        cinRectoImagePath: cinRectoImagePath ? String(cinRectoImagePath) : null,
+        cinVersoImagePath: cinVersoImagePath ? String(cinVersoImagePath) : null,
         cinData: cinData ? JSON.stringify(cinData) : null,
         cinVerified: false, // Will be verified by admin
         cinVerificationRequestedAt: new Date()

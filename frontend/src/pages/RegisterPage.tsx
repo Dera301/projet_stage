@@ -3,13 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { RegisterData } from '../types';
 import SimpleCaptcha from '../components/SimpleCaptcha';
 
-
 const logoSrc = `${process.env.PUBLIC_URL}/logo_colo.svg`;
-
-// L'upload d'image est maintenant géré dans le contexte d'authentification
 
 const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -43,26 +39,12 @@ const RegisterPage: React.FC = () => {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      
-      // Validation du fichier
-      if (!file.type.startsWith('image/')) {
-        toast.error('Veuillez sélectionner une image valide');
-        return;
-      }
-      
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('L\'image est trop volumineuse (max 5MB)');
-        return;
-      }
-      
       setFormData({
         ...formData,
-        profileImage: file
+        profileImage: e.target.files[0]
       });
     }
   };
-
 
   const validateEmail = async (email: string): Promise<boolean> => {
     // 1. Vérification basique du format
@@ -123,44 +105,13 @@ const RegisterPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Créer un objet avec les données d'inscription
-      const { confirmPassword, profileImage, ...registrationData } = formData;
-      
-      // Préparer les données utilisateur pour l'inscription
-      const userData: Omit<RegisterData, 'confirmPassword' | 'profileImage'> & { budget?: number | string } = {
-        ...registrationData,
-      };
-      
-      // Convertir le budget en nombre si nécessaire
-      if (userData.budget !== undefined) {
-        userData.budget = typeof userData.budget === 'string' && userData.budget !== '' ? 
-          Number(userData.budget) : 
-          (userData.budget as number | undefined);
-      }
-      
-      // Inscrire l'utilisateur
-      await register(userData as RegisterData);
-      
-      // Si une image de profil est fournie, l'uploader séparément
-      if (profileImage) {
-        try {
-          const formDataToSend = new FormData();
-          formDataToSend.append('image', profileImage);
-          
-          // L'upload de l'image sera géré par la fonction register du contexte
-          // qui est déjà configurée pour gérer l'upload après l'inscription
-        } catch (uploadError) {
-          console.error('Erreur lors de l\'upload de l\'image de profil:', uploadError);
-          // Ne pas échouer l'inscription à cause de l'échec de l'upload de l'image
-        }
-      }
-      
-      // Rediriger vers la page de connexion avec un message de succès
+      const { confirmPassword, ...registerData } = formData;
+      await register(registerData);
+      // 🔹 REDIRECTION VERS LA PAGE DE CONNEXION APRÈS INSCRIPTION
       navigate('/login');
       toast.success('Inscription réussie ! Veuillez vous connecter.');
     } catch (error) {
-      console.error('Erreur lors de l\'inscription :', error);
-      toast.error('Une erreur est survenue lors de l\'inscription');
+      // L'erreur est déjà gérée dans le contexte
     } finally {
       setIsLoading(false);
     }

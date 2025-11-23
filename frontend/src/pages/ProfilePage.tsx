@@ -10,7 +10,8 @@ import {
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { apiUpload, getCloudinaryUrl } from '../config';
+import { uploadAvatar } from '../services/avatarUploadService'; // Même service que les annonces/propriétés
+
 import { Link } from 'react-router-dom';
 
 const ProfilePage: React.FC = () => {
@@ -62,40 +63,9 @@ const ProfilePage: React.FC = () => {
 
   const [isUploading, setIsUploading] = useState(false);
 
-  const uploadImageToServer = async (file: File): Promise<string> => {
-    try {
-      const formData = new FormData();
-      formData.append('image', file);
-      
-      const data = await apiUpload('/api/upload/image', formData);
-      
-      if (!data.success) {
-        throw new Error(data.message || 'Erreur lors de l\'upload');
-      }
-      
-      return data.data?.url || data.data?.path || '';
-    } catch (error: any) {
-      console.error('Erreur upload:', error);
-      throw new Error(error.message || 'Erreur lors de l\'upload');
-    }
-  };
-
-  
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
-    // Vérifier le type de fichier
-    if (!file.type.startsWith('image/')) { 
-      toast.error(`${file.name} n'est pas une image valide`); 
-      return; 
-    }
-    
-    // Vérifier la taille du fichier (max 5MB)
-    if (file.size > 5 * 1024 * 1024) { 
-      toast.error(`${file.name} est trop volumineux (max 5MB)`); 
-      return; 
-    }
     
     setIsUploading(true);
     const toastId = 'avatar-upload';
@@ -103,44 +73,22 @@ const ProfilePage: React.FC = () => {
     try {
       toast.loading('Téléchargement de la photo...', { id: toastId });
       
-      // Télécharger l'image
-      const url = await uploadImageToServer(file);
+      // Utiliser exactement la même méthode que les annonces/propriétés
+      const avatarUrl = await uploadAvatar(file);
       
-      if (!url) {
-        throw new Error('Aucune URL valide retournée après l\'upload');
-      }
-      
-      console.log('URL de l\'image uploadée:', url);
-      
-      // Mettre à jour le profil avec la nouvelle URL d'avatar
+      // Update the profile with the new avatar URL (stocké comme TEXT dans la DB, pas de limite)
+      // Même méthode que pour les annonces et propriétés
       if (updateProfile) {
-        console.log('Mise à jour du profil avec l\'URL:', url);
-        await updateProfile({ avatar: url });
+        await updateProfile({ avatar: avatarUrl });
         if (user) {
-          setUser({ ...user, avatar: url });
+          setUser({ ...user, avatar: avatarUrl });
         }
       }
       
       toast.success('Photo de profil mise à jour avec succès', { id: toastId });
     } catch (error: any) {
-      console.error('Erreur lors de la mise à jour de l\'avatar:', error);
-      
-      // Afficher un message d'erreur plus détaillé
-      let errorMessage = 'Échec du téléchargement de la photo';
-      
-      if (error.message) {
-        if (error.message.includes('400') || error.message.includes('Bad Request')) {
-          errorMessage = 'Erreur de validation. Veuillez réessayer avec une autre image.';
-        } else if (error.message.includes('413') || error.message.includes('trop volumineux')) {
-          errorMessage = 'L\'image est trop volumineuse. Taille maximale: 5MB';
-        } else if (error.message.includes('500') || error.message.includes('Erreur serveur')) {
-          errorMessage = 'Erreur du serveur. Veuillez réessayer plus tard.';
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      
-      toast.error(errorMessage, { id: toastId, duration: 5000 });
+      console.error('Error updating avatar:', error);
+      toast.error(error.message || 'Échec du téléchargement de la photo', { id: toastId });
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -197,7 +145,7 @@ const ProfilePage: React.FC = () => {
                       </div>
                     ) : user.avatar ? (
                       <img 
-                        src={getCloudinaryUrl(user.avatar, { width: 200, height: 200 })} 
+                        src={user.avatar} 
                         alt="Avatar" 
                         className="w-full h-full object-cover"
                         onError={(e) => {

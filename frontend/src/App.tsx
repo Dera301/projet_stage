@@ -39,10 +39,17 @@ import AdminPage from './pages/AdminPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminRegisterPage from './pages/AdminRegisterPage';
 import AppointmentsPage from './pages/AppointmentsPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 function AppContent() {
   const location = useLocation();
   const isAdminAuthPage = location.pathname.startsWith('/admin/login') || location.pathname.startsWith('/admin/register');
+  
+  // Ajouter un padding-top pour compenser la navbar fixe
+  React.useEffect(() => {
+    document.documentElement.style.setProperty('--navbar-height', '64px');
+  }, []);
 
   // Smooth scroll to top on route change
   React.useEffect(() => {
@@ -59,7 +66,7 @@ function AppContent() {
       {!isAdminAuthPage && <CINVerificationBanner />}
       
       {/* 🔥 CORRECTION : Main container avec gestion du débordement */}
-      <main className="flex-grow w-full overflow-x-hidden">
+      <main className="flex-grow w-full overflow-x-hidden pt-16">
         <div className="w-full max-w-full overflow-x-hidden">
           <AnimatePresence mode="wait" initial={false}>
             <Routes location={location} key={location.pathname}>
@@ -112,6 +119,20 @@ function AppContent() {
                 <PageTransition>
                   <div className="w-full overflow-x-hidden">
                     <ContactPage />
+                  </div>
+                </PageTransition>
+              } />
+              <Route path="/terms" element={
+                <PageTransition>
+                  <div className="w-full overflow-x-hidden">
+                    <TermsPage />
+                  </div>
+                </PageTransition>
+              } />
+              <Route path="/privacy" element={
+                <PageTransition>
+                  <div className="w-full overflow-x-hidden">
+                    <PrivacyPage />
                   </div>
                 </PageTransition>
               } />

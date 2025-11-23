@@ -12,7 +12,6 @@ import {
   ChatBubbleLeftRightIcon as ChatIcon,
   PlusIcon
 } from '@heroicons/react/24/outline';
-import { getCloudinaryUrl } from '../config';
 
 const logoSrc = `${process.env.PUBLIC_URL}/logo_colo.svg`;
 
@@ -122,7 +121,7 @@ const Navbar: React.FC = () => {
         }}
         backButtonText="Fermer"
       />
-      <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
+      <nav className="bg-white shadow-lg border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo */}
@@ -234,16 +233,7 @@ const Navbar: React.FC = () => {
                     ${isActiveLink('/profile') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'}
                   `}>
                     {user.avatar ? (
-                      <img 
-                        src={getCloudinaryUrl(user.avatar, { width: 48, height: 48 })} 
-                        alt="avatar" 
-                        className="w-6 h-6 rounded-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.onerror = null;
-                          target.src = '/default-avatar.png';
-                        }}
-                      />
+                      <img src={user.avatar} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
                     ) : (
                       <UserIcon className="w-5 h-5" />
                     )}
@@ -251,23 +241,45 @@ const Navbar: React.FC = () => {
                       {user.firstName}
                     </span>
                   </button>
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-gray-200">
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-gray-200">
                     <Link
                       to="/dashboard"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary-600 transition-colors"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary-600 transition-colors whitespace-nowrap"
                     >
                       Tableau de bord
                     </Link>
                     <Link
                       to="/profile"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary-600 transition-colors"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary-600 transition-colors whitespace-nowrap"
                     >
                       Mon profil
                     </Link>
+                    {/* Afficher le statut de vérification CIN */}
+                    {user.userType === 'owner' && (
+                      <>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        {user.cinVerified ? (
+                          <div className="px-4 py-2 text-xs text-green-600 bg-green-50">
+                            ✓ CIN Vérifiée
+                          </div>
+                        ) : user.cinPending || (user as any).cin_verification_requested_at ? (
+                          <div className="px-4 py-2 text-xs text-blue-600 bg-blue-50">
+                            ⏳ Vérification en cours
+                          </div>
+                        ) : (
+                          <Link
+                            to="/cin-verification"
+                            className="block px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 transition-colors whitespace-nowrap"
+                          >
+                            Vérifier ma CIN
+                          </Link>
+                        )}
+                      </>
+                    )}
                     <div className="border-t border-gray-100 my-1"></div>
                     <button
                       onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-red-600 transition-colors"
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-red-600 transition-colors whitespace-nowrap"
                     >
                       <LogoutIcon className="w-4 h-4 inline mr-2" />
                       Déconnexion
@@ -379,16 +391,7 @@ const Navbar: React.FC = () => {
                     <div className="flex items-center justify-between px-3 py-2">
                       <div className="flex items-center">
                         {user.avatar ? (
-                          <img 
-                            src={getCloudinaryUrl(user.avatar, { width: 40, height: 40 })} 
-                            alt="avatar" 
-                            className="w-5 h-5 rounded-full object-cover mr-3"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.onerror = null;
-                              target.src = '/default-avatar.png';
-                            }}
-                          />
+                          <img src={user.avatar} alt="avatar" className="w-5 h-5 rounded-full object-cover mr-3" />
                         ) : (
                           <UserIcon className="w-5 h-5 text-gray-400 mr-3" />
                         )}

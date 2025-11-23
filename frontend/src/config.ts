@@ -24,6 +24,13 @@ const buildUrl = (endpoint: string): string => {
   return finalUrl;
 };
 
+// Variable globale pour gérer la déconnexion en cas d'erreur 401
+let onUnauthorizedCallback: (() => void) | null = null;
+
+export const setUnauthorizedCallback = (callback: () => void) => {
+  onUnauthorizedCallback = callback;
+};
+
 export const apiGet = async (url: string) => {
   const fullUrl = buildUrl(url);
   
@@ -47,7 +54,23 @@ export const apiGet = async (url: string) => {
     if (!response.ok) {
        const errorText = await response.text();
        console.error('❌ Server Error Response:', errorText);
-       throw new Error(`Erreur serveur: ${response.status}`);
+       
+       // Gérer les erreurs 401 (Unauthorized) - Token invalide ou expiré
+       if (response.status === 401) {
+         console.warn('⚠️ Token invalide ou expiré, déconnexion...');
+         // Déclencher la déconnexion si callback disponible
+         if (onUnauthorizedCallback) {
+           onUnauthorizedCallback();
+         }
+       }
+       
+       // Essayer de parser le JSON pour obtenir le message d'erreur détaillé
+       try {
+         const errorJson = JSON.parse(errorText);
+         throw new Error(errorJson.message || `Erreur serveur: ${response.status}`);
+       } catch (e) {
+         throw new Error(`Erreur serveur: ${response.status}`);
+       }
     }
     
     const text = await response.text();
@@ -84,7 +107,23 @@ export const apiUpload = async (url: string, formData: FormData) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ Server Error Response:', errorText);
-      throw new Error(`Erreur serveur: ${response.status}`);
+      
+      // Gérer les erreurs 401 (Unauthorized) - Token invalide ou expiré
+      if (response.status === 401) {
+        console.warn('⚠️ Token invalide ou expiré, déconnexion...');
+        // Déclencher la déconnexion si callback disponible
+        if (onUnauthorizedCallback) {
+          onUnauthorizedCallback();
+        }
+      }
+      
+      // Essayer de parser le JSON pour obtenir le message d'erreur détaillé
+      try {
+        const errorJson = JSON.parse(errorText);
+        throw new Error(errorJson.message || `Erreur serveur: ${response.status}`);
+      } catch (e) {
+        throw new Error(`Erreur serveur: ${response.status}`);
+      }
     }
 
     const text = await response.text();
@@ -123,7 +162,23 @@ export const apiJson = async (url: string, method: string, data?: any) => {
     if (!response.ok) {
        const errorText = await response.text();
        console.error('❌ Server Error Response:', errorText);
-       throw new Error(`Erreur serveur: ${response.status}`);
+       
+       // Gérer les erreurs 401 (Unauthorized) - Token invalide ou expiré
+       if (response.status === 401) {
+         console.warn('⚠️ Token invalide ou expiré, déconnexion...');
+         // Déclencher la déconnexion si callback disponible
+         if (onUnauthorizedCallback) {
+           onUnauthorizedCallback();
+         }
+       }
+       
+       // Essayer de parser le JSON pour obtenir le message d'erreur détaillé
+       try {
+         const errorJson = JSON.parse(errorText);
+         throw new Error(errorJson.message || `Erreur serveur: ${response.status}`);
+       } catch (e) {
+         throw new Error(`Erreur serveur: ${response.status}`);
+       }
     }
     
     const text = await response.text();
@@ -156,49 +211,20 @@ export const getApiBaseUrl = () => {
   return API_BASE_URL;
 };
 
-/**
- * Construit l'URL d'une image Cloudinary à partir de son ID public
- */
-export const getCloudinaryUrl = (publicId: string | null | undefined, options: {
-  width?: number;
-  height?: number;
-  crop?: 'fill' | 'fit' | 'limit' | 'pad' | 'crop' | 'thumb' | 'scale';
-  quality?: string;
-} = {}): string => {
-  if (!publicId) return '';
-  
-  const cloudName = 'dz4ttrfjc'; // Remplacez par votre nom de cloud Cloudinary
-  const transformations = [
-    'c_fill',
-    options.width ? `w_${options.width}` : 'w_500',
-    options.height ? `h_${options.height}` : 'h_500',
-    options.crop ? `c_${options.crop}` : 'c_fill',
-    'g_face',
-    'q_auto:good'
-  ].filter(Boolean).join(',');
-  
-  return `https://res.cloudinary.com/${cloudName}/image/upload/${transformations}/${publicId}`;
-};
-
-/**
- * Fonction de compatibilité pour les anciennes URLs
- */
+// Fonction utilitaire pour construire une URL d'image complète
 export const getImageUrl = (imageUrl: string | null | undefined): string => {
   if (!imageUrl) return '';
   
-  // Si c'est un ID Cloudinary (ne contient pas de /)
-  if (!imageUrl.includes('/')) {
-    return getCloudinaryUrl(imageUrl, { width: 500, height: 500 });
-  }
-  
-  // Si l'URL est déjà une URL complète, la retourner telle quelle
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+  // Si c'est déjà une URL complète (http/https), la retourner telle quelle
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('data:')) {
     return imageUrl;
   }
   
-  // Si c'est un chemin relatif, le combiner avec l'URL de base de l'API
-  const baseUrl = API_BASE_URL.replace(/\/+$/, ''); // Supprimer les slashes de fin
-  const cleanPath = imageUrl.replace(/^\/+/, ''); // Supprimer les slashes de début
+  // Si c'est un chemin relatif, construire l'URL complète
+  if (imageUrl.startsWith('/')) {
+    return `${API_BASE_URL}${imageUrl}`;
+  }
   
-  return `${baseUrl}/${cleanPath}`;
+  // Sinon, ajouter le slash et construire l'URL
+  return `${API_BASE_URL}/${imageUrl}`;
 };

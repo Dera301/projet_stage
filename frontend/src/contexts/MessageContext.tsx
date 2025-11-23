@@ -23,11 +23,12 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
   const { user } = useAuth();
 
   // Charger les conversations depuis l'API
   const fetchConversations = useCallback(async () => {
-    if (!user) return;
+    if (!user || isUnauthorized) return;
 
     try {
       setLoading(true);
@@ -47,13 +48,20 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
       }));
 
       setConversations(formattedConversations);
+      setIsUnauthorized(false); // Réinitialiser si la requête réussit
     } catch (error: any) {
       console.error('Erreur chargement conversations:', error);
+      // Si c'est une erreur 401, arrêter le polling
+      if (error.message?.includes('Token invalide') || error.message?.includes('401')) {
+        setIsUnauthorized(true);
+        console.warn('⚠️ Arrêt du polling des conversations - Token invalide');
+        return;
+      }
       toast.error(error.message || 'Erreur lors du chargement des conversations');
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, isUnauthorized]);
 
   // Charger les messages d'une conversation
   const fetchMessages = useCallback(async (conversationId: string) => {
@@ -99,13 +107,22 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
 
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || isUnauthorized) return;
     const interval = setInterval(() => {
       fetchConversations();
-    }, 3000); // toutes les 3 secondes
+    }, 30000); // toutes les 30 secondes (réduit la fréquence)
 
     return () => clearInterval(interval);
-  }, [user, fetchConversations]);
+  }, [user, fetchConversations, isUnauthorized]);
+
+  // Réinitialiser isUnauthorized quand l'utilisateur change
+  useEffect(() => {
+    if (user) {
+      setIsUnauthorized(false);
+    } else {
+      setIsUnauthorized(true);
+    }
+  }, [user]);
 
   // Fonction pour envoyer un message
   const sendMessage = async (receiverId: string, content: string): Promise<void> => {
