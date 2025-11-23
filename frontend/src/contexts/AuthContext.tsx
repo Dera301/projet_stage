@@ -130,7 +130,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             avatarUrl = uploadData.data?.url || uploadData.data?.path;
             
             // Vérifier la longueur de l'URL
-            if (avatarUrl && avatarUrl.length > 1000) {
+            if (avatarUrl && avatarUrl.length > 1000000) {
               console.warn('URL de l\'avatar très longue:', avatarUrl.length, 'caractères');
             }
           } else {
