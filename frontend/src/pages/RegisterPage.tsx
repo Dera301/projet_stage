@@ -5,6 +5,8 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import SimpleCaptcha from '../components/SimpleCaptcha';
 
+const logoSrc = `${process.env.PUBLIC_URL}/logo_colo.svg`;
+
 const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
     email: '',
@@ -120,9 +122,7 @@ const RegisterPage: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <div className="w-16 h-16 bg-primary-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">C</span>
-            </div>
+            <img src={logoSrc} alt="ColocAntananarivo" className="h-12 w-auto" />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Créer un compte

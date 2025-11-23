@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAnnouncement, CreateAnnouncementData } from '../contexts/AnnouncementContext';
+import { apiUpload } from '../config';
 import toast from 'react-hot-toast';
 import { PhotoIcon, IdentificationIcon, ExclamationTriangleIcon, XMarkIcon, ClockIcon } from '@heroicons/react/24/outline';
 
@@ -13,32 +14,19 @@ interface ImageFile {
 
 const uploadImageToServer = async (file: File): Promise<string> => {
   try {
-    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    const { getAuthToken } = await import('../config');
-    const token = getAuthToken();
     const formData = new FormData();
     formData.append('image', file);
     
-    const headers: HeadersInit = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+    const data = await apiUpload('/api/upload/image', formData);
     
-    const response = await fetch(`${API_BASE_URL}/api/upload/image`, { 
-      method: 'POST', 
-      headers,
-      body: formData 
-    });
-    const data = await response.json();
-    
-    if (!response.ok || !data.success) {
+    if (!data.success) {
       throw new Error(data.message || 'Erreur lors de l\'upload');
     }
     
     return data.data?.url || data.data?.path || '';
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erreur upload:', error);
-    throw new Error('Erreur lors de l\'upload: ' + (error as Error).message);
+    throw new Error(error.message || 'Erreur lors de l\'upload');
   }
 };
 

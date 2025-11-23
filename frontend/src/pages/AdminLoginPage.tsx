@@ -57,9 +57,7 @@ const AdminLoginPage: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <div className="w-20 h-20 bg-primary-600 rounded-xl flex items-center justify-center shadow-lg">
-              <ShieldCheckIcon className="w-10 h-10 text-white" />
-            </div>
+            <img src="/logo_colo.svg" alt="ColocAntananarivo" className="h-20 w-auto" />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-dark-900">
             Connexion Administrateur

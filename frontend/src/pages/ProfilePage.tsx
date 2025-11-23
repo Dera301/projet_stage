@@ -10,11 +10,11 @@ import {
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { uploadImageToServer } from '../services/imageUploadService';
+import { apiUpload } from '../config'; // ← Importer apiUpload directement
 import { Link } from 'react-router-dom';
 
 const ProfilePage: React.FC = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, setUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
@@ -60,18 +60,89 @@ const ProfilePage: React.FC = () => {
     fileInputRef.current?.click();
   };
 
+  const [isUploading, setIsUploading] = useState(false);
+
+  const uploadImageToServer = async (file: File): Promise<string> => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const data = await apiUpload('/api/upload/image', formData);
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Erreur lors de l\'upload');
+      }
+      
+      return data.data?.url || data.data?.path || '';
+    } catch (error: any) {
+      console.error('Erreur upload:', error);
+      throw new Error(error.message || 'Erreur lors de l\'upload');
+    }
+  };
+
+  
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
+    // Vérifier le type de fichier
+    if (!file.type.startsWith('image/')) { 
+      toast.error(`${file.name} n'est pas une image valide`); 
+      return; 
+    }
+    
+    // Vérifier la taille du fichier (max 5MB)
+    if (file.size > 5 * 1024 * 1024) { 
+      toast.error(`${file.name} est trop volumineux (max 5MB)`); 
+      return; 
+    }
+    
+    setIsUploading(true);
+    const toastId = 'avatar-upload';
+    
     try {
+      toast.loading('Téléchargement de la photo...', { id: toastId });
+      
+      // Télécharger l'image
       const url = await uploadImageToServer(file);
-      if (updateProfile) {
-        await updateProfile({ avatar: url } as any);
+      
+      if (!url) {
+        throw new Error('Aucune URL valide retournée après l\'upload');
       }
-      toast.success('Photo de profil mise à jour');
-    } catch (err) {
-      toast.error('Échec du téléchargement de la photo');
+      
+      console.log('URL de l\'image uploadée:', url);
+      
+      // Mettre à jour le profil avec la nouvelle URL d'avatar
+      if (updateProfile) {
+        console.log('Mise à jour du profil avec l\'URL:', url);
+        await updateProfile({ avatar: url });
+        if (user) {
+          setUser({ ...user, avatar: url });
+        }
+      }
+      
+      toast.success('Photo de profil mise à jour avec succès', { id: toastId });
+    } catch (error: any) {
+      console.error('Erreur lors de la mise à jour de l\'avatar:', error);
+      
+      // Afficher un message d'erreur plus détaillé
+      let errorMessage = 'Échec du téléchargement de la photo';
+      
+      if (error.message) {
+        if (error.message.includes('400') || error.message.includes('Bad Request')) {
+          errorMessage = 'Erreur de validation. Veuillez réessayer avec une autre image.';
+        } else if (error.message.includes('413') || error.message.includes('trop volumineux')) {
+          errorMessage = 'L\'image est trop volumineuse. Taille maximale: 5MB';
+        } else if (error.message.includes('500') || error.message.includes('Erreur serveur')) {
+          errorMessage = 'Erreur du serveur. Veuillez réessayer plus tard.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      toast.error(errorMessage, { id: toastId, duration: 5000 });
     } finally {
+      setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -120,16 +191,48 @@ const ProfilePage: React.FC = () => {
               <div className="flex items-center space-x-4">
                 <div className="relative">
                   <div className="w-24 h-24 bg-white rounded-full overflow-hidden flex items-center justify-center">
-                    {user.avatar ? (
-                      <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
+                    {isUploading ? (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                      </div>
+                    ) : user.avatar ? (
+                      <img 
+                        src={user.avatar} 
+                        alt="Avatar" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // Fallback to default avatar if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = '/default-avatar.png';
+                        }}
+                      />
                     ) : (
                       <UserIcon className="w-12 h-12 text-primary-600" />
                     )}
                   </div>
-                  <button onClick={handleAvatarClick} className="absolute bottom-0 right-0 bg-primary-600 text-white p-2 rounded-full hover:bg-primary-700 transition-colors">
-                    <CameraIcon className="w-4 h-4" />
+                  <button 
+                    onClick={handleAvatarClick} 
+                    disabled={isUploading}
+                    className={`absolute bottom-0 right-0 ${isUploading ? 'bg-gray-400' : 'bg-primary-600 hover:bg-primary-700'} text-white p-2 rounded-full transition-colors`}
+                  >
+                    {isUploading ? (
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <CameraIcon className="w-4 h-4" />
+                    )}
                   </button>
-                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                  <input 
+                    ref={fileInputRef} 
+                    type="file" 
+                    accept="image/jpeg,image/png,image/webp" 
+                    className="hidden" 
+                    onChange={handleAvatarChange}
+                    disabled={isUploading}
+                  />
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-white">

@@ -13,6 +13,7 @@ import {
   ChatBubbleLeftRightIcon as ChatIcon,
   FunnelIcon
 } from '@heroicons/react/24/outline';
+import { getImageUrl } from '../config';
 
 const PropertyListPage: React.FC = () => {
   const { properties, loading } = useProperty();
@@ -101,19 +102,6 @@ const PropertyListPage: React.FC = () => {
       maxPrice: '',
       availableRooms: ''
     });
-  };
-  const getImageUrl = (imageUrl: string | undefined) => {
-  if (!imageUrl) return '/api/placeholder/400/300';
-  
-  // Si l'URL est déjà une URL complète, la retourner telle quelle
-  if (imageUrl.startsWith('http')) return imageUrl;
-  
-  // Si c'est un chemin relatif, le convertir en URL absolue
-  if (imageUrl.startsWith('/')) {
-    return `http://localhost${imageUrl}`;
-  }
-  
-  return imageUrl;
   };
 
   

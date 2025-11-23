@@ -4,7 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'; // Ajouter Link
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Property } from '../types';
-import { getAuthToken } from '../config';
+import { apiUpload, getImageUrl, apiJson } from '../config';
 import { 
   PhotoIcon,
   ArrowLeftIcon,
@@ -191,27 +191,18 @@ const EditPropertyPage: React.FC = () => {
         const formData = new FormData();
         formData.append('image', file);
         
-        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-        const token = getAuthToken();
-        const headers: HeadersInit = {};
-        
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
+        try {
+          const data = await apiUpload('/api/upload/image', formData);
+          
+          if (!data.success) {
+            throw new Error(data.message || 'Erreur lors de l\'upload');
+          }
+          
+          return data.data?.url || data.data?.path || '';
+        } catch (error: any) {
+          console.error('Erreur upload:', error);
+          throw new Error(error.message || 'Erreur lors de l\'upload');
         }
-        
-        const response = await fetch(`${API_BASE_URL}/api/upload/image`, {
-          method: 'POST',
-          headers,
-          body: formData
-        });
-        
-        const data = await response.json();
-        
-        if (!response.ok || !data.success) {
-          throw new Error(data.message || 'Erreur lors de l\'upload');
-        }
-        
-        return data.data?.url || data.data?.path || '';
       };
 
       const uploadPromises = imageFiles.map(img => uploadImageToServer(img.file));
@@ -235,59 +226,57 @@ const EditPropertyPage: React.FC = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!user || !property) {
-      toast.error('Erreur: utilisateur non connecté ou propriété non chargée');
-      return;
-    }
+  e.preventDefault();
+  
+  if (!user || !property) {
+    toast.error('Erreur: utilisateur non connecté ou propriété non chargée');
+    return;
+  }
 
-    // Validation
-    if (!formData.title.trim()) {
-      toast.error('Le titre est requis');
-      return;
-    }
-    
-    if (!formData.description.trim()) {
-      toast.error('La description est requise');
-      return;
-    }
-    
-    if (!formData.address.trim()) {
-      toast.error('L\'adresse est requise');
-      return;
-    }
-    
-    if (!formData.district) {
-      toast.error('Le quartier est requis');
-      return;
-    }
-    
-    if (formData.price <= 0) {
-      toast.error('Le prix doit être supérieur à 0');
-      return;
-    }
+  // Validation
+  if (!formData.title.trim()) {
+    toast.error('Le titre est requis');
+    return;
+  }
+  
+  if (!formData.description.trim()) {
+    toast.error('La description est requise');
+    return;
+  }
+  
+  if (!formData.address.trim()) {
+    toast.error('L\'adresse est requise');
+    return;
+  }
+  
+  if (!formData.district) {
+    toast.error('Le quartier est requis');
+    return;
+  }
+  
+  if (formData.price <= 0) {
+    toast.error('Le prix doit être supérieur à 0');
+    return;
+  }
 
-    try {
+  try {
     let finalImageUrls = [...existingImages];
 
     // Upload des nouvelles images si présentes
     if (imageFiles.length > 0) {
-        toast.loading('Upload des nouvelles images...');
-        const newImageUrls = await uploadNewImages();
-        finalImageUrls = [...existingImages, ...newImageUrls];
-        toast.dismiss();
+      toast.loading('Upload des nouvelles images...');
+      const newImageUrls = await uploadNewImages();
+      finalImageUrls = [...existingImages, ...newImageUrls];
+      toast.dismiss();
     }
 
     const updateData = { ...formData, images: finalImageUrls };
 
-    // Requête vers le backend
-    const { apiJson } = await import('../config');
-    const response = await apiJson(`/api/properties/update/${property.id}`, 'PUT', updateData);
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-        throw new Error(data.message || "Erreur inconnue lors de la mise à jour");
+    // Utilisation directe de l'import statique
+    const data = await apiJson(`/api/properties/update/${property.id}`, 'PUT', updateData);
+    // Vérifier directement le succès
+    if (!data.success) {
+      throw new Error(data.message || "Erreur inconnue lors de la mise à jour");
     }
 
     // Nettoyage
@@ -295,26 +284,20 @@ const EditPropertyPage: React.FC = () => {
     toast.success('Propriété modifiée avec succès !');
     navigate('/dashboard');
     
-    } catch (error) {
-      console.error("Erreur lors de la modification:", error);
+  } catch (error) {
+    console.error("Erreur lors de la modification:", error);
 
-      // Vérifie que l'erreur est bien une instance d'Error
-      if (error instanceof Error) {
-        toast.error(`Erreur: ${error.message}`);
-      } else {
-        // Si c'est autre chose (ex: string ou objet brut)
-        toast.error(`Erreur inconnue: ${String(error)}`);
-      }
+    // Vérifie que l'erreur est bien une instance d'Error
+    if (error instanceof Error) {
+      toast.error(`Erreur: ${error.message}`);
+    } else {
+      // Si c'est autre chose (ex: string ou objet brut)
+      toast.error(`Erreur inconnue: ${String(error)}`);
     }
-  };
+  }
+};
 
-  const getImageUrl = (imageUrl: string | undefined) => {
-    if (!imageUrl) return '/api/placeholder/400/300';
-    if (imageUrl.startsWith('http')) return imageUrl;
-    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    if (imageUrl.startsWith('/')) return `${API_BASE_URL}${imageUrl}`;
-    return imageUrl;
-  };
+  // Utilise la fonction centralisée getImageUrl de config
 
   if (!property) {
     return (

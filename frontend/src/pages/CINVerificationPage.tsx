@@ -70,12 +70,16 @@ const CINVerificationPage: React.FC = () => {
         cinRectoImage: formData.cinRectoImage,
         cinVersoImage: formData.cinVersoImage,
       });
-      navigate('/dashboard');
+      
+      // Attendre un peu pour que le toast s'affiche
+      setTimeout(() => {
+        setIsLoading(false);
+        navigate('/dashboard');
+      }, 1000);
       
     } catch (error: any) {
-      toast.error(error.message || 'Erreur lors de la vérification');
-    } finally {
       setIsLoading(false);
+      toast.error(error.message || 'Erreur lors de la vérification');
     }
   };
 

@@ -13,6 +13,8 @@ import {
   PlusIcon
 } from '@heroicons/react/24/outline';
 
+const logoSrc = `${process.env.PUBLIC_URL}/logo_colo.svg`;
+
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const { conversations } = useMessage();
@@ -124,11 +126,8 @@ const Navbar: React.FC = () => {
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">C</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">ColocAntananarivo</span>
+            <Link to="/" className="flex items-center">
+              <img src="/logo_colo.svg" alt="ColocAntananarivo" className="h-20 w-auto" />
             </Link>
           </div>
 

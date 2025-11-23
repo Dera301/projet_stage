@@ -132,12 +132,13 @@ export interface SearchFilters {
 // Context Types
 export interface AuthContextType {
   user: User | null;
+  setUser: (user: User | null) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => void;
-  updateProfile?: (profileData: Partial<User>) => Promise<void>;
+  updateProfile: (profileData: Partial<User>) => Promise<void>;
   isLoading: boolean;
-  verifyCIN: (verificationData: CINVerificationData) => Promise<void>; // Nouvelle méthode
+  verifyCIN: (verificationData: CINVerificationData) => Promise<void>;
 }
 
 export interface PropertyContextType {
@@ -155,11 +156,13 @@ export interface MessageContextType {
   messages: Message[];
   sendMessage: (receiverId: string, content: string) => Promise<void>;
   markAsRead: (messageId: string) => Promise<void>;
-  getConversationMessages?: (conversationId: string) => Promise<Message[]>;
-  refreshConversations?: () => void;
-  refreshMessages?: () => void;
+  getConversationMessages: (conversationId: string) => Promise<Message[]>;
+  refreshConversations: () => void;
+  refreshMessages: () => void;
   loading: boolean;
-  
+  editMessage: (messageId: string, content: string) => Promise<void>;
+  deleteMessage: (messageId: string) => Promise<void>;
+  deleteConversation: (conversationId: string) => Promise<void>;
 }
 export interface CINVerificationData {
   cinNumber: string;

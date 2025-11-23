@@ -60,21 +60,24 @@ router.post('/register', async (req, res) => {
     accountActivationDeadline.setHours(accountActivationDeadline.getHours() + 24);
 
     // Create user in database
+    const userData = {
+      email,
+      password: hashedPassword,
+      firstName,
+      lastName,
+      phone,
+      userType,
+      university: university || null,
+      studyLevel: studyLevel || null,
+      budget: budget ? parseFloat(budget) : null,
+      clerkId: clerkId,
+      isVerified: false,
+      accountActivationDeadline,
+      avatar: req.body.avatar || null  // Ajout du champ avatar
+    };
+
     const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        phone,
-        userType,
-        university: university || null,
-        studyLevel: studyLevel || null,
-        budget: budget ? parseFloat(budget) : null,
-        clerkId: clerkId,
-        isVerified: false,
-        accountActivationDeadline
-      },
+      data: userData,
       select: {
         id: true,
         email: true,
