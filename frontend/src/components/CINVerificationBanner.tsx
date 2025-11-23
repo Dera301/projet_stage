@@ -18,7 +18,23 @@ const CINVerificationBanner: React.FC = () => {
   // Vérification en attente
   const isVerificationPending = React.useMemo(() => {
     if (!user || isUserVerified) return false;
-    return Boolean((user as any).cinPending) || Boolean((user as any).cin_verification_requested_at);
+    
+    // Vérifier si une demande de vérification est en attente
+    const hasPendingRequest = 
+      Boolean((user as any).cinPending) || 
+      Boolean((user as any).cin_verification_requested_at) ||
+      (user as any).cin_verification_status === 'pending';
+      
+    console.log('Vérification CIN - État:', {
+      user,
+      isUserVerified,
+      cinPending: (user as any).cinPending,
+      cin_verification_requested_at: (user as any).cin_verification_requested_at,
+      cin_verification_status: (user as any).cin_verification_status,
+      isVerificationPending: hasPendingRequest
+    });
+      
+    return hasPendingRequest;
   }, [user, isUserVerified]);
 
   // Charger la visibilité depuis localStorage et nettoyer si vérifié

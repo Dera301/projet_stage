@@ -723,7 +723,7 @@ const AdminPage: React.FC = () => {
 
             {activeTab === 'announcements' && (
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                <h2 className="text-xl font-semibold mb-4 text-dark-900">Annonces Étudiantes</h2>
+                <h2 className="text-xl font-semibold mb-4 text-gray-900">Annonces Étudiantes</h2>
                 {selectedAnnouncement ? (
                   <div className="space-y-4">
                     <button
@@ -857,7 +857,7 @@ const AdminPage: React.FC = () => {
 
             {activeTab === 'properties' && (
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                <h2 className="text-xl font-semibold mb-4 text-dark-900">Appartements Publiés</h2>
+                <h2 className="text-xl font-semibold mb-4 text-gray-900">Appartements Publiés</h2>
                 {selectedProperty ? (
                   <div className="space-y-4">
                     <button
@@ -1052,7 +1052,7 @@ const AdminPage: React.FC = () => {
 
             {activeTab === 'cin' && (
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                <h2 className="text-xl font-semibold mb-4 text-dark-900">CIN à Vérifier</h2>
+                <h2 className="text-xl font-semibold mb-4 text-gray-900">CIN à Vérifier</h2>
                 {cinToVerify.length === 0 ? (
                   <p className="text-dark-600 text-center py-8">Aucune CIN en attente de vérification</p>
                 ) : (
@@ -1067,7 +1067,7 @@ const AdminPage: React.FC = () => {
                         <div className="mb-4">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
-                              <h3 className="text-lg font-semibold text-dark-900 mb-1">
+                              <h3 className="text-lg font-semibold text-dark-100 mb-1">
                                 {cin.firstName} {cin.lastName}
                               </h3>
                               <p className="text-sm text-dark-600 mb-1">{cin.email}</p>
