@@ -1077,7 +1077,7 @@ const AdminPage: React.FC = () => {
                         </div>
                         
                         <div className="space-y-4 mb-4">
-                          {cin.cinRectoImagePath && (
+                          {cin.cinRectoImagePath ? (
                             <div>
                               <p className="text-sm font-medium text-dark-700 mb-2">Recto de la CIN</p>
                               <div className="relative">
@@ -1086,14 +1086,24 @@ const AdminPage: React.FC = () => {
                                   alt="CIN Recto"
                                   className="w-full h-64 object-contain bg-dark-50 rounded border-2 border-dark-200 hover:border-primary-400 transition-colors cursor-zoom-in"
                                   onError={(e) => {
-                                    e.currentTarget.src = '/api/placeholder/300/200';
+                                    console.error('Erreur chargement image CIN recto:', cin.cinRectoImagePath);
+                                    const target = e.target as HTMLImageElement;
+                                    target.onerror = null;
+                                    target.src = '/api/placeholder/300/200';
                                   }}
-                                  onClick={() => window.open(getImageUrl(cin.cinRectoImagePath), '_blank')}
+                                  onClick={() => {
+                                    const url = getImageUrl(cin.cinRectoImagePath);
+                                    if (url) window.open(url, '_blank');
+                                  }}
                                 />
                               </div>
                             </div>
+                          ) : (
+                            <div className="bg-gray-100 rounded p-4 text-center">
+                              <p className="text-sm text-gray-600">Image recto non disponible</p>
+                            </div>
                           )}
-                          {cin.cinVersoImagePath && (
+                          {cin.cinVersoImagePath ? (
                             <div>
                               <p className="text-sm font-medium text-dark-700 mb-2">Verso de la CIN</p>
                               <div className="relative">
@@ -1102,11 +1112,21 @@ const AdminPage: React.FC = () => {
                                   alt="CIN Verso"
                                   className="w-full h-64 object-contain bg-dark-50 rounded border-2 border-dark-200 hover:border-primary-400 transition-colors cursor-zoom-in"
                                   onError={(e) => {
-                                    e.currentTarget.src = '/api/placeholder/300/200';
+                                    console.error('Erreur chargement image CIN verso:', cin.cinVersoImagePath);
+                                    const target = e.target as HTMLImageElement;
+                                    target.onerror = null;
+                                    target.src = '/api/placeholder/300/200';
                                   }}
-                                  onClick={() => window.open(getImageUrl(cin.cinVersoImagePath), '_blank')}
+                                  onClick={() => {
+                                    const url = getImageUrl(cin.cinVersoImagePath);
+                                    if (url) window.open(url, '_blank');
+                                  }}
                                 />
                               </div>
+                            </div>
+                          ) : (
+                            <div className="bg-gray-100 rounded p-4 text-center">
+                              <p className="text-sm text-gray-600">Image verso non disponible</p>
                             </div>
                           )}
                         </div>
@@ -1273,6 +1293,187 @@ const AdminPage: React.FC = () => {
                             <input type="checkbox" className="sr-only peer" defaultChecked />
                             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                           </label>
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* Section Mode maintenance */}
+                    <section className="border-b border-gray-200 pb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Mode maintenance</h3>
+                      <p className="text-gray-700 mb-4">
+                        Activez le mode maintenance pour effectuer des mises à jour sans que les utilisateurs puissent accéder à la plateforme.
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">Activer le mode maintenance</p>
+                          <p className="text-sm text-gray-600">La plateforme sera inaccessible aux utilisateurs non administrateurs</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" className="sr-only peer" />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                      </div>
+                      {false && (
+                        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                          <p className="text-sm text-yellow-800">
+                            <strong>Mode maintenance actif</strong> - Les utilisateurs verront un message de maintenance lors de leur connexion.
+                          </p>
+                        </div>
+                      )}
+                    </section>
+
+                    {/* Section Configuration email */}
+                    <section className="border-b border-gray-200 pb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuration email</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Serveur SMTP
+                          </label>
+                          <input
+                            type="text"
+                            className="input-field"
+                            placeholder="smtp.example.com"
+                            defaultValue="smtp.gmail.com"
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Port
+                            </label>
+                            <input
+                              type="number"
+                              className="input-field"
+                              placeholder="587"
+                              defaultValue="587"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Email expéditeur
+                            </label>
+                            <input
+                              type="email"
+                              className="input-field"
+                              placeholder="noreply@example.com"
+                            />
+                          </div>
+                        </div>
+                        <button className="btn-primary">
+                          Tester la configuration email
+                        </button>
+                      </div>
+                    </section>
+
+                    {/* Section Sécurité */}
+                    <section className="border-b border-gray-200 pb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Paramètres de sécurité</h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-gray-900">Authentification à deux facteurs (2FA)</p>
+                            <p className="text-sm text-gray-600">Recommandé pour les comptes administrateurs</p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" className="sr-only peer" defaultChecked />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                          </label>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-gray-900">Limite de tentatives de connexion</p>
+                            <p className="text-sm text-gray-600">Bloquer après 5 tentatives échouées</p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" className="sr-only peer" defaultChecked />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                          </label>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-gray-900">Journalisation des actions admin</p>
+                            <p className="text-sm text-gray-600">Enregistrer toutes les actions administratives</p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" className="sr-only peer" defaultChecked />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                          </label>
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* Section Sauvegarde */}
+                    <section className="border-b border-gray-200 pb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Sauvegarde et restauration</h3>
+                      <div className="space-y-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <div className="flex items-start space-x-3">
+                            <div className="flex-shrink-0">
+                              <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-blue-900">Dernière sauvegarde</p>
+                              <p className="text-sm text-blue-700">Il y a 2 heures - Taille: 45.2 MB</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex space-x-3">
+                          <button className="btn-primary">
+                            Créer une sauvegarde maintenant
+                          </button>
+                          <button className="btn-secondary">
+                            Restaurer depuis une sauvegarde
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between pt-2">
+                          <div>
+                            <p className="font-medium text-gray-900">Sauvegarde automatique</p>
+                            <p className="text-sm text-gray-600">Sauvegarder la base de données quotidiennement</p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" className="sr-only peer" defaultChecked />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                          </label>
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* Section API et intégrations */}
+                    <section className="border-b border-gray-200 pb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">API et intégrations</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Clé API Cloudinary
+                          </label>
+                          <div className="flex space-x-2">
+                            <input
+                              type="password"
+                              className="input-field flex-1"
+                              placeholder="••••••••••••"
+                              defaultValue="••••••••••••"
+                            />
+                            <button className="btn-secondary">
+                              Afficher
+                            </button>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">Utilisée pour l'upload d'images</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Webhook URL (optionnel)
+                          </label>
+                          <input
+                            type="url"
+                            className="input-field"
+                            placeholder="https://example.com/webhook"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">URL pour recevoir les notifications d'événements</p>
                         </div>
                       </div>
                     </section>

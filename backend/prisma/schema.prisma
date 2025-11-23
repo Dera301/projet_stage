@@ -24,8 +24,8 @@ model User {
   cinNumber                  String?        @db.VarChar(12)
   cinData                    String?
   cinVerified                Boolean        @default(false)
-  cinRectoImagePath          String?        @db.VarChar(255)
-  cinVersoImagePath          String?        @db.VarChar(255)
+  cinRectoImagePath          String?        @db.Text
+  cinVersoImagePath          String?        @db.Text
   cinVerificationConfidence  Float?
   cinVerificationErrors      String?
   cinVerifiedAt              DateTime?

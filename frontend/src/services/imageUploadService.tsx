@@ -83,12 +83,7 @@ export const uploadImageToServer = async (file: File): Promise<string> => {
       throw new Error('Aucune URL d\'image valide reçue du serveur');
     }
 
-    // Avertissement si l'URL est très longue
-    if (imageUrl.length > 1000000) {
-      console.warn('L\'URL de l\'image est très longue:', imageUrl.length, 'caractères');
-      throw new Error('L\'URL de l\'image est trop longue. Veuillez essayer avec une image plus petite ou un format différent.');
-    }
-
+    // Pas de limite de longueur - les URLs sont stockées en TEXT dans la base de données
     return imageUrl;
   } catch (error: any) {
     console.error('Erreur upload:', error);

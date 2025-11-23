@@ -226,12 +226,13 @@ router.post('/verify_cin', verifyJWT, async (req, res) => {
     }
 
     // Update user with CIN information
+    // Les champs cinRectoImagePath et cinVersoImagePath sont TEXT dans la DB, pas de limite de longueur
     const user = await prisma.user.update({
       where: { id: userId },
       data: {
         cinNumber,
-        cinRectoImagePath: cinRectoImagePath || null,
-        cinVersoImagePath: cinVersoImagePath || null,
+        cinRectoImagePath: cinRectoImagePath ? String(cinRectoImagePath) : null,
+        cinVersoImagePath: cinVersoImagePath ? String(cinVersoImagePath) : null,
         cinData: cinData ? JSON.stringify(cinData) : null,
         cinVerified: false, // Will be verified by admin
         cinVerificationRequestedAt: new Date()
