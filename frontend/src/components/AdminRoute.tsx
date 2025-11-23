@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 interface AdminRouteProps {
@@ -8,6 +8,7 @@ interface AdminRouteProps {
 
 const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -17,8 +18,13 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     );
   }
 
+  // If the user is not logged in, redirect unless we're already on the admin login page.
   if (!user) {
-    return <Navigate to="/admin/login" replace />;
+    if (location.pathname !== '/admin/login') {
+      return <Navigate to="/admin/login" replace />;
+    }
+
+    return <>{children}</>;
   }
 
   if (user.userType !== 'admin') {
@@ -29,5 +35,3 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
 };
 
 export default AdminRoute;
-
-

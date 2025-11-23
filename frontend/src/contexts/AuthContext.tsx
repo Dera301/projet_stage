@@ -1,9 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, AuthContextType, RegisterData, CINVerificationData } from '../types'; // Retirer CINVerificationResult
-import { apiGet, apiJson, apiUpload, setAuthToken, setUnauthorizedCallback } from '../config';
+import { apiGet, apiJson, apiUpload, setAuthToken } from '../config';
 import toast from 'react-hot-toast';
 import { cinVerificationService } from '../services/cinVerificationService';
-import { uploadAvatarPublic } from '../services/avatarUploadService';
 import { getStorage, removeStorage, clearStorage } from '../utils/storage';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,16 +22,6 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Configurer le callback pour la déconnexion automatique en cas d'erreur 401
-  useEffect(() => {
-    setUnauthorizedCallback(() => {
-      console.warn('🔒 Déconnexion automatique - Token invalide');
-      setUser(null);
-      setAuthToken(null);
-      clearStorage();
-    });
-  }, []);
 
  useEffect(() => {
   const token = getStorage('auth_token'); // Utiliser getStorage
@@ -127,27 +116,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterData): Promise<void> => {
     setIsLoading(true);
     try {
-      // Uploader l'image si elle existe (même méthode que les annonces/propriétés)
-      let avatarUrl = null;
-      const profileImage: File | undefined = (userData as any).profileImage;
-      
-      if (profileImage) {
-        try {
-          // Uploader l'image (même méthode que les annonces/propriétés, mais via route publique pour l'inscription)
-          avatarUrl = await uploadAvatarPublic(profileImage);
-          console.log('✅ Avatar uploadé avec succès:', avatarUrl ? 'Oui' : 'Non');
-          
-          if (!avatarUrl) {
-            throw new Error('L\'upload de l\'image a échoué');
-          }
-        } catch (imageError: any) {
-          console.error('Erreur lors de l\'upload de l\'image:', imageError);
-          // Si l'image est fournie mais qu'il y a une erreur, on fait échouer l'inscription
-          throw new Error(`Erreur avec l'image de profil: ${imageError.message}`);
-        }
-      }
-
-      // Créer l'utilisateur avec l'URL de l'avatar (même méthode que les annonces/propriétés)
       const data = await apiJson('/api/auth/register', 'POST', {
         email: userData.email,
         password: userData.password,
@@ -158,29 +126,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         university: userData.university,
         studyLevel: userData.studyLevel,
         budget: typeof (userData as any).budget === 'number' ? (userData as any).budget : Number((userData as any).budget) || null,
-        avatar: avatarUrl // Stocker l'URL comme TEXT dans la DB (pas de limite, comme les annonces/propriétés)
       });
       
       if (!data.success) {
         throw new Error(data.message || 'Erreur lors de l\'inscription');
       }
 
-      // Mettre à jour le token d'authentification
+      // Si une image de profil a été fournie, utiliser le token retourné pour uploader et mettre à jour l'avatar
       const token = data?.data?.token || data?.token;
-      if (token) {
-        setAuthToken(token);
-      }
-      
-      // Mettre à jour l'utilisateur connecté
       const createdUser = data?.data?.user || data?.user;
-      if (createdUser) {
-        setUser(mapApiUserToFront(createdUser));
+      const profileImage: File | undefined = (userData as any).profileImage;
+      if (token && profileImage) {
+        setAuthToken(token);
+        try {
+          const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+          const form = new FormData();
+          form.append('image', profileImage);
+          const uploadRes = await fetch(`${API_BASE_URL}/api/upload/image`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: form,
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadRes.ok && uploadData.success) {
+            const avatarUrl = uploadData.data.url;
+            await apiJson('/api/users/me', 'PUT', { avatar: avatarUrl });
+            // Met à jour le user local si on l'a déjà
+            if (createdUser) {
+              setUser(prev => prev ? { ...prev, avatar: avatarUrl } : prev);
+            }
+          }
+        } catch (e) {
+          console.warn('Upload avatar après inscription échoué:', e);
+        }
       }
-      
-      // Afficher un message de succès
-      toast.success('Inscription réussie !');
     } catch (error: any) {
-      console.error('Erreur lors de l\'inscription:', error);
       toast.error(error.message || 'Erreur lors de l\'inscription');
       throw error;
     } finally {
@@ -203,7 +183,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const updateProfile = async (profileData: Partial<User>): Promise<void> => {
     try {
-      // Pas de normalisation nécessaire - l'avatar est TEXT dans la DB (pas de limite de 255)
       const data = await apiJson('/api/users/me', 'PUT', profileData);
       
       if (!data.success) {
@@ -276,26 +255,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw new Error(backendData.message || 'Erreur lors de la vérification CIN');
     }
 
-    // 4. Recharger l'utilisateur depuis le serveur pour avoir les données à jour
-    try {
-      const meData = await apiGet('/api/auth/me');
-      if (meData.success && meData.data) {
-        setUser(mapApiUserToFront(meData.data));
-        console.log('👤 Utilisateur rechargé après vérification CIN:', meData.data);
-      }
-    } catch (meError) {
-      console.warn('⚠️ Impossible de recharger le profil:', meError);
-      // Mettre à jour localement en fallback
-      if (user) {
-        const updatedUser = {
-          ...user,
-          isVerified: false,
-          cinVerified: false,
-          cinPending: true,
-          cinNumber: verificationData.cinNumber
-        };
-        setUser(updatedUser);
-      }
+    // 4. Mettre à jour l'utilisateur - en attente de validation admin
+    if (user) {
+      const updatedUser = {
+        ...user,
+        isVerified: false,
+        cinVerified: false,
+        cinPending: true,
+        cinNumber: verificationData.cinNumber
+      };
+      console.log('👤 Utilisateur mis à jour (en attente):', updatedUser);
+      setUser(updatedUser);
     }
     
     toast.success('Vérification CIN soumise avec succès ! En attente de validation par un administrateur.');
@@ -309,7 +279,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 };
 
-  const mapApiUserToFront = (apiUser: any): User => {
+  const value: AuthContextType = {
+    user,
+    login,
+    register,
+    logout,
+    updateProfile,
+    isLoading,
+    verifyCIN,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+  function mapApiUserToFront(apiUser: any): User {
     // Logique améliorée pour déterminer cinVerified
     let isCinVerified = false;
     
@@ -327,6 +314,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const hasCinImages = !!(apiUser.cin_recto_image_path || apiUser.cin_verso_image_path);
     const hasPendingStatus = apiUser.cinPending !== undefined ? Boolean(apiUser.cinPending) : false;
     const cinPending = (hasCinImages && !isCinVerified) || hasPendingStatus;
+
+    console.log('🔍 Mapping user - cinVerified:', isCinVerified, 'cinPending:', cinPending, 'raw data:', {
+      cinVerified: apiUser.cinVerified,
+      cin_verified: apiUser.cin_verified,
+      cin_verified_at: apiUser.cin_verified_at,
+      cin_recto_image_path: apiUser.cin_recto_image_path,
+      cin_verso_image_path: apiUser.cin_verso_image_path
+    });
 
     return {
       id: String(apiUser.id),
@@ -352,22 +347,4 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       createdAt: apiUser.createdAt ? new Date(apiUser.createdAt) : (apiUser.created_at ? new Date(apiUser.created_at) : new Date()),
       updatedAt: apiUser.updatedAt ? new Date(apiUser.updatedAt) : (apiUser.updated_at ? new Date(apiUser.updated_at) : new Date()),
     };
-  };
-
-  const value: AuthContextType = {
-    user,
-    setUser,
-    login,
-    register,
-    logout,
-    updateProfile,
-    isLoading,
-    verifyCIN
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+  }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { apiGet, apiJson, getImageUrl as getImageUrlFromConfig } from '../config';
+import { apiGet, apiJson } from '../config';
 import { 
   UsersIcon, 
   ChatBubbleLeftRightIcon as ChatIcon,
@@ -19,8 +19,7 @@ import {
   ExclamationTriangleIcon,
   ArrowTrendingUpIcon,
   ChartBarIcon,
-  ArrowRightOnRectangleIcon as LogoutIcon,
-  Bars3Icon
+  ArrowRightOnRectangleIcon as LogoutIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -31,7 +30,6 @@ const AdminPage: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ActiveTab>('users');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
   const [props, setProps] = useState<any[]>([]);
   const [anns, setAnns] = useState<any[]>([]);
@@ -56,11 +54,6 @@ const AdminPage: React.FC = () => {
     pendingVerifications: 0,
     newUsersToday: 0,
     activeListings: 0
-  });
-  const [cinRejectModal, setCinRejectModal] = useState<{open: boolean, userId: string | null, reason: string}>({
-    open: false,
-    userId: null,
-    reason: ''
   });
 
   useEffect(() => {
@@ -138,12 +131,13 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  // Fonction pour obtenir l'URL de l'image - utilise celle de config.ts
+  // Fonction pour obtenir l'URL de l'image
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
   const getImageUrl = (imageUrl: string | undefined) => {
     if (!imageUrl) return '/api/placeholder/400/300';
-    // Utiliser la fonction de config.ts qui gère mieux les URLs Cloudinary
-    const url = getImageUrlFromConfig(imageUrl);
-    return url || '/api/placeholder/400/300';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    if (imageUrl.startsWith('/')) return `${API_BASE_URL}${imageUrl}`;
+    return imageUrl;
   };
 
   if (!user) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="text-gray-900">Chargement...</div></div>;
@@ -210,27 +204,20 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  const handleVerifyCIN = async (userId: string, approved: boolean, reason?: string) => {
+  const handleVerifyCIN = async (userId: string, approved: boolean) => {
     try {
-      const payload: any = { verified: approved };
-      if (!approved && reason) {
-        payload.reason = reason;
-      }
-      const data = await apiJson(`/api/admin/cin_verify/${userId}`, 'PUT', payload);
+      const data = await apiJson(`/api/admin/cin_verify/${userId}`, 'PUT', {
+        verified: approved
+      });
       
       if (data.success) {
         toast.success(approved ? 'CIN vérifiée avec succès' : 'CIN rejetée');
         setCinToVerify(prev => prev.filter(c => c.id !== userId));
         setUsers(prev => prev.map(u => u.id === userId ? { ...u, cinVerified: approved, isVerified: approved } : u));
-        setCinRejectModal({ open: false, userId: null, reason: '' });
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Erreur lors de la vérification');
+    } catch (error) {
+      toast.error('Erreur lors de la vérification');
     }
-  };
-
-  const handleRejectCINClick = (userId: string) => {
-    setCinRejectModal({ open: true, userId, reason: '' });
   };
 
   const pendingCinCount = cinToVerify.length;
@@ -272,13 +259,6 @@ const AdminPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              {/* Menu hamburger pour mobile */}
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
-              >
-                <Bars3Icon className="w-6 h-6 text-gray-600" />
-              </button>
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                 <ShieldCheckIcon className="w-6 h-6 text-white" />
               </div>
@@ -311,30 +291,12 @@ const AdminPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Navigation latérale et contenu */}
-        <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-8">
-          {/* Sidebar - Overlay sur mobile, normale sur desktop */}
-          {sidebarOpen && (
-            <div 
-              className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            />
-          )}
-          <div className={`${sidebarOpen ? 'fixed' : 'hidden'} lg:block lg:relative inset-y-0 left-0 z-50 w-64 bg-white lg:bg-transparent shadow-lg lg:shadow-none flex-shrink-0`}>
-            <div className="flex items-center justify-between p-4 lg:hidden border-b">
-              <h2 className="text-lg font-semibold text-gray-900">Menu</h2>
+        <div className="flex space-x-8">
+          {/* Sidebar */}
+          <div className="w-64 flex-shrink-0">
+            <nav className="space-y-2">
               <button
-                onClick={() => setSidebarOpen(false)}
-                className="p-2 rounded-lg hover:bg-gray-100"
-              >
-                <XMarkIcon className="w-6 h-6 text-gray-600" />
-              </button>
-            </div>
-            <nav className="space-y-2 p-4 lg:p-0">
-              <button
-                onClick={() => {
-                  setActiveTab('dashboard');
-                  setSidebarOpen(false);
-                }}
+                onClick={() => setActiveTab('dashboard')}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all ${
                   activeTab === 'dashboard' 
                     ? 'bg-blue-50 border border-blue-200 text-blue-700 shadow-sm' 
@@ -346,10 +308,7 @@ const AdminPage: React.FC = () => {
               </button>
 
               <button
-                onClick={() => {
-                  setActiveTab('users');
-                  setSidebarOpen(false);
-                }}
+                onClick={() => setActiveTab('users')}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all ${
                   activeTab === 'users' 
                     ? 'bg-blue-50 border border-blue-200 text-blue-700 shadow-sm' 
@@ -364,10 +323,7 @@ const AdminPage: React.FC = () => {
               </button>
 
               <button
-                onClick={() => {
-                  setActiveTab('properties');
-                  setSidebarOpen(false);
-                }}
+                onClick={() => setActiveTab('properties')}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all ${
                   activeTab === 'properties' 
                     ? 'bg-blue-50 border border-blue-200 text-blue-700 shadow-sm' 
@@ -382,10 +338,7 @@ const AdminPage: React.FC = () => {
               </button>
 
               <button
-                onClick={() => {
-                  setActiveTab('announcements');
-                  setSidebarOpen(false);
-                }}
+                onClick={() => setActiveTab('announcements')}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all ${
                   activeTab === 'announcements' 
                     ? 'bg-blue-50 border border-blue-200 text-blue-700 shadow-sm' 
@@ -400,10 +353,7 @@ const AdminPage: React.FC = () => {
               </button>
 
               <button
-                onClick={() => {
-                  setActiveTab('cin');
-                  setSidebarOpen(false);
-                }}
+                onClick={() => setActiveTab('cin')}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all ${
                   activeTab === 'cin' 
                     ? 'bg-blue-50 border border-blue-200 text-blue-700 shadow-sm' 
@@ -420,10 +370,7 @@ const AdminPage: React.FC = () => {
               </button>
 
               <button
-                onClick={() => {
-                  setActiveTab('settings');
-                  setSidebarOpen(false);
-                }}
+                onClick={() => setActiveTab('settings')}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all ${
                   activeTab === 'settings' 
                     ? 'bg-blue-50 border border-blue-200 text-blue-700 shadow-sm' 
@@ -1076,7 +1023,7 @@ const AdminPage: React.FC = () => {
                         </div>
                         
                         <div className="space-y-4 mb-4">
-                          {cin.cinRectoImagePath ? (
+                          {cin.cinRectoImagePath && (
                             <div>
                               <p className="text-sm font-medium text-dark-700 mb-2">Recto de la CIN</p>
                               <div className="relative">
@@ -1085,24 +1032,14 @@ const AdminPage: React.FC = () => {
                                   alt="CIN Recto"
                                   className="w-full h-64 object-contain bg-dark-50 rounded border-2 border-dark-200 hover:border-primary-400 transition-colors cursor-zoom-in"
                                   onError={(e) => {
-                                    console.error('Erreur chargement image CIN recto:', cin.cinRectoImagePath);
-                                    const target = e.target as HTMLImageElement;
-                                    target.onerror = null;
-                                    target.src = '/api/placeholder/300/200';
+                                    e.currentTarget.src = '/api/placeholder/300/200';
                                   }}
-                                  onClick={() => {
-                                    const url = getImageUrl(cin.cinRectoImagePath);
-                                    if (url) window.open(url, '_blank');
-                                  }}
+                                  onClick={() => window.open(getImageUrl(cin.cinRectoImagePath), '_blank')}
                                 />
                               </div>
                             </div>
-                          ) : (
-                            <div className="bg-gray-100 rounded p-4 text-center">
-                              <p className="text-sm text-gray-600">Image recto non disponible</p>
-                            </div>
                           )}
-                          {cin.cinVersoImagePath ? (
+                          {cin.cinVersoImagePath && (
                             <div>
                               <p className="text-sm font-medium text-dark-700 mb-2">Verso de la CIN</p>
                               <div className="relative">
@@ -1111,21 +1048,11 @@ const AdminPage: React.FC = () => {
                                   alt="CIN Verso"
                                   className="w-full h-64 object-contain bg-dark-50 rounded border-2 border-dark-200 hover:border-primary-400 transition-colors cursor-zoom-in"
                                   onError={(e) => {
-                                    console.error('Erreur chargement image CIN verso:', cin.cinVersoImagePath);
-                                    const target = e.target as HTMLImageElement;
-                                    target.onerror = null;
-                                    target.src = '/api/placeholder/300/200';
+                                    e.currentTarget.src = '/api/placeholder/300/200';
                                   }}
-                                  onClick={() => {
-                                    const url = getImageUrl(cin.cinVersoImagePath);
-                                    if (url) window.open(url, '_blank');
-                                  }}
+                                  onClick={() => window.open(getImageUrl(cin.cinVersoImagePath), '_blank')}
                                 />
                               </div>
-                            </div>
-                          ) : (
-                            <div className="bg-gray-100 rounded p-4 text-center">
-                              <p className="text-sm text-gray-600">Image verso non disponible</p>
                             </div>
                           )}
                         </div>
@@ -1139,7 +1066,7 @@ const AdminPage: React.FC = () => {
                             <span>Approuver</span>
                           </button>
                           <button
-                            onClick={() => handleRejectCINClick(cin.id)}
+                            onClick={() => handleVerifyCIN(cin.id, false)}
                             className="flex-1 btn-secondary text-sm flex items-center justify-center space-x-2"
                           >
                             <XMarkIcon className="w-5 h-5" />
@@ -1193,312 +1120,6 @@ const AdminPage: React.FC = () => {
                     {pendingCinCount === 0 && newUsersCount === 0 && (
                       <p className="text-dark-600 text-center py-8">Aucune notification</p>
                     )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'settings' && (
-              <div className="space-y-6">
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                  <h2 className="text-xl font-semibold mb-6 text-gray-900 flex items-center space-x-2">
-                    <CogIcon className="w-6 h-6" />
-                    <span>Paramètres de la plateforme</span>
-                  </h2>
-
-                  <div className="space-y-6">
-                    {/* Section Conditions d'utilisation */}
-                    <section className="border-b border-gray-200 pb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Conditions d'utilisation</h3>
-                      <p className="text-gray-700 mb-4">
-                        Gérez les conditions d'utilisation de la plateforme. Les utilisateurs doivent accepter ces conditions lors de l'inscription.
-                      </p>
-                      <div className="flex space-x-3">
-                        <a
-                          href="/terms"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn-secondary"
-                        >
-                          <DocumentTextIcon className="w-5 h-5 inline mr-2" />
-                          Voir les conditions
-                        </a>
-                        <button
-                          onClick={() => window.open('/terms', '_blank')}
-                          className="btn-primary"
-                        >
-                          Modifier
-                        </button>
-                      </div>
-                    </section>
-
-                    {/* Section Politique de confidentialité */}
-                    <section className="border-b border-gray-200 pb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Politique de confidentialité</h3>
-                      <p className="text-gray-700 mb-4">
-                        Gérez la politique de confidentialité de la plateforme. Cette politique explique comment nous collectons et utilisons les données.
-                      </p>
-                      <div className="flex space-x-3">
-                        <a
-                          href="/privacy"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn-secondary"
-                        >
-                          <DocumentTextIcon className="w-5 h-5 inline mr-2" />
-                          Voir la politique
-                        </a>
-                        <button
-                          onClick={() => window.open('/privacy', '_blank')}
-                          className="btn-primary"
-                        >
-                          Modifier
-                        </button>
-                      </div>
-                    </section>
-
-                    {/* Section Paramètres généraux */}
-                    <section className="border-b border-gray-200 pb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Paramètres généraux</h3>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-gray-900">Vérification CIN obligatoire</p>
-                            <p className="text-sm text-gray-600">Les propriétaires doivent vérifier leur CIN pour publier</p>
-                          </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" defaultChecked />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                          </label>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-gray-900">Notifications par email</p>
-                            <p className="text-sm text-gray-600">Envoyer des notifications par email aux utilisateurs</p>
-                          </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" defaultChecked />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                          </label>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-gray-900">Messages automatiques</p>
-                            <p className="text-sm text-gray-600">Envoyer des messages automatiques pour les actions admin</p>
-                          </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" defaultChecked />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                          </label>
-                        </div>
-                      </div>
-                    </section>
-
-                    {/* Section Mode maintenance */}
-                    <section className="border-b border-gray-200 pb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Mode maintenance</h3>
-                      <p className="text-gray-700 mb-4">
-                        Activez le mode maintenance pour effectuer des mises à jour sans que les utilisateurs puissent accéder à la plateforme.
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-gray-900">Activer le mode maintenance</p>
-                          <p className="text-sm text-gray-600">La plateforme sera inaccessible aux utilisateurs non administrateurs</p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" className="sr-only peer" />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        </label>
-                      </div>
-                      {false && (
-                        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                          <p className="text-sm text-yellow-800">
-                            <strong>Mode maintenance actif</strong> - Les utilisateurs verront un message de maintenance lors de leur connexion.
-                          </p>
-                        </div>
-                      )}
-                    </section>
-
-                    {/* Section Configuration email */}
-                    <section className="border-b border-gray-200 pb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuration email</h3>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Serveur SMTP
-                          </label>
-                          <input
-                            type="text"
-                            className="input-field"
-                            placeholder="smtp.example.com"
-                            defaultValue="smtp.gmail.com"
-                          />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Port
-                            </label>
-                            <input
-                              type="number"
-                              className="input-field"
-                              placeholder="587"
-                              defaultValue="587"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Email expéditeur
-                            </label>
-                            <input
-                              type="email"
-                              className="input-field"
-                              placeholder="noreply@example.com"
-                            />
-                          </div>
-                        </div>
-                        <button className="btn-primary">
-                          Tester la configuration email
-                        </button>
-                      </div>
-                    </section>
-
-                    {/* Section Sécurité */}
-                    <section className="border-b border-gray-200 pb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Paramètres de sécurité</h3>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-gray-900">Authentification à deux facteurs (2FA)</p>
-                            <p className="text-sm text-gray-600">Recommandé pour les comptes administrateurs</p>
-                          </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" defaultChecked />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                          </label>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-gray-900">Limite de tentatives de connexion</p>
-                            <p className="text-sm text-gray-600">Bloquer après 5 tentatives échouées</p>
-                          </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" defaultChecked />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                          </label>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-gray-900">Journalisation des actions admin</p>
-                            <p className="text-sm text-gray-600">Enregistrer toutes les actions administratives</p>
-                          </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" defaultChecked />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                          </label>
-                        </div>
-                      </div>
-                    </section>
-
-                    {/* Section Sauvegarde */}
-                    <section className="border-b border-gray-200 pb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Sauvegarde et restauration</h3>
-                      <div className="space-y-4">
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                          <div className="flex items-start space-x-3">
-                            <div className="flex-shrink-0">
-                              <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-blue-900">Dernière sauvegarde</p>
-                              <p className="text-sm text-blue-700">Il y a 2 heures - Taille: 45.2 MB</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex space-x-3">
-                          <button className="btn-primary">
-                            Créer une sauvegarde maintenant
-                          </button>
-                          <button className="btn-secondary">
-                            Restaurer depuis une sauvegarde
-                          </button>
-                        </div>
-                        <div className="flex items-center justify-between pt-2">
-                          <div>
-                            <p className="font-medium text-gray-900">Sauvegarde automatique</p>
-                            <p className="text-sm text-gray-600">Sauvegarder la base de données quotidiennement</p>
-                          </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" defaultChecked />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                          </label>
-                        </div>
-                      </div>
-                    </section>
-
-                    {/* Section API et intégrations */}
-                    <section className="border-b border-gray-200 pb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">API et intégrations</h3>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Clé API Cloudinary
-                          </label>
-                          <div className="flex space-x-2">
-                            <input
-                              type="password"
-                              className="input-field flex-1"
-                              placeholder="••••••••••••"
-                              defaultValue="••••••••••••"
-                            />
-                            <button className="btn-secondary">
-                              Afficher
-                            </button>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">Utilisée pour l'upload d'images</p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Webhook URL (optionnel)
-                          </label>
-                          <input
-                            type="url"
-                            className="input-field"
-                            placeholder="https://example.com/webhook"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">URL pour recevoir les notifications d'événements</p>
-                        </div>
-                      </div>
-                    </section>
-
-                    {/* Section Statistiques */}
-                    <section>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistiques de la plateforme</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <p className="text-sm text-gray-600">Utilisateurs totaux</p>
-                          <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
-                        </div>
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <p className="text-sm text-gray-600">Logements actifs</p>
-                          <p className="text-2xl font-bold text-gray-900">{stats.totalProperties}</p>
-                        </div>
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <p className="text-sm text-gray-600">Annonces actives</p>
-                          <p className="text-2xl font-bold text-gray-900">{stats.totalAnnouncements}</p>
-                        </div>
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <p className="text-sm text-gray-600">Vérifications en attente</p>
-                          <p className="text-2xl font-bold text-gray-900">{stats.pendingVerifications}</p>
-                        </div>
-                      </div>
-                    </section>
                   </div>
                 </div>
               </div>
@@ -1561,48 +1182,6 @@ const AdminPage: React.FC = () => {
                       className="btn-danger"
                     >
                       Supprimer
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* CIN Reject Modal */}
-            {cinRejectModal.open && cinRejectModal.userId && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-lg max-w-md w-full p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Rejeter la vérification CIN
-                  </h3>
-                  <p className="text-sm text-gray-700 mb-4">
-                    Veuillez saisir la raison du rejet (sera envoyée à l'utilisateur) :
-                  </p>
-                  <textarea
-                    value={cinRejectModal.reason}
-                    onChange={(e) => setCinRejectModal({ ...cinRejectModal, reason: e.target.value })}
-                    className="input-field w-full mb-4"
-                    rows={4}
-                    placeholder="Raison du rejet..."
-                    required
-                  />
-                  <div className="flex space-x-3 justify-end">
-                    <button
-                      onClick={() => setCinRejectModal({ open: false, userId: null, reason: '' })}
-                      className="btn-secondary"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (!cinRejectModal.reason.trim()) {
-                          toast.error('Veuillez saisir une raison');
-                          return;
-                        }
-                        handleVerifyCIN(cinRejectModal.userId!, false, cinRejectModal.reason);
-                      }}
-                      className="btn-danger"
-                    >
-                      Rejeter
                     </button>
                   </div>
                 </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, EyeSlashIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import SimpleCaptcha from '../components/SimpleCaptcha';
 import toast from 'react-hot-toast';
 import { apiJson } from '../config';
@@ -90,7 +90,9 @@ const AdminRegisterPage: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <img src="/logo_colo.svg" alt="ColocAntananarivo" className="h-20 w-auto" />
+            <div className="w-20 h-20 bg-primary-600 rounded-xl flex items-center justify-center shadow-lg">
+              <ShieldCheckIcon className="w-10 h-10 text-white" />
+            </div>
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-dark-900">
             Créer un compte Administrateur

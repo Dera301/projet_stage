@@ -7,60 +7,6 @@ const { sendAdminNotification } = require('../utils/adminNotifier');
 
 const prisma = new PrismaClient();
 
-// Helper function to send automatic message to user
-const sendAutoMessage = async (userId, adminId, content) => {
-  try {
-    // Find or create conversation between admin and user
-    let conversation = await prisma.conversation.findFirst({
-      where: {
-        OR: [
-          { user1Id: adminId, user2Id: userId },
-          { user1Id: userId, user2Id: adminId }
-        ]
-      }
-    });
-
-    if (!conversation) {
-      conversation = await prisma.conversation.create({
-        data: {
-          user1Id: adminId,
-          user2Id: userId,
-          unreadCount: 0
-        }
-      });
-    } else {
-      await prisma.conversation.update({
-        where: { id: conversation.id },
-        data: { updatedAt: new Date() }
-      });
-    }
-
-    // Create message
-    await prisma.message.create({
-      data: {
-        conversationId: conversation.id,
-        senderId: adminId,
-        receiverId: userId,
-        content,
-        isRead: false
-      }
-    });
-
-    // Increment unread count
-    await prisma.conversation.update({
-      where: { id: conversation.id },
-      data: {
-        unreadCount: {
-          increment: 1
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error sending auto message:', error);
-    // Don't throw, just log the error
-  }
-};
-
 // Public route to seed the first admin (only when no admin exists)
 router.post('/seed_admin', async (req, res) => {
   try {
@@ -190,27 +136,6 @@ router.put('/user_update_role/:id', async (req, res) => {
 router.delete('/user_delete/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { reason } = req.body;
-
-    const user = await prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true
-      }
-    });
-
-    if (!user) {
-      return sendError(res, 'Utilisateur non trouvé', 404);
-    }
-
-    // Envoyer un message avant suppression si une raison est fournie
-    if (reason && reason.trim()) {
-      const messageContent = `Bonjour ${user.firstName},\n\nVotre compte a été supprimé par un administrateur.\n\nRaison : ${reason}\n\nSi vous pensez qu'il s'agit d'une erreur, veuillez nous contacter.\n\nCordialement,\nL'équipe ColocAntananarivo`;
-      await sendAutoMessage(user.id, req.user.id, messageContent);
-    }
 
     await prisma.user.delete({
       where: { id }
@@ -362,16 +287,6 @@ router.delete('/announcement_delete_with_reason/:id', async (req, res) => {
       include: { author: { select: { id: true, firstName: true, lastName: true, email: true } } }
     });
 
-    if (!ann) {
-      return sendError(res, 'Annonce non trouvée', 404);
-    }
-
-    // Envoyer un message à l'auteur si une raison est fournie
-    if (reason && reason.trim() && ann.author) {
-      const messageContent = `Bonjour ${ann.author.firstName},\n\nVotre annonce a été supprimée par un administrateur.\n\nRaison : ${reason}\n\nSi vous pensez qu'il s'agit d'une erreur, veuillez nous contacter.\n\nCordialement,\nL'équipe ColocAntananarivo`;
-      await sendAutoMessage(ann.author.id, req.user.id, messageContent);
-    }
-
     await prisma.announcement.delete({ where: { id } });
 
     try {
@@ -434,20 +349,6 @@ router.put('/cin_verify/:id', async (req, res) => {
     const id = parseInt(req.params.id);
     const { verified, reason } = req.body;
 
-    const userBeforeUpdate = await prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true
-      }
-    });
-
-    if (!userBeforeUpdate) {
-      return sendError(res, 'Utilisateur non trouvé', 404);
-    }
-
     const user = await prisma.user.update({
       where: { id },
       data: {
@@ -465,15 +366,6 @@ router.put('/cin_verify/:id', async (req, res) => {
         cinVerifiedAt: true
       }
     });
-
-    // Envoyer un message automatique
-    if (verified === false && reason && reason.trim()) {
-      const messageContent = `Bonjour ${user.firstName},\n\nVotre demande de vérification de CIN a été rejetée.\n\nRaison : ${reason}\n\nVous pouvez soumettre une nouvelle demande avec des documents valides.\n\nCordialement,\nL'équipe ColocAntananarivo`;
-      await sendAutoMessage(user.id, req.user.id, messageContent);
-    } else if (verified === true) {
-      const messageContent = `Bonjour ${user.firstName},\n\nFélicitations ! Votre CIN a été vérifiée avec succès.\n\nVotre compte est maintenant vérifié et vous pouvez utiliser toutes les fonctionnalités de la plateforme.\n\nCordialement,\nL'équipe ColocAntananarivo`;
-      await sendAutoMessage(user.id, req.user.id, messageContent);
-    }
 
     await sendAdminNotification('cin_verification_result', { id: user.id, email: user.email, name: `${user.firstName || ''} ${user.lastName || ''}`, verified: verified === true, reason }).catch(() => {});
     return sendResponse(res, {

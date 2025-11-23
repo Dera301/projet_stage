@@ -21,8 +21,7 @@ import {
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Property } from '../types';
-import ScheduleAppointmentModal from '../components/ScheduleAppointmentModal';
-import { getImageUrl } from '../config';
+import ScheduleAppointmentModal from '../components/ScheduleAppointmentModal'; // Ajoutez cette importation
 
 const PropertyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -153,6 +152,19 @@ const PropertyDetailPage: React.FC = () => {
       toast.success('Lien copié dans le presse-papiers');
     }
   };
+  const getImageUrl = (imageUrl: string | undefined) => {
+  if (!imageUrl) return '/api/placeholder/400/300';
+  
+  // Si l'URL est déjà une URL complète, la retourner telle quelle
+  if (imageUrl.startsWith('http')) return imageUrl;
+  
+  // Si c'est un chemin relatif, le convertir en URL absolue
+  if (imageUrl.startsWith('/')) {
+    return `http://localhost${imageUrl}`;
+  }
+  
+  return imageUrl;
+};
 
 
   const content = (

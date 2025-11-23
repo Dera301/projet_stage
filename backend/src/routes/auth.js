@@ -59,29 +59,22 @@ router.post('/register', async (req, res) => {
     const accountActivationDeadline = new Date();
     accountActivationDeadline.setHours(accountActivationDeadline.getHours() + 24);
 
-    // Récupérer l'avatar depuis le body
-    const avatar = req.body.avatar || null;
-    console.log('📸 Avatar reçu lors de l\'inscription:', avatar ? 'Oui' : 'Non', avatar ? `(${avatar.length} caractères)` : '');
-
     // Create user in database
-    const userData = {
-      email,
-      password: hashedPassword,
-      firstName,
-      lastName,
-      phone,
-      userType,
-      university: university || null,
-      studyLevel: studyLevel || null,
-      budget: budget ? parseFloat(budget) : null,
-      clerkId: clerkId,
-      isVerified: false,
-      accountActivationDeadline,
-      avatar: avatar  // Inclure l'avatar dans les données utilisateur
-    };
-
     const user = await prisma.user.create({
-      data: userData,
+      data: {
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        phone,
+        userType,
+        university: university || null,
+        studyLevel: studyLevel || null,
+        budget: budget ? parseFloat(budget) : null,
+        clerkId: clerkId,
+        isVerified: false,
+        accountActivationDeadline
+      },
       select: {
         id: true,
         email: true,
@@ -92,7 +85,6 @@ router.post('/register', async (req, res) => {
         university: true,
         studyLevel: true,
         budget: true,
-        avatar: true,
         isVerified: true,
         createdAt: true
       }
@@ -231,13 +223,12 @@ router.post('/verify_cin', verifyJWT, async (req, res) => {
     }
 
     // Update user with CIN information
-    // Les champs cinRectoImagePath et cinVersoImagePath sont TEXT dans la DB, pas de limite de longueur
     const user = await prisma.user.update({
       where: { id: userId },
       data: {
         cinNumber,
-        cinRectoImagePath: cinRectoImagePath ? String(cinRectoImagePath) : null,
-        cinVersoImagePath: cinVersoImagePath ? String(cinVersoImagePath) : null,
+        cinRectoImagePath: cinRectoImagePath || null,
+        cinVersoImagePath: cinVersoImagePath || null,
         cinData: cinData ? JSON.stringify(cinData) : null,
         cinVerified: false, // Will be verified by admin
         cinVerificationRequestedAt: new Date()

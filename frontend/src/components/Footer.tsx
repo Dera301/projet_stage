@@ -13,8 +13,11 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo et description */}
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center mb-4">
-              <img src="/logo_colo.svg" alt="ColocAntananarivo" className="h-20 w-auto" />
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">C</span>
+              </div>
+              <span className="text-xl font-bold">ColocAntananarivo</span>
             </div>
             <p className="text-gray-300 mb-6 max-w-md">
               La plateforme de référence pour la colocation étudiante à Antananarivo. 
@@ -97,21 +100,18 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Copyright et liens légaux */}
-        <div className="border-t border-gray-800 mt-8 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400 text-sm mb-4 md:mb-0">
-              © {new Date().getFullYear()} ColocAntananarivo. Tous droits réservés.
-            </p>
-            <div className="flex space-x-6">
-              <Link to="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Conditions d'utilisation
-              </Link>
-              <Link to="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Politique de confidentialité
-              </Link>
-            </div>
-          </div>
+        {/* Copyright */}
+        <div className="border-t border-gray-800 mt-8 pt-8 text-center">
+          <p className="text-gray-400">
+            © 2025 ColocAntananarivo. Tous droits réservés. | 
+            <a href="/privacy" className="hover:text-white transition-colors ml-2">
+              Politique de confidentialité
+            </a>
+            <span className="mx-2">|</span>
+            <a href="/terms" className="hover:text-white transition-colors">
+              Conditions d'utilisation
+            </a>
+          </p>
         </div>
       </div>
     </footer>

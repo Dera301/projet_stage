@@ -2,33 +2,14 @@
 import { getStorage, setStorage, removeStorage } from './utils/storage';
 
 // URL de base : On utilise la variable d'env ou la valeur en dur, sans slash final
-const API_BASE_URL = (process.env.REACT_APP_API_URL || 'https://projet-stage-backend.vercel.app').replace(/\/+$/, '');
+const API_BASE_URL = (process.env.REACT_APP_API_URL || 'https://projet-stage-backend.vercel.app').replace(/\/$/, '');
 
 console.log('🔗 Configuration API:', API_BASE_URL);
 
 const buildUrl = (endpoint: string): string => {
-  // Nettoyer l'endpoint : enlever tous les slashes en début et fin
-  const cleanEndpoint = endpoint.replace(/^\/+|\/+$/g, '');
-  // Nettoyer l'URL de base : enlever le slash de fin s'il existe
-  const cleanBaseUrl = API_BASE_URL.replace(/\/+$/, '');
-  // Construire l'URL finale en évitant les doubles slashes
-  let finalUrl = `${cleanBaseUrl}/${cleanEndpoint}`;
-  
-  // Remplacer tous les séquences de plus d'un slash par un seul
-  finalUrl = finalUrl.replace(/([^:])\/\//g, '$1/');
-  
-  // S'assurer que le protocole est correct (http:// ou https://)
-  finalUrl = finalUrl.replace(/(https?:)\/+/g, '$1//');
-  
-  console.log('URL construite:', finalUrl); // Pour le débogage
-  return finalUrl;
-};
-
-// Variable globale pour gérer la déconnexion en cas d'erreur 401
-let onUnauthorizedCallback: (() => void) | null = null;
-
-export const setUnauthorizedCallback = (callback: () => void) => {
-  onUnauthorizedCallback = callback;
+  // S'assurer que l'endpoint commence par un slash
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  return `${API_BASE_URL}${cleanEndpoint}`;
 };
 
 export const apiGet = async (url: string) => {
@@ -54,23 +35,7 @@ export const apiGet = async (url: string) => {
     if (!response.ok) {
        const errorText = await response.text();
        console.error('❌ Server Error Response:', errorText);
-       
-       // Gérer les erreurs 401 (Unauthorized) - Token invalide ou expiré
-       if (response.status === 401) {
-         console.warn('⚠️ Token invalide ou expiré, déconnexion...');
-         // Déclencher la déconnexion si callback disponible
-         if (onUnauthorizedCallback) {
-           onUnauthorizedCallback();
-         }
-       }
-       
-       // Essayer de parser le JSON pour obtenir le message d'erreur détaillé
-       try {
-         const errorJson = JSON.parse(errorText);
-         throw new Error(errorJson.message || `Erreur serveur: ${response.status}`);
-       } catch (e) {
-         throw new Error(`Erreur serveur: ${response.status}`);
-       }
+       throw new Error(`Erreur serveur: ${response.status}`);
     }
     
     const text = await response.text();
@@ -107,23 +72,7 @@ export const apiUpload = async (url: string, formData: FormData) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ Server Error Response:', errorText);
-      
-      // Gérer les erreurs 401 (Unauthorized) - Token invalide ou expiré
-      if (response.status === 401) {
-        console.warn('⚠️ Token invalide ou expiré, déconnexion...');
-        // Déclencher la déconnexion si callback disponible
-        if (onUnauthorizedCallback) {
-          onUnauthorizedCallback();
-        }
-      }
-      
-      // Essayer de parser le JSON pour obtenir le message d'erreur détaillé
-      try {
-        const errorJson = JSON.parse(errorText);
-        throw new Error(errorJson.message || `Erreur serveur: ${response.status}`);
-      } catch (e) {
-        throw new Error(`Erreur serveur: ${response.status}`);
-      }
+      throw new Error(`Erreur serveur: ${response.status}`);
     }
 
     const text = await response.text();
@@ -162,23 +111,7 @@ export const apiJson = async (url: string, method: string, data?: any) => {
     if (!response.ok) {
        const errorText = await response.text();
        console.error('❌ Server Error Response:', errorText);
-       
-       // Gérer les erreurs 401 (Unauthorized) - Token invalide ou expiré
-       if (response.status === 401) {
-         console.warn('⚠️ Token invalide ou expiré, déconnexion...');
-         // Déclencher la déconnexion si callback disponible
-         if (onUnauthorizedCallback) {
-           onUnauthorizedCallback();
-         }
-       }
-       
-       // Essayer de parser le JSON pour obtenir le message d'erreur détaillé
-       try {
-         const errorJson = JSON.parse(errorText);
-         throw new Error(errorJson.message || `Erreur serveur: ${response.status}`);
-       } catch (e) {
-         throw new Error(`Erreur serveur: ${response.status}`);
-       }
+       throw new Error(`Erreur serveur: ${response.status}`);
     }
     
     const text = await response.text();
@@ -204,27 +137,4 @@ export const setAuthToken = (token: string | null) => {
 
 export const getAuthToken = () => {
   return getStorage('auth_token');
-};
-
-// Fonction utilitaire pour obtenir l'URL de base de l'API
-export const getApiBaseUrl = () => {
-  return API_BASE_URL;
-};
-
-// Fonction utilitaire pour construire une URL d'image complète
-export const getImageUrl = (imageUrl: string | null | undefined): string => {
-  if (!imageUrl) return '';
-  
-  // Si c'est déjà une URL complète (http/https), la retourner telle quelle
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('data:')) {
-    return imageUrl;
-  }
-  
-  // Si c'est un chemin relatif, construire l'URL complète
-  if (imageUrl.startsWith('/')) {
-    return `${API_BASE_URL}${imageUrl}`;
-  }
-  
-  // Sinon, ajouter le slash et construire l'URL
-  return `${API_BASE_URL}/${imageUrl}`;
 };

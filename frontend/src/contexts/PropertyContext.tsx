@@ -126,12 +126,9 @@ export const PropertyProvider: React.FC<PropertyProviderProps> = ({ children }) 
       } else {
         setUserProperties([]);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Erreur fetchUserProperties:', error);
-      // Ne pas afficher d'erreur si c'est une erreur 401 (gérée par config.ts)
-      if (!error.message?.includes('Token invalide') && !error.message?.includes('401')) {
-        toast.error('Erreur lors du chargement de vos propriétés');
-      }
+      toast.error('Erreur lors du chargement de vos propriétés');
       setUserProperties([]);
     } finally {
       setLoading(false);

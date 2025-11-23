@@ -24,7 +24,7 @@ import { useCINVerification } from '../hooks/useCINVerification';
 import { FadeInOnScroll } from '../utils/animations';
 import { Property } from '../types';
 import toast from 'react-hot-toast';
-import { apiGet, getImageUrl } from '../config';
+import { apiGet } from '../config';
 
 const HomePage: React.FC = () => {
   const { properties, loading } = useProperty();
@@ -138,6 +138,19 @@ const HomePage: React.FC = () => {
     }
   ];
 
+  // Fonction utilitaire pour les URLs d'images
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  // Dans HomePage.tsx - CORRECTION
+  const getImageUrl = (imageUrl: string | undefined) => {
+    if (!imageUrl) return '/api/placeholder/400/300';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    
+    // 🔥 CORRECTION: Éviter les doubles slashs
+    const baseUrl = API_BASE_URL.replace(/\/+$/, '');
+    const cleanImageUrl = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+    
+    return `${baseUrl}${cleanImageUrl}`.replace(/\/\//g, '/');
+  };
 
   const filteredAnnouncements = useMemo(() => {
     if (!searchQuery) return latestAnnouncements;

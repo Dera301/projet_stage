@@ -4,7 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'; // Ajouter Link
 import { useProperty } from '../contexts/PropertyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Property } from '../types';
-import { apiUpload, getImageUrl } from '../config';
+import { getAuthToken } from '../config';
 import { 
   PhotoIcon,
   ArrowLeftIcon,
@@ -191,18 +191,27 @@ const EditPropertyPage: React.FC = () => {
         const formData = new FormData();
         formData.append('image', file);
         
-        try {
-          const data = await apiUpload('/api/upload/image', formData);
-          
-          if (!data.success) {
-            throw new Error(data.message || 'Erreur lors de l\'upload');
-          }
-          
-          return data.data?.url || data.data?.path || '';
-        } catch (error: any) {
-          console.error('Erreur upload:', error);
-          throw new Error(error.message || 'Erreur lors de l\'upload');
+        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+        const token = getAuthToken();
+        const headers: HeadersInit = {};
+        
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
         }
+        
+        const response = await fetch(`${API_BASE_URL}/api/upload/image`, {
+          method: 'POST',
+          headers,
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Erreur lors de l\'upload');
+        }
+        
+        return data.data?.url || data.data?.path || '';
       };
 
       const uploadPromises = imageFiles.map(img => uploadImageToServer(img.file));
@@ -299,7 +308,13 @@ const EditPropertyPage: React.FC = () => {
     }
   };
 
-  // Utilise la fonction centralisée getImageUrl de config
+  const getImageUrl = (imageUrl: string | undefined) => {
+    if (!imageUrl) return '/api/placeholder/400/300';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    if (imageUrl.startsWith('/')) return `${API_BASE_URL}${imageUrl}`;
+    return imageUrl;
+  };
 
   if (!property) {
     return (

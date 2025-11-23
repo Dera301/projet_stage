@@ -11,7 +11,6 @@ import {
   StarIcon,
   HeartIcon
 } from '@heroicons/react/24/outline';
-import { getImageUrl } from '../config';
 
 const SearchPage: React.FC = () => {
   const { searchProperties, loading } = useProperty();
@@ -86,7 +85,17 @@ const SearchPage: React.FC = () => {
     property.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Utilise la fonction centralisée getImageUrl importée de config
+  const getImageUrl = (imageUrl: string | undefined) => {
+    if (!imageUrl) return '/api/placeholder/400/300';
+    
+    if (imageUrl.startsWith('http')) return imageUrl;
+    
+    if (imageUrl.startsWith('/')) {
+      return `http://localhost${imageUrl}`;
+    }
+    
+    return imageUrl;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">

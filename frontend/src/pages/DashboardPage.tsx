@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAnnouncement } from '../contexts/AnnouncementContext';
 import { TrashIcon } from '@heroicons/react/24/solid';
-import { apiGet, getImageUrl } from '../config';
+import { apiGet } from '../config';
 import { useMessage } from '../contexts/MessageContext';
 import {
   HomeIcon,
@@ -230,6 +230,17 @@ const DashboardPage: React.FC = () => {
     } catch (e) {}
   };
 
+  const getImageUrl = (imageUrl: string | undefined) => {
+    if (!imageUrl) return '/api/placeholder/400/300';
+    
+    if (imageUrl.startsWith('http')) return imageUrl;
+    
+    if (imageUrl.startsWith('/')) {
+      return `http://localhost${imageUrl}`;
+    }
+    
+    return imageUrl;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-8">

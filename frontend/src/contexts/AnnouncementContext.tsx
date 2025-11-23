@@ -75,12 +75,9 @@ export const AnnouncementProvider: React.FC<{ children: ReactNode }> = ({ childr
       } else {
         setUserAnnouncements([]);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      // Ne pas afficher d'erreur si c'est une erreur 401 (gérée par config.ts)
-      if (!err.message?.includes('Token invalide') && !err.message?.includes('401')) {
-        toast.error('Impossible de charger vos annonces');
-      }
+      toast.error('Impossible de charger vos annonces');
       setUserAnnouncements([]);
     } finally { setLoading(false); }
   }, [user]);

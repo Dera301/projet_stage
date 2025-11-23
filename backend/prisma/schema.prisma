@@ -19,13 +19,13 @@ model User {
   university                 String?        @db.VarChar(255)
   studyLevel                 String?        @db.VarChar(100)
   bio                        String?
-  avatar                     String?        @db.Text
+  avatar                     String?        @db.VarChar(255)
   budget                     Decimal?       @db.Decimal(10, 2)
   cinNumber                  String?        @db.VarChar(12)
   cinData                    String?
   cinVerified                Boolean        @default(false)
-  cinRectoImagePath          String?        @db.Text
-  cinVersoImagePath          String?        @db.Text
+  cinRectoImagePath          String?        @db.VarChar(255)
+  cinVersoImagePath          String?        @db.VarChar(255)
   cinVerificationConfidence  Float?
   cinVerificationErrors      String?
   cinVerifiedAt              DateTime?
@@ -126,19 +126,18 @@ model Message {
 }
 
 model Appointment {
-  id                 Int               @id @default(autoincrement())
-  propertyId         Int
-  studentId          Int
-  ownerId            Int
-  appointmentDate    DateTime
-  status             AppointmentStatus @default(pending)
-  message            String?
-  cancellationReason String?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  owner              User              @relation("OwnerAppointments", fields: [ownerId], references: [id], onDelete: Cascade)
-  property           Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  student            User              @relation("StudentAppointments", fields: [studentId], references: [id], onDelete: Cascade)
+  id              Int               @id @default(autoincrement())
+  propertyId      Int
+  studentId       Int
+  ownerId         Int
+  appointmentDate DateTime
+  status          AppointmentStatus @default(pending)
+  message         String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  owner           User              @relation("OwnerAppointments", fields: [ownerId], references: [id], onDelete: Cascade)
+  property        Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  student         User              @relation("StudentAppointments", fields: [studentId], references: [id], onDelete: Cascade)
 
   @@map("appointments")
 }
