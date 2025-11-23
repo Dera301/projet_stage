@@ -113,24 +113,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 };
 
-  const register = async (userData: RegisterData): Promise<void> => {
+  const register = async (userData: RegisterData | FormData): Promise<void> => {
     setIsLoading(true);
-    const profileImage: File | undefined = (userData as any).profileImage;
     
     try {
-      // D'abord créer l'utilisateur sans l'avatar
-      const registerData = {
-        email: userData.email,
-        password: userData.password,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        phone: userData.phone,
-        userType: userData.userType,
-        university: userData.university,
-        studyLevel: userData.studyLevel,
-        budget: typeof (userData as any).budget === 'number' ? (userData as any).budget : Number((userData as any).budget) || null,
-      };
+      let profileImage: File | null | undefined;
+      let registerData: Omit<RegisterData, 'profileImage' | 'confirmPassword'>;
       
+      // Gérer à la fois les FormData et les objets simples
+      if (userData instanceof FormData) {
+        // Extraire l'image si elle existe
+        profileImage = userData.get('profileImage') as File | null || undefined;
+        
+        // Créer un objet avec les données du formulaire
+        const formDataObj: Record<string, any> = {};
+        userData.forEach((value, key) => {
+          if (key !== 'profileImage') {
+            formDataObj[key] = value;
+          }
+        });
+        
+        // Convertir les champs numériques
+        if (formDataObj.budget) {
+          formDataObj.budget = Number(formDataObj.budget) || null;
+        }
+        
+        registerData = formDataObj as Omit<RegisterData, 'profileImage' | 'confirmPassword'>;
+      } else {
+        // Gérer l'objet simple
+        const { profileImage: img, confirmPassword, ...rest } = userData;
+        profileImage = img;
+        
+        // Convertir le budget en nombre si nécessaire
+        if (userData.budget !== undefined && userData.budget !== null) {
+          userData.budget = typeof userData.budget === 'string' && userData.budget !== '' ? 
+            Number(userData.budget) : 
+            (userData.budget as number | undefined);
+        } else {
+          // Si le budget est null ou undefined, on le supprime pour éviter les erreurs de typage
+          delete userData.budget;
+        }
+        
+        const budgetValue = userData.budget;
+        
+        registerData = {
+          ...rest,
+          budget: budgetValue,
+        };
+      }
+      
+      // Envoyer les données d'inscription
       const data = await apiJson('/api/auth/register', 'POST', registerData);
       
       if (!data.success) {
@@ -148,15 +180,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           const uploadData = await apiUpload('/api/upload/image', form);
           
-          if (uploadData.success && uploadData.data?.url) {
-            // Utiliser l'URL complète de Cloudinary
-            const cloudinaryUrl = uploadData.data.url;
-            
-            // Stocker l'URL complète dans la base de données
-            // La validation côté serveur devrait accepter cette URL
+          if (uploadData.success && uploadData.data?.publicId) {
+            // Stocker uniquement l'ID public dans la base de données
             await apiJson('/api/users/me', 'PUT', {
-              avatar: cloudinaryUrl
+              avatar: uploadData.data.publicId
             });
+            
+            // Mettre à jour l'utilisateur avec le nouvel avatar
+            if (data.data.user) {
+              data.data.user.avatar = uploadData.data.publicId;
+              setUser(mapApiUserToFront(data.data.user));
+            }
           }
         } catch (uploadError) {
           console.error('Erreur lors de l\'upload de l\'image de profil:', uploadError);

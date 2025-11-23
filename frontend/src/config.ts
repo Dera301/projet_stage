@@ -156,20 +156,49 @@ export const getApiBaseUrl = () => {
   return API_BASE_URL;
 };
 
-// Fonction utilitaire pour construire une URL d'image complète
+/**
+ * Construit l'URL d'une image Cloudinary à partir de son ID public
+ */
+export const getCloudinaryUrl = (publicId: string | null | undefined, options: {
+  width?: number;
+  height?: number;
+  crop?: 'fill' | 'fit' | 'limit' | 'pad' | 'crop' | 'thumb' | 'scale';
+  quality?: string;
+} = {}): string => {
+  if (!publicId) return '';
+  
+  const cloudName = 'dz4ttrfjc'; // Remplacez par votre nom de cloud Cloudinary
+  const transformations = [
+    'c_fill',
+    options.width ? `w_${options.width}` : 'w_500',
+    options.height ? `h_${options.height}` : 'h_500',
+    options.crop ? `c_${options.crop}` : 'c_fill',
+    'g_face',
+    'q_auto:good'
+  ].filter(Boolean).join(',');
+  
+  return `https://res.cloudinary.com/${cloudName}/image/upload/${transformations}/${publicId}`;
+};
+
+/**
+ * Fonction de compatibilité pour les anciennes URLs
+ */
 export const getImageUrl = (imageUrl: string | null | undefined): string => {
   if (!imageUrl) return '';
   
-  // Si c'est déjà une URL complète (http/https), la retourner telle quelle
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('data:')) {
+  // Si c'est un ID Cloudinary (ne contient pas de /)
+  if (!imageUrl.includes('/')) {
+    return getCloudinaryUrl(imageUrl, { width: 500, height: 500 });
+  }
+  
+  // Si l'URL est déjà une URL complète, la retourner telle quelle
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
     return imageUrl;
   }
   
-  // Si c'est un chemin relatif, construire l'URL complète
-  if (imageUrl.startsWith('/')) {
-    return `${API_BASE_URL}${imageUrl}`;
-  }
+  // Si c'est un chemin relatif, le combiner avec l'URL de base de l'API
+  const baseUrl = API_BASE_URL.replace(/\/+$/, ''); // Supprimer les slashes de fin
+  const cleanPath = imageUrl.replace(/^\/+/, ''); // Supprimer les slashes de début
   
-  // Sinon, ajouter le slash et construire l'URL
-  return `${API_BASE_URL}/${imageUrl}`;
+  return `${baseUrl}/${cleanPath}`;
 };

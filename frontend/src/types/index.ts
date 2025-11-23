@@ -92,6 +92,9 @@ export interface RegisterData {
   userType: 'student' | 'owner';
   university?: string;
   studyLevel?: string;
+  budget?: number | string | undefined;
+  confirmPassword?: string;
+  profileImage?: File | null;
 }
 
 export interface ImageFile {

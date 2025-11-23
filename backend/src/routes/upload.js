@@ -55,8 +55,9 @@ router.post('/image', (req, res) => {
         }
       );
       
+      // Retourner uniquement l'ID public de l'image
+      // L'URL complète sera construite côté client
       sendResponse(res, {
-        url: result.secure_url,
         publicId: result.public_id,
         width: result.width,
         height: result.height

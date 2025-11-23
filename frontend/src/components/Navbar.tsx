@@ -12,6 +12,7 @@ import {
   ChatBubbleLeftRightIcon as ChatIcon,
   PlusIcon
 } from '@heroicons/react/24/outline';
+import { getCloudinaryUrl } from '../config';
 
 const logoSrc = `${process.env.PUBLIC_URL}/logo_colo.svg`;
 
@@ -233,7 +234,16 @@ const Navbar: React.FC = () => {
                     ${isActiveLink('/profile') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'}
                   `}>
                     {user.avatar ? (
-                      <img src={user.avatar} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
+                      <img 
+                        src={getCloudinaryUrl(user.avatar, { width: 48, height: 48 })} 
+                        alt="avatar" 
+                        className="w-6 h-6 rounded-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = '/default-avatar.png';
+                        }}
+                      />
                     ) : (
                       <UserIcon className="w-5 h-5" />
                     )}
@@ -369,7 +379,16 @@ const Navbar: React.FC = () => {
                     <div className="flex items-center justify-between px-3 py-2">
                       <div className="flex items-center">
                         {user.avatar ? (
-                          <img src={user.avatar} alt="avatar" className="w-5 h-5 rounded-full object-cover mr-3" />
+                          <img 
+                            src={getCloudinaryUrl(user.avatar, { width: 40, height: 40 })} 
+                            alt="avatar" 
+                            className="w-5 h-5 rounded-full object-cover mr-3"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null;
+                              target.src = '/default-avatar.png';
+                            }}
+                          />
                         ) : (
                           <UserIcon className="w-5 h-5 text-gray-400 mr-3" />
                         )}

@@ -10,7 +10,7 @@ import {
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { apiUpload } from '../config'; // ← Importer apiUpload directement
+import { apiUpload, getCloudinaryUrl } from '../config';
 import { Link } from 'react-router-dom';
 
 const ProfilePage: React.FC = () => {
@@ -197,7 +197,7 @@ const ProfilePage: React.FC = () => {
                       </div>
                     ) : user.avatar ? (
                       <img 
-                        src={user.avatar} 
+                        src={getCloudinaryUrl(user.avatar, { width: 200, height: 200 })} 
                         alt="Avatar" 
                         className="w-full h-full object-cover"
                         onError={(e) => {
