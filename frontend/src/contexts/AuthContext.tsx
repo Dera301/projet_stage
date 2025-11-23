@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, AuthContextType, RegisterData, CINVerificationData } from '../types'; // Retirer CINVerificationResult
-import { apiGet, apiJson, apiUpload, setAuthToken } from '../config';
+import { apiGet, apiJson, apiUpload, setAuthToken, setUnauthorizedCallback } from '../config';
 import toast from 'react-hot-toast';
 import { cinVerificationService } from '../services/cinVerificationService';
 import { getStorage, removeStorage, clearStorage } from '../utils/storage';
@@ -22,6 +22,16 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Configurer le callback pour la déconnexion automatique en cas d'erreur 401
+  useEffect(() => {
+    setUnauthorizedCallback(() => {
+      console.warn('🔒 Déconnexion automatique - Token invalide');
+      setUser(null);
+      setAuthToken(null);
+      clearStorage();
+    });
+  }, []);
 
  useEffect(() => {
   const token = getStorage('auth_token'); // Utiliser getStorage

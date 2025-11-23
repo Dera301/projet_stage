@@ -24,6 +24,13 @@ const buildUrl = (endpoint: string): string => {
   return finalUrl;
 };
 
+// Variable globale pour gérer la déconnexion en cas d'erreur 401
+let onUnauthorizedCallback: (() => void) | null = null;
+
+export const setUnauthorizedCallback = (callback: () => void) => {
+  onUnauthorizedCallback = callback;
+};
+
 export const apiGet = async (url: string) => {
   const fullUrl = buildUrl(url);
   
@@ -47,6 +54,15 @@ export const apiGet = async (url: string) => {
     if (!response.ok) {
        const errorText = await response.text();
        console.error('❌ Server Error Response:', errorText);
+       
+       // Gérer les erreurs 401 (Unauthorized) - Token invalide ou expiré
+       if (response.status === 401) {
+         console.warn('⚠️ Token invalide ou expiré, déconnexion...');
+         // Déclencher la déconnexion si callback disponible
+         if (onUnauthorizedCallback) {
+           onUnauthorizedCallback();
+         }
+       }
        
        // Essayer de parser le JSON pour obtenir le message d'erreur détaillé
        try {
@@ -91,6 +107,15 @@ export const apiUpload = async (url: string, formData: FormData) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ Server Error Response:', errorText);
+      
+      // Gérer les erreurs 401 (Unauthorized) - Token invalide ou expiré
+      if (response.status === 401) {
+        console.warn('⚠️ Token invalide ou expiré, déconnexion...');
+        // Déclencher la déconnexion si callback disponible
+        if (onUnauthorizedCallback) {
+          onUnauthorizedCallback();
+        }
+      }
       
       // Essayer de parser le JSON pour obtenir le message d'erreur détaillé
       try {
@@ -137,6 +162,15 @@ export const apiJson = async (url: string, method: string, data?: any) => {
     if (!response.ok) {
        const errorText = await response.text();
        console.error('❌ Server Error Response:', errorText);
+       
+       // Gérer les erreurs 401 (Unauthorized) - Token invalide ou expiré
+       if (response.status === 401) {
+         console.warn('⚠️ Token invalide ou expiré, déconnexion...');
+         // Déclencher la déconnexion si callback disponible
+         if (onUnauthorizedCallback) {
+           onUnauthorizedCallback();
+         }
+       }
        
        // Essayer de parser le JSON pour obtenir le message d'erreur détaillé
        try {
