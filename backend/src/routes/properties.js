@@ -255,6 +255,14 @@ router.get('/search', async (req, res) => {
 // Create property
 router.post('/create', verifyJWT, async (req, res) => {
   try {
+    // Log des données reçues pour débogage
+    console.log('Données reçues:', JSON.stringify({
+      ...req.body,
+      // Ne pas logger les images complètes pour éviter de surcharger les logs
+      images: req.body.images ? '[...images]' : null,
+      amenities: req.body.amenities
+    }, null, 2));    
+    
     const {
       title,
       description,
@@ -270,6 +278,9 @@ router.post('/create', verifyJWT, async (req, res) => {
       latitude,
       longitude
     } = req.body;
+
+    // Log des coordonnées reçues
+    console.log('Coordonnées reçues:', { latitude, longitude });
 
     // Validate required fields
     if (!title || !description || !address || !district || !price || !deposit || !availableRooms || !totalRooms || !propertyType) {

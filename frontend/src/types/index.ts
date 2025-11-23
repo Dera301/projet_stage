@@ -113,10 +113,8 @@ export interface CreatePropertyData {
   propertyType: 'apartment' | 'house' | 'studio';
   amenities: string[];
   images: string[];
-  coordinates?: {
-    lat: number;
-    lng: number;
-  };
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface SearchFilters {

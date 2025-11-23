@@ -572,11 +572,15 @@ const CreatePropertyPage: React.FC = () => {
 
       toast.dismiss();
       
-      // Étape 2: Créer la propriété avec les URLs permanentes
+      // Log des coordonnées pour débogage
+      console.log('Coordonnées avant envoi:', coordinates);
+      
+      // Étape 2: Créer la propriété avec les URLs permanentes et les coordonnées
       await createProperty({
         ...formData,
         images: uploadedImageUrls,
-        coordinates
+        latitude: coordinates.lat,
+        longitude: coordinates.lng
       });
       
       // Nettoyer les URLs temporaires
@@ -585,6 +589,7 @@ const CreatePropertyPage: React.FC = () => {
     } catch (error) {
       console.error('Erreur lors de la création:', error);
       toast.dismiss();
+      toast.error(error instanceof Error ? error.message : 'Une erreur est survenue lors de la création de la propriété');
     }
   };
 

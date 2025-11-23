@@ -48,6 +48,7 @@ app.use((req, res, next) => {
 
 // Routes API
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/verification', require('./routes/authRoutes'));
 app.use('/api/properties', require('./routes/properties'));
 app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/messages', require('./routes/messages'));

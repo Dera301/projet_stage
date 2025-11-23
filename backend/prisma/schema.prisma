@@ -43,8 +43,23 @@ model User {
   receivedMessages           Message[]      @relation("ReceivedMessages")
   sentMessages               Message[]      @relation("SentMessages")
   properties                 Property[]
+  verificationCodes          VerificationCode[]
 
   @@map("users")
+}
+
+model VerificationCode {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  code      String    @db.VarChar(10)
+  type      String    @db.VarChar(50) // EMAIL_VERIFICATION, PASSWORD_RESET, etc.
+  expiresAt DateTime
+  used      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, code])
+  @@index([code, type, used])
 }
 
 model Property {
