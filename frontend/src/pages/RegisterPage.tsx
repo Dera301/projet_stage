@@ -412,13 +412,23 @@ const RegisterPage: React.FC = () => {
             />
             <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
               J'accepte les{' '}
-              <a href="/terms" className="text-primary-600 hover:text-primary-500">
+              <Link
+                to="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-600 hover:text-primary-500"
+              >
                 conditions d'utilisation
-              </a>{' '}
+              </Link>{' '}
               et la{' '}
-              <a href="/privacy" className="text-primary-600 hover:text-primary-500">
+              <Link
+                to="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-600 hover:text-primary-500"
+              >
                 politique de confidentialité
-              </a>
+              </Link>
             </label>
           </div>
 

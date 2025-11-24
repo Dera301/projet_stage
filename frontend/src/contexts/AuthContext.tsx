@@ -159,7 +159,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // Créer l'utilisateur
-      const data = await apiJson('/api/auth/register', 'POST', {
+      const data = await apiJson('/api/verification/register', 'POST', {
         email: userData.email,
         password: userData.password,
         firstName: userData.firstName,
@@ -369,7 +369,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const verifyEmail = async (registrationId: string, code: string) => {
     try {
-      const response = await apiJson('/api/auth/verify-email', 'POST', { registrationId, code });
+      const response = await apiJson('/api/verification/verify-email', 'POST', { registrationId, code });
       
       if (response.success) {
         if (user) {
@@ -390,7 +390,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const resendVerificationCode = async ({ email, registrationId }: { email: string; registrationId?: string }) => {
     try {
-      const response = await apiJson('/api/auth/resend-verification', 'POST', { email, registrationId });
+      const response = await apiJson('/api/verification/resend-verification', 'POST', { email, registrationId });
       
       if (response.success) {
         toast.success('Code de vérification envoyé avec succès');
