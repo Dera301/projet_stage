@@ -1,5 +1,6 @@
 // config.ts
 import { getStorage, setStorage, removeStorage } from './utils/storage';
+import { formatErrorForDisplay } from './utils/errorHandler';
 
 // URL de base : On utilise la variable d'env ou la valeur en dur, sans slash final
 const API_BASE_URL = (process.env.REACT_APP_API_URL || 'https://projet-stage-backend.vercel.app').replace(/\/+$/, '');
@@ -67,9 +68,16 @@ export const apiGet = async (url: string) => {
        // Essayer de parser le JSON pour obtenir le message d'erreur détaillé
        try {
          const errorJson = JSON.parse(errorText);
-         throw new Error(errorJson.message || `Erreur serveur: ${response.status}`);
-       } catch (e) {
-         throw new Error(`Erreur serveur: ${response.status}`);
+         const error = new Error(errorJson.message || errorJson.error || 'Une erreur est survenue');
+         (error as any).response = { status: response.status, data: errorJson };
+         throw error;
+       } catch (e: any) {
+         if (e.message && e.response) {
+           throw e;
+         }
+         const error = new Error(formatErrorForDisplay({ response: { status: response.status }, message: e.message || 'Une erreur est survenue' }));
+         (error as any).response = { status: response.status };
+         throw error;
        }
     }
     
@@ -80,8 +88,14 @@ export const apiGet = async (url: string) => {
       console.error('❌ Invalid JSON received:', text.substring(0, 100));
       throw new Error('Le serveur a renvoyé un format invalide (HTML au lieu de JSON)');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('💥 Fetch error:', error);
+    // Si l'erreur n'a pas déjà été formatée, la formater
+    if (error && !error.response) {
+      const formattedError = new Error(formatErrorForDisplay(error));
+      (formattedError as any).response = { status: 0 };
+      throw formattedError;
+    }
     throw error;
   }
 };
@@ -120,9 +134,18 @@ export const apiUpload = async (url: string, formData: FormData) => {
       // Essayer de parser le JSON pour obtenir le message d'erreur détaillé
       try {
         const errorJson = JSON.parse(errorText);
-        throw new Error(errorJson.message || `Erreur serveur: ${response.status}`);
-      } catch (e) {
-        throw new Error(`Erreur serveur: ${response.status}`);
+        const error = new Error(errorJson.message || errorJson.error || 'Une erreur est survenue');
+        (error as any).response = { status: response.status, data: errorJson };
+        throw error;
+      } catch (e: any) {
+        if (e.message) {
+          const error = new Error(formatErrorForDisplay({ response: { status: response.status }, message: e.message }));
+          (error as any).response = { status: response.status };
+          throw error;
+        }
+        const error = new Error(formatErrorForDisplay({ response: { status: response.status } }));
+        (error as any).response = { status: response.status };
+        throw error;
       }
     }
 
@@ -133,8 +156,14 @@ export const apiUpload = async (url: string, formData: FormData) => {
       console.error('❌ Invalid JSON received:', text.substring(0, 100));
       throw new Error('Le serveur a renvoyé un format invalide');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('💥 Upload error:', error);
+    // Si l'erreur n'a pas déjà été formatée, la formater
+    if (error && !error.response) {
+      const formattedError = new Error(formatErrorForDisplay(error));
+      (formattedError as any).response = { status: 0 };
+      throw formattedError;
+    }
     throw error;
   }
 };
@@ -175,9 +204,16 @@ export const apiJson = async (url: string, method: string, data?: any) => {
        // Essayer de parser le JSON pour obtenir le message d'erreur détaillé
        try {
          const errorJson = JSON.parse(errorText);
-         throw new Error(errorJson.message || `Erreur serveur: ${response.status}`);
-       } catch (e) {
-         throw new Error(`Erreur serveur: ${response.status}`);
+         const error = new Error(errorJson.message || errorJson.error || 'Une erreur est survenue');
+         (error as any).response = { status: response.status, data: errorJson };
+         throw error;
+       } catch (e: any) {
+         if (e.message && e.response) {
+           throw e;
+         }
+         const error = new Error(formatErrorForDisplay({ response: { status: response.status }, message: e.message || 'Une erreur est survenue' }));
+         (error as any).response = { status: response.status };
+         throw error;
        }
     }
     
@@ -188,8 +224,14 @@ export const apiJson = async (url: string, method: string, data?: any) => {
       console.error('❌ Invalid JSON received:', text.substring(0, 100));
       throw new Error('Le serveur a renvoyé un format invalide');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('💥 Fetch error:', error);
+    // Si l'erreur n'a pas déjà été formatée, la formater
+    if (error && !error.response) {
+      const formattedError = new Error(formatErrorForDisplay(error));
+      (formattedError as any).response = { status: 0 };
+      throw formattedError;
+    }
     throw error;
   }
 };

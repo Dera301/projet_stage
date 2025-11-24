@@ -10,6 +10,17 @@ const prisma = new PrismaClient();
 // Helper function to send automatic message to user
 const sendAutoMessage = async (userId, adminId, content) => {
   try {
+    // Get user info for notification
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, firstName: true, lastName: true, email: true }
+    });
+
+    if (!user) {
+      console.error('User not found for auto message:', userId);
+      return;
+    }
+
     // Find or create conversation between admin and user
     let conversation = await prisma.conversation.findFirst({
       where: {
@@ -54,6 +65,15 @@ const sendAutoMessage = async (userId, adminId, content) => {
           increment: 1
         }
       }
+    });
+
+    // Notifier l'admin que le message a été envoyé
+    await sendAdminNotification('admin_message_sent', {
+      userEmail: user.email,
+      userName: `${user.firstName || ''} ${user.lastName || ''}`,
+      content: content.substring(0, 200) // Limiter la longueur pour l'email
+    }).catch(err => {
+      console.error('Erreur notification admin message:', err);
     });
   } catch (error) {
     console.error('Error sending auto message:', error);
