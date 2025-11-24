@@ -56,6 +56,18 @@ const verifyCode = async (req, res) => {
       }
 
       const createdUser = await prisma.$transaction(async (tx) => {
+        // Vérifier à nouveau si l'utilisateur existe déjà (double vérification)
+        const existingUser = await tx.user.findUnique({
+          where: { email: pending.email },
+          select: { id: true }
+        });
+
+        if (existingUser) {
+          await tx.pendingRegistration.delete({ where: { id: pending.id } }).catch(() => {});
+          throw new Error('Un compte existe déjà avec cet email');
+        }
+
+        // Créer l'utilisateur avec le statut PENDING_VERIFICATION par défaut
         const newUser = await tx.user.create({
           data: {
             email: pending.email,
@@ -71,7 +83,8 @@ const verifyCode = async (req, res) => {
             isVerified: true,
             verificationCode: null,
             verificationExpires: null,
-            status: 'PENDING_APPROVAL'
+            status: 'PENDING_VERIFICATION', // Statut initial
+            lastLogin: new Date()
           },
           select: {
             id: true,
@@ -80,11 +93,14 @@ const verifyCode = async (req, res) => {
             lastName: true,
             userType: true,
             status: true,
+            isVerified: true,
             createdAt: true
           }
         });
 
+        // Supprimer l'inscription en attente
         await tx.pendingRegistration.delete({ where: { id: pending.id } });
+        
         return newUser;
       });
 
@@ -104,8 +120,15 @@ const verifyCode = async (req, res) => {
       });
     }
 
-    // Compatibilité : ancien flux basé sur l'utilisateur existant
+    // Ancien flux basé sur l'utilisateur existant (pour rétrocompatibilité)
     const legacyUserId = parseInt(userId, 10);
+    if (isNaN(legacyUserId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID utilisateur invalide'
+      });
+    }
+
     const user = await prisma.user.findUnique({
       where: { 
         id: legacyUserId,
@@ -119,7 +142,8 @@ const verifyCode = async (req, res) => {
         verificationCode: true,
         verificationExpires: true,
         status: true,
-        userType: true
+        userType: true,
+        password: true
       }
     });
 
@@ -142,9 +166,10 @@ const verifyCode = async (req, res) => {
       where: { id: user.id },
       data: { 
         isVerified: true,
-        status: 'PENDING_APPROVAL',
+        status: 'PENDING_VERIFICATION', // Mettre à jour le statut
         verificationCode: null,
-        verificationExpires: null
+        verificationExpires: null,
+        lastLogin: new Date() // Mettre à jour la dernière connexion
       },
       select: {
         id: true,
@@ -152,7 +177,8 @@ const verifyCode = async (req, res) => {
         firstName: true,
         lastName: true,
         userType: true,
-        status: true
+        status: true,
+        isVerified: true
       }
     });
 

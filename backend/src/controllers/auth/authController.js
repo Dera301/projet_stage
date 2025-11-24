@@ -96,7 +96,7 @@ const register = async (req, res) => {
         budget: numericBudget,
         avatar: avatar || null,
         verificationCode,
-        verificationExpires
+        verificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h d'expiration
       },
       update: {
         passwordHash: hashedPassword,
@@ -109,12 +109,13 @@ const register = async (req, res) => {
         budget: numericBudget,
         avatar: avatar || null,
         verificationCode,
-        verificationExpires,
+        verificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h d'expiration
         attempts: 0
       },
       select: {
         id: true,
         email: true,
+        firstName: true,
         verificationExpires: true
       }
     });
@@ -125,13 +126,18 @@ const register = async (req, res) => {
         name: firstName,
         code: verificationCode
       });
-
+      console.log(`Email de vérification envoyé à ${email} avec le code: ${verificationCode}`);
     } catch (emailError) {
       console.error('Erreur lors de l\'envoi de l\'email de vérification:', emailError);
+      // En mode développement, retourner le code directement pour faciliter les tests
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('En mode développement, le code de vérification est:', verificationCode);
+      }
       // Ne pas échouer l'inscription à cause d'une erreur d'email
     }
 
-    res.status(201).json({
+    // En mode développement, inclure le code de vérification dans la réponse
+    const response = {
       success: true,
       message: 'Un code de vérification a été envoyé à votre adresse email',
       pendingId: pendingRegistration.id,
@@ -139,7 +145,15 @@ const register = async (req, res) => {
       requiresVerification: true,
       expiresAt: pendingRegistration.verificationExpires,
       existingPending: !!existingPending
-    });
+    };
+
+    // En mode développement, inclure le code de vérification dans la réponse
+    if (process.env.NODE_ENV === 'development') {
+      response.verificationCode = verificationCode;
+      console.log('Code de vérification (développement uniquement):', verificationCode);
+    }
+
+    res.status(201).json(response);
   } catch (error) {
     console.error('Erreur lors de l\'inscription:', error);
     res.status(500).json({ 
