@@ -8,13 +8,28 @@ let transporter;
  * @returns {import('nodemailer').Transporter|null} Instance du transporteur ou null en cas d'erreur
  */
 const initTransporter = () => {
+  // Log des variables d'environnement pour débogage (sans afficher les mots de passe)
+  console.log('🔍 Vérification configuration SMTP:');
+  console.log('  - SMTP_HOST:', process.env.SMTP_HOST ? '✅ défini' : '❌ manquant');
+  console.log('  - SMTP_PORT:', process.env.SMTP_PORT || '587 (défaut)');
+  console.log('  - SMTP_SECURE:', process.env.SMTP_SECURE);
+  console.log('  - SMTP_USER:', process.env.SMTP_USER ? '✅ défini' : '❌ manquant');
+  console.log('  - SMTP_PASSWORD:', process.env.SMTP_PASSWORD ? '✅ défini' : '❌ manquant');
+  console.log('  - EMAIL_FROM_ADDRESS:', process.env.EMAIL_FROM_ADDRESS ? '✅ défini' : '❌ manquant');
+  console.log('  - EMAIL_FROM_NAME:', process.env.EMAIL_FROM_NAME ? '✅ défini' : '❌ manquant');
+  
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
     console.warn('⚠️  Configuration SMTP incomplète. Les emails ne seront pas envoyés.');
+    console.warn('   Variables manquantes:', {
+      SMTP_HOST: !process.env.SMTP_HOST,
+      SMTP_USER: !process.env.SMTP_USER,
+      SMTP_PASSWORD: !process.env.SMTP_PASSWORD
+    });
     return null;
   }
 
   try {
-    return nodemailer.createTransport({
+    const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || '587', 10),
       secure: process.env.SMTP_SECURE === 'true',
@@ -32,6 +47,9 @@ const initTransporter = () => {
         tls: { rejectUnauthorized: false }
       })
     });
+    
+    console.log('✅ Transporteur SMTP créé avec succès');
+    return transporter;
   } catch (error) {
     console.error('❌ Erreur lors de la création du transporteur SMTP:', error);
     return null;
@@ -46,12 +64,19 @@ transporter = initTransporter();
  * @returns {boolean} true si le service est correctement configuré
  */
 const isEmailConfigured = () => {
-  const isConfigured = !!transporter && 
-                      !!process.env.EMAIL_FROM_ADDRESS && 
-                      !!process.env.EMAIL_FROM_NAME;
+  const hasTransporter = !!transporter;
+  const hasFromAddress = !!process.env.EMAIL_FROM_ADDRESS;
+  const hasFromName = !!process.env.EMAIL_FROM_NAME;
+  
+  const isConfigured = hasTransporter && hasFromAddress && hasFromName;
   
   if (!isConfigured) {
     console.warn('⚠️  Configuration d\'email incomplète. Vérifiez vos variables d\'environnement.');
+    console.warn('   Détails:', {
+      transporter: hasTransporter ? '✅' : '❌',
+      EMAIL_FROM_ADDRESS: hasFromAddress ? '✅' : '❌',
+      EMAIL_FROM_NAME: hasFromName ? '✅' : '❌'
+    });
   }
   
   return isConfigured;
@@ -74,13 +99,21 @@ const generateVerificationCode = () => {
  * @returns {Promise<{success: boolean, message: string}>}
  */
 const sendVerificationEmail = async (to, { name, code }) => {
+  console.log(`📧 Tentative d'envoi d'email de vérification à ${to} pour ${name}`);
+  console.log(`   Code de vérification: ${code}`);
+  
   if (!isEmailConfigured()) {
     console.warn(`📧 [Email simulé] Email de vérification pour ${to} (${name}): Code = ${code}`);
     return { success: true, message: 'Email de vérification simulé (mode développement)' };
   }
 
+  const fromAddress = process.env.EMAIL_FROM_ADDRESS;
+  const fromName = process.env.EMAIL_FROM_NAME || 'Équipe Colocation';
+  
+  console.log(`   Expéditeur: "${fromName}" <${fromAddress}>`);
+
   const mailOptions = {
-    from: `"${process.env.EMAIL_FROM_NAME || 'Équipe Colocation'}" <${process.env.EMAIL_FROM_ADDRESS}>`,
+    from: `"${fromName}" <${fromAddress}>`,
     to,
     subject: 'Vérifiez votre adresse email',
     html: `
@@ -106,8 +139,9 @@ const sendVerificationEmail = async (to, { name, code }) => {
   };
 
   try {
+    console.log(`   Envoi en cours via ${process.env.SMTP_HOST}:${process.env.SMTP_PORT}...`);
     const info = await transporter.sendMail(mailOptions);
-    console.log(`📧 Email de vérification envoyé à ${to} (Message ID: ${info.messageId})`);
+    console.log(`✅ Email de vérification envoyé à ${to} (Message ID: ${info.messageId})`);
     return { 
       success: true, 
       message: 'Email de vérification envoyé avec succès',
@@ -116,7 +150,11 @@ const sendVerificationEmail = async (to, { name, code }) => {
   } catch (error) {
     console.error('❌ Erreur lors de l\'envoi de l\'email de vérification:', {
       to,
+      from: fromAddress,
       error: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response,
       stack: error.stack
     });
     

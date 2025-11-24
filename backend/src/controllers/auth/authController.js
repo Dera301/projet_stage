@@ -1,3 +1,4 @@
+
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -104,16 +105,26 @@ const register = async (req, res) => {
 
     try {
       // Envoyer l'email de vérification
-      await emailService.sendVerificationEmail(email, {
+      console.log(`📧 Tentative d'envoi d'email de vérification à ${email}`);
+      const emailResult = await emailService.sendVerificationEmail(email, {
         name: firstName,
         code: verificationCode
       });
-      console.log(`Email de vérification envoyé à ${email} avec le code: ${verificationCode}`);
+      
+      if (emailResult.success) {
+        console.log(`✅ Email de vérification envoyé avec succès à ${email} avec le code: ${verificationCode}`);
+      } else {
+        console.warn(`⚠️  Email de vérification non envoyé (simulé): ${emailResult.message}`);
+      }
     } catch (emailError) {
-      console.error('Erreur lors de l\'envoi de l\'email de vérification:', emailError);
+      console.error('❌ Erreur lors de l\'envoi de l\'email de vérification:', emailError);
+      console.error('   Détails:', {
+        message: emailError.message,
+        stack: emailError.stack
+      });
       // En mode développement, retourner le code directement pour faciliter les tests
       if (process.env.NODE_ENV === 'development') {
-        console.warn('En mode développement, le code de vérification est:', verificationCode);
+        console.warn('⚠️  En mode développement, le code de vérification est:', verificationCode);
       }
       // Ne pas échouer l'inscription à cause d'une erreur d'email
     }
