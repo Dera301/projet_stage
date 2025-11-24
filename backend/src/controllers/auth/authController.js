@@ -43,30 +43,27 @@ const register = async (req, res) => {
       });
     }
 
-    // Vérifier si l'utilisateur existe déjà
+    // Vérifier si un utilisateur vérifié existe déjà
     const existingUser = await prisma.user.findUnique({ 
       where: { email },
       select: { id: true, isVerified: true }
     });
     
     if (existingUser) {
-      // Si l'utilisateur existe mais n'est pas vérifié, on peut lui renvoyer un code
       if (!existingUser.isVerified) {
+        // Supprimer l'utilisateur non vérifié existant
+        await prisma.user.delete({ where: { id: existingUser.id } });
+      } else {
         return res.status(400).json({ 
           success: false,
-          message: 'Un compte existe déjà avec cet email mais n\'est pas encore vérifié. Veuillez vérifier votre boîte mail ou demander un nouveau code de vérification.'
+          message: 'Un compte avec cet email existe déjà' 
         });
       }
-      return res.status(400).json({ 
-        success: false,
-        message: 'Un compte avec cet email existe déjà' 
-      });
     }
 
-    // Vérifier si une inscription est déjà en attente
-    const existingPending = await prisma.pendingRegistration.findUnique({
-      where: { email },
-      select: { id: true }
+    // Vérifier et supprimer les inscriptions en attente existantes
+    await prisma.pendingRegistration.deleteMany({
+      where: { email }
     });
 
     // Hacher le mot de passe
@@ -81,10 +78,9 @@ const register = async (req, res) => {
       ? Number(budget)
       : null;
 
-    // Créer ou mettre à jour l'inscription en attente
-    const pendingRegistration = await prisma.pendingRegistration.upsert({
-      where: { email },
-      create: {
+    // Créer une nouvelle inscription en attente
+    const pendingRegistration = await prisma.pendingRegistration.create({
+      data: {
         email,
         passwordHash: hashedPassword,
         firstName,
@@ -97,20 +93,6 @@ const register = async (req, res) => {
         avatar: avatar || null,
         verificationCode,
         verificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h d'expiration
-      },
-      update: {
-        passwordHash: hashedPassword,
-        firstName,
-        lastName,
-        phone,
-        userType: normalizedUserType,
-        university: isStudent ? university : null,
-        studyLevel: isStudent ? studyLevel : null,
-        budget: numericBudget,
-        avatar: avatar || null,
-        verificationCode,
-        verificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h d'expiration
-        attempts: 0
       },
       select: {
         id: true,
@@ -136,15 +118,14 @@ const register = async (req, res) => {
       // Ne pas échouer l'inscription à cause d'une erreur d'email
     }
 
-    // En mode développement, inclure le code de vérification dans la réponse
+    // Préparer la réponse
     const response = {
       success: true,
-      message: 'Un code de vérification a été envoyé à votre adresse email',
+      message: 'Un code de vérification a été envoyé à votre adresse email. Veuillez vérifier votre boîte de réception et votre dossier de courrier indésirable.',
       pendingId: pendingRegistration.id,
       email: pendingRegistration.email,
       requiresVerification: true,
-      expiresAt: pendingRegistration.verificationExpires,
-      existingPending: !!existingPending
+      expiresAt: pendingRegistration.verificationExpires
     };
 
     // En mode développement, inclure le code de vérification dans la réponse

@@ -22,7 +22,7 @@ const verifyCode = async (req, res) => {
 
     // Nouveau flux : vérifier une inscription en attente
     if (registrationId) {
-      const pendingId = parseInt(registrationId, 10);
+      const pendingId = parseInt(registrationId, 10); // Vérifier si l'inscription en attente existe
       const pending = await prisma.pendingRegistration.findUnique({
         where: { id: pendingId }
       });
@@ -30,44 +30,46 @@ const verifyCode = async (req, res) => {
       if (!pending) {
         return res.status(400).json({
           success: false,
-          message: 'Inscription en attente introuvable ou déjà utilisée'
+          message: 'Inscription en attente introuvable ou déjà utilisée. Veuillez réessayer de vous inscrire.'
         });
       }
 
       const now = new Date();
       if (pending.verificationCode !== code || new Date(pending.verificationExpires) < now) {
+        // Supprimer l'inscription expirée
+        if (new Date(pending.verificationExpires) < now) {
+          await prisma.pendingRegistration.delete({ where: { id: pending.id } });
+        }
+        
         return res.status(400).json({
           success: false,
-          message: 'Code de vérification invalide ou expiré'
+          message: 'Code de vérification invalide ou expiré. Veuillez demander un nouveau code.'
         });
       }
 
-      const existingUser = await prisma.user.findUnique({
+      // Vérifier si un utilisateur avec cet email existe déjà
+      const existingVerifiedUser = await prisma.user.findUnique({
         where: { email: pending.email },
-        select: { id: true }
+        select: { id: true, isVerified: true }
       });
 
-      if (existingUser) {
-        await prisma.pendingRegistration.delete({ where: { id: pending.id } }).catch(() => {});
-        return res.status(409).json({
-          success: false,
-          message: 'Ce compte a déjà été créé. Veuillez vous connecter.'
-        });
+      if (existingVerifiedUser) {
+        // Supprimer l'inscription en attente dans tous les cas
+        await prisma.pendingRegistration.delete({ where: { id: pending.id } });
+        
+        if (existingVerifiedUser.isVerified) {
+          return res.status(400).json({
+            success: false,
+            message: 'Un compte vérifié avec cet email existe déjà. Veuillez vous connecter.'
+          });
+        } else {
+          // Supprimer l'utilisateur non vérifié existant
+          await prisma.user.delete({ where: { id: existingVerifiedUser.id } });
+        }
       }
 
+      // Créer l'utilisateur après vérification réussie
       const createdUser = await prisma.$transaction(async (tx) => {
-        // Vérifier à nouveau si l'utilisateur existe déjà (double vérification)
-        const existingUser = await tx.user.findUnique({
-          where: { email: pending.email },
-          select: { id: true }
-        });
-
-        if (existingUser) {
-          await tx.pendingRegistration.delete({ where: { id: pending.id } }).catch(() => {});
-          throw new Error('Un compte existe déjà avec cet email');
-        }
-
-        // Créer l'utilisateur avec le statut PENDING_VERIFICATION par défaut
         const newUser = await tx.user.create({
           data: {
             email: pending.email,
@@ -83,7 +85,7 @@ const verifyCode = async (req, res) => {
             isVerified: true,
             verificationCode: null,
             verificationExpires: null,
-            status: 'PENDING_VERIFICATION', // Statut initial
+            status: 'PENDING_APPROVAL', // Statut initial après vérification
             lastLogin: new Date()
           },
           select: {
@@ -113,10 +115,18 @@ const verifyCode = async (req, res) => {
         console.error('Erreur lors de l\'envoi des emails post-vérification:', emailError);
       }
 
+      // Générer un token JWT pour la connexion automatique
+      const token = jwt.sign(
+        { userId: createdUser.id, email: createdUser.email },
+        process.env.JWT_SECRET || 'votre-secret-jwt',
+        { expiresIn: '7d' }
+      );
+
       return res.status(200).json({
         success: true,
         message: 'Email vérifié avec succès. Votre compte est en attente de validation par un administrateur.',
-        user: createdUser
+        user: createdUser,
+        token: token
       });
     }
 
