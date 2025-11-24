@@ -274,10 +274,9 @@ const EditPropertyPage: React.FC = () => {
 
     // Requête vers le backend
     const { apiJson } = await import('../config');
-    const response = await apiJson(`/api/properties/update/${property.id}`, 'PUT', updateData);
-    const data = await response.json();
+    const data = await apiJson(`/api/properties/update/${property.id}`, 'PUT', updateData);
 
-    if (!response.ok || !data.success) {
+    if (!data.success) {
         throw new Error(data.message || "Erreur inconnue lors de la mise à jour");
     }
 
