@@ -14,7 +14,18 @@ const generateVerificationCode = () => {
 // Inscription d'un nouvel utilisateur
 const register = async (req, res) => {
   try {
-    const { email, password, firstName, lastName, phone, userType, university, studyLevel, budget } = req.body;
+    const { 
+      email, 
+      password, 
+      firstName, 
+      lastName, 
+      phone, 
+      userType, 
+      university, 
+      studyLevel, 
+      budget,
+      avatar
+    } = req.body;
     
     console.log('Tentative d\'inscription avec les données:', {
       email,
@@ -52,39 +63,59 @@ const register = async (req, res) => {
       });
     }
 
+    // Vérifier si une inscription est déjà en attente
+    const existingPending = await prisma.pendingRegistration.findUnique({
+      where: { email },
+      select: { id: true }
+    });
+
     // Hacher le mot de passe
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationCode = generateVerificationCode();
     const verificationExpires = new Date();
     verificationExpires.setHours(verificationExpires.getHours() + 24); // Expire dans 24h
 
-    // Créer l'utilisateur avec isVerified à false
-    const user = await prisma.user.create({
-      data: {
+    const normalizedUserType = (userType || 'student').toLowerCase();
+    const isStudent = normalizedUserType === 'student';
+    const numericBudget = isStudent && budget !== undefined && budget !== null
+      ? Number(budget)
+      : null;
+
+    // Créer ou mettre à jour l'inscription en attente
+    const pendingRegistration = await prisma.pendingRegistration.upsert({
+      where: { email },
+      create: {
         email,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         firstName,
         lastName,
         phone,
-        userType,
-        university: userType === 'STUDENT' ? university : undefined,
-        studyLevel: userType === 'STUDENT' ? studyLevel : undefined,
-        budget: userType === 'STUDENT' ? parseFloat(budget) : undefined,
-        isVerified: false,
+        userType: normalizedUserType,
+        university: isStudent ? university : null,
+        studyLevel: isStudent ? studyLevel : null,
+        budget: numericBudget,
+        avatar: avatar || null,
+        verificationCode,
+        verificationExpires
+      },
+      update: {
+        passwordHash: hashedPassword,
+        firstName,
+        lastName,
+        phone,
+        userType: normalizedUserType,
+        university: isStudent ? university : null,
+        studyLevel: isStudent ? studyLevel : null,
+        budget: numericBudget,
+        avatar: avatar || null,
         verificationCode,
         verificationExpires,
-        status: 'PENDING_VERIFICATION'
+        attempts: 0
       },
       select: {
         id: true,
         email: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        userType: true,
-        isVerified: true,
-        status: true,
-        createdAt: true
+        verificationExpires: true
       }
     });
 
@@ -95,11 +126,6 @@ const register = async (req, res) => {
         code: verificationCode
       });
 
-      // Notifier l'administrateur de la nouvelle inscription
-      await emailService.notifyAdminNewRegistration({
-        ...user,
-        email: email
-      });
     } catch (emailError) {
       console.error('Erreur lors de l\'envoi de l\'email de vérification:', emailError);
       // Ne pas échouer l'inscription à cause d'une erreur d'email
@@ -108,9 +134,11 @@ const register = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Un code de vérification a été envoyé à votre adresse email',
-      userId: user.id,
-      email: user.email,
-      requiresVerification: true
+      pendingId: pendingRegistration.id,
+      email: pendingRegistration.email,
+      requiresVerification: true,
+      expiresAt: pendingRegistration.verificationExpires,
+      existingPending: !!existingPending
     });
   } catch (error) {
     console.error('Erreur lors de l\'inscription:', error);
@@ -208,7 +236,7 @@ const login = async (req, res) => {
     }
 
     // Vérifier si le compte est approuvé
-    if (user.status !== 'ACTIVE') {
+    if (user.status && user.status !== 'ACTIVE') {
       return res.status(403).json({
         success: false,
         message: 'Votre compte est en attente de validation par un administrateur',

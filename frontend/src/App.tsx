@@ -12,6 +12,7 @@ import PageTransition from './components/PageTransition';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import VerifyAccountPage from './pages/VerifyAccountPage';
 import DashboardPage from './pages/DashboardPage';
 import PropertyDetailPage from './pages/PropertyDetailPage';
 import PropertyListPage from './pages/PropertyListPage';
@@ -29,6 +30,7 @@ import CINVerificationPage from './pages/CINVerificationPage';
 // Components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import FirstLoginGuide from './components/FirstLoginGuide';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import EditPropertyPage from './pages/EditPropertyPage';
@@ -105,6 +107,13 @@ function AppContent() {
                 <PageTransition>
                   <div className="w-full overflow-x-hidden">
                     <RegisterPage />
+                  </div>
+                </PageTransition>
+              } />
+              <Route path="/verify-account" element={
+                <PageTransition>
+                  <div className="w-full overflow-x-hidden">
+                    <VerifyAccountPage />
                   </div>
                 </PageTransition>
               } />
@@ -267,6 +276,7 @@ function AppContent() {
       )}
       
       {!isAdminAuthPage && <ScrollToTopButton />}
+      {!isAdminAuthPage && <FirstLoginGuide />}
       
       <Toaster 
         position="top-right"

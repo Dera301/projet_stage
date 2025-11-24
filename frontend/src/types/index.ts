@@ -6,6 +6,7 @@ export interface User {
   lastName: string;
   phone: string;
   userType: 'student' | 'owner' | 'admin';
+  status?: 'PENDING_VERIFICATION' | 'PENDING_APPROVAL' | 'ACTIVE' | 'SUSPENDED';
   university?: string;
   studyLevel?: string;
   budget?: number;
@@ -24,6 +25,7 @@ export interface User {
   cin_verified_at?: string;
   account_activation_deadline?: string; // Nouveau champ pour stocker les données CIN extraites
   accountActivationDeadline?: Date; // Date limite pour l'accès (24h)
+  lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -92,6 +94,8 @@ export interface RegisterData {
   userType: 'student' | 'owner';
   university?: string;
   studyLevel?: string;
+  budget?: number;
+  avatar?: string | null;
 }
 
 export interface ImageFile {
@@ -132,13 +136,13 @@ export interface AuthContextType {
   user: User | null;
   setUser: (user: User | null) => void;
   login: (email: string, password: string) => Promise<{ success: boolean; data?: any }>;
-  register: (userData: RegisterData) => Promise<{ success: boolean; userId?: string; message?: string }>;
+  register: (userData: RegisterData) => Promise<{ success: boolean; pendingId?: string; email?: string; message?: string }>;
   logout: () => void;
   updateProfile: (profileData: Partial<User>) => Promise<void>;
   isLoading: boolean;
   verifyCIN: (verificationData: CINVerificationData) => Promise<void>;
-  verifyEmail: (userId: string, code: string) => Promise<{ success: boolean; message?: string }>;
-  resendVerificationCode: (email: string) => Promise<{ success: boolean; message?: string }>;
+  verifyEmail: (registrationId: string, code: string) => Promise<{ success: boolean; message?: string }>;
+  resendVerificationCode: (params: { email: string; registrationId?: string }) => Promise<{ success: boolean; message?: string }>;
 }
 
 export interface PropertyContextType {

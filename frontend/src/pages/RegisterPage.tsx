@@ -25,11 +25,8 @@ const RegisterPage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [captchaVerified, setCaptchaVerified] = useState(false);
-  const [verificationStep, setVerificationStep] = useState(false);
-  const [verificationCode, setVerificationCode] = useState('');
-  const [userId, setUserId] = useState<string>('');
   
-  const { register, verifyEmail, resendVerificationCode } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -106,11 +103,15 @@ const RegisterPage: React.FC = () => {
       const { confirmPassword, ...registerData } = formData;
       const response = await register(registerData);
       
-      // Si l'inscription réussit mais nécessite une vérification
-      if (response && response.userId) {
-        setUserId(response.userId);
-        setVerificationStep(true);
+      if (response?.success && response.pendingId) {
         toast.success('Un code de vérification a été envoyé à votre adresse email');
+        navigate(`/verify-account?pendingId=${response.pendingId}&email=${encodeURIComponent(formData.email)}`);
+        return;
+      }
+
+      if (response?.success) {
+        toast.success('Verifiez votre boite mail pour finaliser votre compte.');
+        navigate('/verify-account');
       }
     } catch (error) {
       // L'erreur est déjà gérée dans le contexte
@@ -118,104 +119,6 @@ const RegisterPage: React.FC = () => {
       setIsLoading(false);
     }
   };
-
-  // Étape de vérification du code
-  if (verificationStep && userId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div>
-            <div className="flex justify-center">
-              <img src={logoSrc} alt="ColocAntananarivo" className="h-12 w-auto" />
-            </div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Vérification du compte
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Nous avons envoyé un code à {formData.email}
-            </p>
-          </div>
-
-          <form 
-            className="mt-8 space-y-6" 
-            onSubmit={async (e) => {
-              e.preventDefault();
-              if (!verificationCode) {
-                toast.error('Veuillez entrer le code de vérification');
-                return;
-              }
-              
-              setIsLoading(true);
-              try {
-                if (!userId) {
-                  throw new Error('ID utilisateur manquant');
-                }
-                const result = await verifyEmail(userId, verificationCode);
-                if (result.success) {
-                  toast.success('Compte vérifié avec succès !');
-                  navigate('/login');
-                } else {
-                  toast.error(result.message || 'Échec de la vérification');
-                }
-              } catch (error: any) {
-                console.error('Erreur lors de la vérification:', error);
-                toast.error(error.message || 'Code de vérification invalide ou expiré');
-              } finally {
-                setIsLoading(false);
-              }
-            }}
-          >
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="verificationCode" className="block text-sm font-medium text-gray-700">
-                  Code de vérification
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="verificationCode"
-                    name="verificationCode"
-                    type="text"
-                    required
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value)}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                    placeholder="Entrez le code à 6 chiffres"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      await resendVerificationCode(formData.email);
-                      toast.success('Nouveau code envoyé !');
-                    } catch (error) {
-                      toast.error('Impossible d\'envoyer un nouveau code');
-                    }
-                  }}
-                  className="text-sm font-medium text-primary-600 hover:text-primary-500"
-                >
-                  Renvoyer le code
-                </button>
-              </div>
-
-              <div>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? 'Vérification...' : 'Vérifier mon compte'}
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

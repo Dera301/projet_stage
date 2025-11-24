@@ -181,13 +181,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null);
       setAuthToken(null);
       
-      toast.success('Inscription réussie ! Veuillez vous connecter.');
+      toast.success('Inscription initiée ! Veuillez vérifier votre email.');
       
       // Return success with user ID if available
+      const pendingIdentifier = data.pendingId ?? data.data?.pendingId;
       return { 
         success: true, 
-        userId: data.user?.id || data.userId,
-        message: 'Inscription réussie ! Veuillez vous connecter.'
+        pendingId: pendingIdentifier !== undefined ? String(pendingIdentifier) : undefined,
+        email: data.email || userData.email,
+        message: data.message || 'Veuillez valider le code reçu pour finaliser votre compte.'
       };
     } catch (error: any) {
       console.error('Erreur lors de l\'inscription:', error);
@@ -365,9 +367,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   };
 
-  const verifyEmail = async (userId: string, code: string) => {
+  const verifyEmail = async (registrationId: string, code: string) => {
     try {
-      const response = await apiJson('/api/auth/verify-email', 'POST', { userId, code });
+      const response = await apiJson('/api/auth/verify-email', 'POST', { registrationId, code });
       
       if (response.success) {
         if (user) {
@@ -386,9 +388,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const resendVerificationCode = async (email: string) => {
+  const resendVerificationCode = async ({ email, registrationId }: { email: string; registrationId?: string }) => {
     try {
-      const response = await apiJson('/api/auth/resend-verification', 'POST', { email });
+      const response = await apiJson('/api/auth/resend-verification', 'POST', { email, registrationId });
       
       if (response.success) {
         toast.success('Code de vérification envoyé avec succès');

@@ -12,6 +12,7 @@ model User {
   id                         Int            @id @default(autoincrement())
   email                      String         @unique @db.VarChar(255)
   password                   String?        @db.VarChar(255)
+  status                     UserStatus     @default(PENDING_VERIFICATION)
   firstName                  String         @db.VarChar(100)
   lastName                   String         @db.VarChar(100)
   phone                      String         @db.VarChar(20)
@@ -35,6 +36,7 @@ model User {
   verificationExpires        DateTime?
   clerkId                    String?        @unique @db.VarChar(255)
   accountActivationDeadline  DateTime?
+  lastLogin                  DateTime?
   createdAt                  DateTime       @default(now())
   updatedAt                  DateTime       @updatedAt
   announcements              Announcement[]
@@ -48,6 +50,27 @@ model User {
   verificationCodes          VerificationCode[]
 
   @@map("users")
+}
+
+model PendingRegistration {
+  id                  Int       @id @default(autoincrement())
+  email               String    @unique @db.VarChar(255)
+  passwordHash        String    @db.VarChar(255)
+  firstName           String    @db.VarChar(100)
+  lastName            String    @db.VarChar(100)
+  phone               String    @db.VarChar(20)
+  userType            UserType  @default(student)
+  university          String?   @db.VarChar(255)
+  studyLevel          String?   @db.VarChar(100)
+  budget              Decimal?  @db.Decimal(10, 2)
+  avatar              String?   @db.Text
+  verificationCode    String    @db.VarChar(10)
+  verificationExpires DateTime
+  attempts            Int       @default(0)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@map("pending_registrations")
 }
 
 model VerificationCode {
@@ -177,4 +200,11 @@ enum AppointmentStatus {
   confirmed
   cancelled
   completed
+}
+
+enum UserStatus {
+  PENDING_VERIFICATION
+  PENDING_APPROVAL
+  ACTIVE
+  SUSPENDED
 }

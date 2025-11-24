@@ -18,7 +18,7 @@ graph TB
         end
         
         subgraph "Backend Deployment"
-            BE1[Serverless Functions]
+            BE1[Express API (Serverless)]
             BE2[API Routes]
             BE3[Upload Handler]
         end
@@ -40,7 +40,7 @@ graph TB
         end
         
         subgraph "Storage"
-            ST1[Vercel Blob Storage<br/>or Cloudinary]
+            ST1[Cloudinary Media CDN]
         end
     end
     
@@ -179,26 +179,17 @@ graph TB
 graph LR
     subgraph "Upload Flow"
         CLIENT[Client Upload]
-        API[Upload API]
-        TEMP[/tmp/uploads]
-        PROCESS[Process Image]
-        STORAGE[Storage Service]
+        API[Express Upload API]
+        TMP[/tmp buffer]
+        CLOUDINARY[(Cloudinary)]
+        CDN[Cloudinary CDN]
     end
     
     CLIENT --> API
-    API --> TEMP
-    TEMP --> PROCESS
-    PROCESS --> STORAGE
-    
-    subgraph "Storage Options"
-        OPT1[Vercel Blob]
-        OPT2[Cloudinary]
-        OPT3[AWS S3]
-    end
-    
-    STORAGE --> OPT1
-    STORAGE --> OPT2
-    STORAGE --> OPT3
+    API --> TMP
+    TMP --> CLOUDINARY
+    CLOUDINARY --> CDN
+    CDN --> CLIENT
 ```
 
 **Note** : Sur Vercel, les fichiers dans `/tmp` sont temporaires. Pour un stockage permanent, utiliser un service cloud.
@@ -211,8 +202,9 @@ graph LR
 ### Backend
 - `DATABASE_URL` : URL de connexion PostgreSQL
 - `JWT_SECRET` : Clé secrète JWT
-- `CLERK_SECRET_KEY` : Clé secrète Clerk (optionnel)
-- `CLERK_PUBLISHABLE_KEY` : Clé publique Clerk (optionnel)
+- `CLOUDINARY_CLOUD_NAME` : Identifiant Cloudinary
+- `CLOUDINARY_API_KEY` : Clé API Cloudinary
+- `CLOUDINARY_API_SECRET` : Secret Cloudinary
 - `NODE_ENV` : Environnement (production/development)
 - `VERCEL` : Indicateur Vercel
 - `VERCEL_ENV` : Environnement Vercel

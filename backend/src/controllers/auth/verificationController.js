@@ -7,22 +7,109 @@ const prisma = new PrismaClient();
  * @route POST /api/auth/verify
  * @access Public
  */
+const generateVerificationCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+
 const verifyCode = async (req, res) => {
   try {
-    const { userId, code } = req.body;
+    const { registrationId, userId, code } = req.body;
 
-    if (!userId || !code) {
+    if ((!registrationId && !userId) || !code) {
       return res.status(400).json({ 
         success: false, 
-        message: 'ID utilisateur et code sont requis' 
+        message: 'Identifiant d\'inscription et code sont requis' 
       });
     }
 
-    // Vérifier si l'utilisateur existe et n'est pas encore vérifié
+    // Nouveau flux : vérifier une inscription en attente
+    if (registrationId) {
+      const pendingId = parseInt(registrationId, 10);
+      const pending = await prisma.pendingRegistration.findUnique({
+        where: { id: pendingId }
+      });
+
+      if (!pending) {
+        return res.status(400).json({
+          success: false,
+          message: 'Inscription en attente introuvable ou déjà utilisée'
+        });
+      }
+
+      const now = new Date();
+      if (pending.verificationCode !== code || new Date(pending.verificationExpires) < now) {
+        return res.status(400).json({
+          success: false,
+          message: 'Code de vérification invalide ou expiré'
+        });
+      }
+
+      const existingUser = await prisma.user.findUnique({
+        where: { email: pending.email },
+        select: { id: true }
+      });
+
+      if (existingUser) {
+        await prisma.pendingRegistration.delete({ where: { id: pending.id } }).catch(() => {});
+        return res.status(409).json({
+          success: false,
+          message: 'Ce compte a déjà été créé. Veuillez vous connecter.'
+        });
+      }
+
+      const createdUser = await prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
+            email: pending.email,
+            password: pending.passwordHash,
+            firstName: pending.firstName,
+            lastName: pending.lastName,
+            phone: pending.phone,
+            userType: pending.userType,
+            university: pending.userType === 'student' ? pending.university : null,
+            studyLevel: pending.userType === 'student' ? pending.studyLevel : null,
+            budget: pending.userType === 'student' ? pending.budget : null,
+            avatar: pending.avatar,
+            isVerified: true,
+            verificationCode: null,
+            verificationExpires: null,
+            status: 'PENDING_APPROVAL'
+          },
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            userType: true,
+            status: true,
+            createdAt: true
+          }
+        });
+
+        await tx.pendingRegistration.delete({ where: { id: pending.id } });
+        return newUser;
+      });
+
+      try {
+        await emailService.sendVerificationSuccessEmail(createdUser.email, {
+          name: createdUser.firstName
+        });
+        await emailService.notifyAdminNewRegistration(createdUser);
+      } catch (emailError) {
+        console.error('Erreur lors de l\'envoi des emails post-vérification:', emailError);
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Email vérifié avec succès. Votre compte est en attente de validation par un administrateur.',
+        user: createdUser
+      });
+    }
+
+    // Compatibilité : ancien flux basé sur l'utilisateur existant
+    const legacyUserId = parseInt(userId, 10);
     const user = await prisma.user.findUnique({
       where: { 
-        id: parseInt(userId),
-        isVerified: false // Ne vérifier que les comptes non vérifiés
+        id: legacyUserId,
+        isVerified: false
       },
       select: {
         id: true,
@@ -31,7 +118,6 @@ const verifyCode = async (req, res) => {
         lastName: true,
         verificationCode: true,
         verificationExpires: true,
-        isVerified: true,
         status: true,
         userType: true
       }
@@ -44,7 +130,6 @@ const verifyCode = async (req, res) => {
       });
     }
 
-    // Vérifier si le code correspond et n'est pas expiré
     const now = new Date();
     if (user.verificationCode !== code || new Date(user.verificationExpires) < now) {
       return res.status(400).json({ 
@@ -53,12 +138,13 @@ const verifyCode = async (req, res) => {
       });
     }
 
-    // Mettre à jour l'utilisateur comme vérifié
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: { 
         isVerified: true,
-        status: 'PENDING_APPROVAL' // Mettre le statut en attente d'approbation
+        status: 'PENDING_APPROVAL',
+        verificationCode: null,
+        verificationExpires: null
       },
       select: {
         id: true,
@@ -70,12 +156,9 @@ const verifyCode = async (req, res) => {
       }
     });
 
-    // Envoyer un email de confirmation de vérification
     await emailService.sendVerificationSuccessEmail(user.email, {
       name: user.firstName
     });
-
-    // Notifier l'administrateur de la nouvelle inscription
     await emailService.notifyAdminNewRegistration({
       ...updatedUser,
       email: user.email
@@ -102,24 +185,69 @@ const verifyCode = async (req, res) => {
  */
 const resendVerificationCode = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { registrationId, email } = req.body;
 
-    if (!email) {
+    if (!registrationId && !email) {
       return res.status(400).json({ 
         success: false, 
-        message: 'L\'adresse email est requise' 
+        message: 'L\'identifiant d\'inscription ou l\'email est requis' 
       });
     }
 
-    // Vérifier si l'utilisateur existe
+    let pending = null;
+    if (registrationId) {
+      pending = await prisma.pendingRegistration.findUnique({
+        where: { id: parseInt(registrationId, 10) }
+      });
+    }
+
+    if (!pending && email) {
+      pending = await prisma.pendingRegistration.findUnique({
+        where: { email }
+      });
+    }
+
+    if (pending) {
+      const verificationCode = generateVerificationCode();
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
+
+      await prisma.pendingRegistration.update({
+        where: { id: pending.id },
+        data: {
+          verificationCode,
+          verificationExpires: expiresAt,
+          attempts: 0
+        }
+      });
+
+      await emailService.sendVerificationEmail(pending.email, {
+        name: pending.firstName,
+        code: verificationCode
+      });
+
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Un nouveau code de vérification a été envoyé à votre adresse email',
+        pendingId: pending.id
+      });
+    }
+
+    // Compatibilité : reprise sur un utilisateur existant non vérifié
+    if (!email) {
+      return res.status(404).json({
+        success: false,
+        message: 'Inscription en attente introuvable'
+      });
+    }
+
     const user = await prisma.user.findUnique({
       where: { email },
       select: {
         id: true,
         email: true,
         firstName: true,
-        isVerified: true,
-        status: true
+        isVerified: true
       }
     });
 
@@ -137,12 +265,10 @@ const resendVerificationCode = async (req, res) => {
       });
     }
 
-    // Générer un nouveau code de vérification
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCode = generateVerificationCode();
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 24); // Expire dans 24 heures
+    expiresAt.setHours(expiresAt.getHours() + 24);
 
-    // Mettre à jour le code de vérification de l'utilisateur
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -151,7 +277,6 @@ const resendVerificationCode = async (req, res) => {
       }
     });
 
-    // Envoyer l'email de vérification
     await emailService.sendVerificationEmail(user.email, {
       name: user.firstName,
       code: verificationCode

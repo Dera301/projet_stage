@@ -42,6 +42,20 @@ img {
     width: 100%;
   }
 
+  /* 🔄 Styles globaux des champs de formulaire */
+  input,
+  select,
+  textarea,
+  .form-control {
+    background-color: #ffffff;
+    color: #0f172a;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #6b7280;
+  }
+
   /* 🔥 CORRECTION : Container principal */
   #root {
     width: 100%;
@@ -73,7 +87,7 @@ img {
   }
   
   .input-field {
-    @apply w-full px-3 py-2 border border-dark-300 bg-dark-100 text-dark-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply w-full px-3 py-2 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
   }
   
   .card {
@@ -134,6 +148,8 @@ img {
     transition: all 0.2s;
     resize: none;
     max-width: 100%; /* 🔥 Important */
+    background-color: #ffffff;
+    color: #0f172a;
   }
 
   .input-field:focus {
