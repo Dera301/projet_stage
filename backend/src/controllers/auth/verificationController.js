@@ -69,7 +69,8 @@ const verifyCode = async (req, res) => {
         }
       }
 
-      // Créer l'utilisateur après vérification réussie
+      // Créer l'utilisateur après vérification email réussie
+      // IMPORTANT: isVerified reste false jusqu'à ce que la CIN soit vérifiée par l'admin
       const createdUser = await prisma.$transaction(async (tx) => {
         const newUser = await tx.user.create({
           data: {
@@ -83,10 +84,11 @@ const verifyCode = async (req, res) => {
             studyLevel: pending.userType === 'student' ? pending.studyLevel : null,
             budget: pending.userType === 'student' ? pending.budget : null,
             avatar: pending.avatar,
-            isVerified: true,
+            isVerified: false, // Reste false jusqu'à vérification CIN
+            cinVerified: false, // CIN non vérifiée pour l'instant
             verificationCode: null,
             verificationExpires: null,
-            status: 'PENDING_APPROVAL', // Statut initial après vérification
+            status: 'PENDING_VERIFICATION', // En attente de vérification CIN
             lastLogin: new Date()
           },
           select: {
@@ -97,6 +99,7 @@ const verifyCode = async (req, res) => {
             userType: true,
             status: true,
             isVerified: true,
+            cinVerified: true,
             createdAt: true
           }
         });
@@ -125,9 +128,10 @@ const verifyCode = async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        message: 'Email vérifié avec succès. Votre compte est en attente de validation par un administrateur.',
+        message: 'Email vérifié avec succès. Veuillez maintenant vérifier votre CIN pour finaliser votre compte.',
         user: createdUser,
-        token: token
+        token: token,
+        requiresCINVerification: true
       });
     }
 
@@ -173,11 +177,13 @@ const verifyCode = async (req, res) => {
       });
     }
 
+    // IMPORTANT: isVerified reste false jusqu'à ce que la CIN soit vérifiée par l'admin
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: { 
-        isVerified: true,
-        status: 'PENDING_VERIFICATION', // Mettre à jour le statut
+        isVerified: false, // Reste false jusqu'à vérification CIN
+        cinVerified: false, // CIN non vérifiée pour l'instant
+        status: 'PENDING_VERIFICATION', // En attente de vérification CIN
         verificationCode: null,
         verificationExpires: null,
         lastLogin: new Date() // Mettre à jour la dernière connexion
@@ -189,7 +195,8 @@ const verifyCode = async (req, res) => {
         lastName: true,
         userType: true,
         status: true,
-        isVerified: true
+        isVerified: true,
+        cinVerified: true
       }
     });
 
@@ -203,8 +210,9 @@ const verifyCode = async (req, res) => {
 
     res.status(200).json({ 
       success: true, 
-      message: 'Email vérifié avec succès. Votre compte est en attente de validation par un administrateur.',
-      user: updatedUser
+      message: 'Email vérifié avec succès. Veuillez maintenant vérifier votre CIN pour finaliser votre compte.',
+      user: updatedUser,
+      requiresCINVerification: true
     });
   } catch (error) {
     console.error('Erreur lors de la vérification du code :', error);

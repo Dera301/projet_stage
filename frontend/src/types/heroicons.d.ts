@@ -51,6 +51,5 @@ declare module '@heroicons/react/24/outline' {
   export const TrashIcon: FC<SVGProps<SVGSVGElement>>;
   export const InformationCircleIcon: FC<SVGProps<SVGSVGElement>>;
   
-  
 }
   

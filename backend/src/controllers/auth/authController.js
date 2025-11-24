@@ -172,6 +172,7 @@ const login = async (req, res) => {
         phone: true,
         userType: true,
         isVerified: true,
+        cinVerified: true,
         status: true,
         verificationCode: true,
         verificationExpires: true
@@ -194,8 +195,11 @@ const login = async (req, res) => {
       });
     }
 
-    // Vérifier si le compte est vérifié
-    if (!user.isVerified) {
+    // Vérifier si l'email est vérifié (verificationCode doit être null)
+    // Note: isVerified peut être false si la CIN n'est pas encore vérifiée
+    const emailVerified = !user.verificationCode;
+    
+    if (!emailVerified) {
       // Si le code de vérification a expiré, en générer un nouveau
       const now = new Date();
       let verificationCode = user.verificationCode;
@@ -275,7 +279,8 @@ const login = async (req, res) => {
       success: true,
       message: 'Connexion réussie',
       token,
-      user: userWithoutSensitiveData
+      user: userWithoutSensitiveData,
+      requiresCINVerification: !user.cinVerified // Indiquer si la CIN doit être vérifiée
     });
   } catch (error) {
     console.error('Erreur lors de la connexion:', error);

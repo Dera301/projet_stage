@@ -468,13 +468,15 @@ router.put('/cin_verify/:id', async (req, res) => {
       return sendError(res, 'Utilisateur non trouvé', 404);
     }
 
+    // IMPORTANT: isVerified devient true seulement quand la CIN est vérifiée
     const user = await prisma.user.update({
       where: { id },
       data: {
         cinVerified: verified === true,
         cinVerifiedAt: verified === true ? new Date() : null,
         cinVerificationErrors: verified === false ? reason : null,
-        isVerified: verified === true
+        isVerified: verified === true, // isVerified = true seulement si CIN vérifiée
+        status: verified === true ? 'PENDING_APPROVAL' : 'PENDING_VERIFICATION' // Mettre à jour le statut
       },
       select: {
         id: true,
