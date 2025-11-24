@@ -131,12 +131,14 @@ export interface SearchFilters {
 export interface AuthContextType {
   user: User | null;
   setUser: (user: User | null) => void;
-  login: (email: string, password: string) => Promise<void>;
-  register: (userData: RegisterData) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ success: boolean; data?: any }>;
+  register: (userData: RegisterData) => Promise<{ success: boolean; userId?: string; message?: string }>;
   logout: () => void;
   updateProfile: (profileData: Partial<User>) => Promise<void>;
   isLoading: boolean;
   verifyCIN: (verificationData: CINVerificationData) => Promise<void>;
+  verifyEmail: (userId: string, code: string) => Promise<{ success: boolean; message?: string }>;
+  resendVerificationCode: (email: string) => Promise<{ success: boolean; message?: string }>;
 }
 
 export interface PropertyContextType {

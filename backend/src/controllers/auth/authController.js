@@ -15,6 +15,14 @@ const generateVerificationCode = () => {
 const register = async (req, res) => {
   try {
     const { email, password, firstName, lastName, phone, userType, university, studyLevel, budget } = req.body;
+    
+    console.log('Tentative d\'inscription avec les données:', {
+      email,
+      firstName,
+      lastName,
+      userType,
+      hasPassword: !!password
+    });
 
     // Validation des champs requis
     if (!email || !password || !firstName || !lastName || !phone || !userType) {

@@ -71,41 +71,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 }, []);
 
 
-  const login = async (email: string, password: string): Promise<void> => {
-  setIsLoading(true);
-  try {
-    const data = await apiJson('/api/auth/login', 'POST', { email, password });
-    
-    if (!data.success) {
-      throw new Error(data.message || 'Erreur de connexion');
-    }
-    
-    let authToken = null;
-    if (data.data?.token) {
-      authToken = data.data.token;
-    } else if (data.token) {
-      authToken = data.token;
-    } else {
-      authToken = 'demo-token';
-      console.log('🧪 Token de démo enregistré (fallback)');
-    }
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const data = await apiJson('/api/auth/login', 'POST', { email, password });
+      
+      if (!data.success) {
+        return { success: false, message: data.message || 'Erreur de connexion' };
+      }
+      
+      let authToken = null;
+      if (data.data?.token) {
+        authToken = data.data.token;
+      } else if (data.token) {
+        authToken = data.token;
+      } else {
+        authToken = 'demo-token';
+        console.log('🧪 Token de démo enregistré (fallback)');
+      }
 
-    if (authToken) {
-      setAuthToken(authToken);
-      console.log('✅ Token enregistré pour le port', window.location.port);
-    }
+      if (authToken) {
+        setAuthToken(authToken);
+        console.log('✅ Token enregistré pour le port', window.location.port);
+      }
 
+      let userData = null;
       if (data.data?.user) {
-        setUser(mapApiUserToFront(data.data.user));
+        userData = mapApiUserToFront(data.data.user);
+        setUser(userData);
       } else if (data.user) {
-        setUser(mapApiUserToFront(data.user));
+        userData = mapApiUserToFront(data.user);
+        setUser(userData);
       } else if (data.data) {
-        setUser(mapApiUserToFront(data.data));
+        userData = mapApiUserToFront(data.data);
+        setUser(userData);
       } else {
         try {
           const meData = await apiGet('/api/auth/me');
           if (meData.success) {
-            setUser(mapApiUserToFront(meData.data));
+            userData = mapApiUserToFront(meData.data);
+            setUser(userData);
             console.log('👤 Utilisateur connecté via me:', meData.data);
           }
         } catch (meError) {
@@ -114,17 +119,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       toast.success('Connexion réussie !');
+      return { 
+        success: true, 
+        data: userData 
+      };
     } catch (error: any) {
-    setAuthToken(null);
-    removeStorage('auth_token'); // Utiliser removeStorage
-    toast.error(error.message || 'Erreur lors de la connexion');
-    throw error;
-  } finally {
-    setIsLoading(false);
-  }
+      setAuthToken(null);
+      removeStorage('auth_token');
+      const errorMessage = error.message || 'Erreur lors de la connexion';
+      toast.error(errorMessage);
+      return { 
+        success: false, 
+        message: errorMessage 
+      };
+    } finally {
+      setIsLoading(false);
+    }
 };
 
-  const register = async (userData: RegisterData): Promise<void> => {
+  const register = async (userData: RegisterData) => {
     setIsLoading(true);
     try {
       // Uploader l'image si elle existe
@@ -137,11 +150,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('✅ Avatar uploadé avec succès:', avatarUrl ? 'Oui' : 'Non');
           
           if (!avatarUrl) {
-            throw new Error('L\'upload de l\'image a échoué');
+            return { success: false, message: 'L\'upload de l\'image a échoué' };
           }
         } catch (imageError: any) {
           console.error('Erreur lors de l\'upload de l\'image:', imageError);
-          throw new Error(`Erreur avec l'image de profil: ${imageError.message}`);
+          return { success: false, message: `Erreur avec l'image de profil: ${imageError.message}` };
         }
       }
 
@@ -160,7 +173,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       
       if (!data.success) {
-        throw new Error(data.message || 'Erreur lors de l\'inscription');
+        return { success: false, message: data.message || 'Erreur lors de l\'inscription' };
       }
       
       // Ne pas connecter automatiquement l'utilisateur
@@ -169,10 +182,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setAuthToken(null);
       
       toast.success('Inscription réussie ! Veuillez vous connecter.');
+      
+      // Return success with user ID if available
+      return { 
+        success: true, 
+        userId: data.user?.id || data.userId,
+        message: 'Inscription réussie ! Veuillez vous connecter.'
+      };
     } catch (error: any) {
       console.error('Erreur lors de l\'inscription:', error);
-      toast.error(error.message || 'Erreur lors de l\'inscription');
-      throw error;
+      const errorMessage = error.message || 'Erreur lors de l\'inscription';
+      toast.error(errorMessage);
+      return { success: false, message: errorMessage };
     } finally {
       setIsLoading(false);
     }
@@ -344,6 +365,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   };
 
+  const verifyEmail = async (userId: string, code: string) => {
+    try {
+      const response = await apiJson('/api/auth/verify-email', 'POST', { userId, code });
+      
+      if (response.success) {
+        if (user) {
+          setUser({ ...user, isVerified: true });
+        }
+        toast.success('Email vérifié avec succès');
+        return { success: true, message: 'Email vérifié avec succès' };
+      } else {
+        throw new Error(response.message || 'Erreur lors de la vérification de l\'email');
+      }
+    } catch (error: any) {
+      console.error('Erreur lors de la vérification de l\'email:', error);
+      const errorMessage = error.message || 'Erreur lors de la vérification de l\'email';
+      toast.error(errorMessage);
+      return { success: false, message: errorMessage };
+    }
+  };
+
+  const resendVerificationCode = async (email: string) => {
+    try {
+      const response = await apiJson('/api/auth/resend-verification', 'POST', { email });
+      
+      if (response.success) {
+        toast.success('Code de vérification envoyé avec succès');
+        return { success: true, message: 'Code de vérification envoyé avec succès' };
+      } else {
+        throw new Error(response.message || 'Erreur lors de l\'envoi du code de vérification');
+      }
+    } catch (error: any) {
+      console.error('Erreur lors de l\'envoi du code de vérification:', error);
+      const errorMessage = error.message || 'Erreur lors de l\'envoi du code de vérification';
+      toast.error(errorMessage);
+      return { success: false, message: errorMessage };
+    }
+  };
+
   const value: AuthContextType = {
     user,
     setUser,
@@ -352,7 +412,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     updateProfile,
     isLoading,
-    verifyCIN
+    verifyCIN,
+    verifyEmail,
+    resendVerificationCode
   };
 
   return (

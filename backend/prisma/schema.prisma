@@ -31,6 +31,8 @@ model User {
   cinVerifiedAt              DateTime?
   cinVerificationRequestedAt DateTime?
   isVerified                 Boolean        @default(false)
+  verificationCode           String?        @db.VarChar(10)
+  verificationExpires        DateTime?
   clerkId                    String?        @unique @db.VarChar(255)
   accountActivationDeadline  DateTime?
   createdAt                  DateTime       @default(now())
