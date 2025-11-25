@@ -10,7 +10,10 @@ import {
   XMarkIcon,
   EllipsisHorizontalIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  ArrowLeftIcon,
+  PhoneIcon,
+  VideoCameraIcon
 } from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -38,8 +41,30 @@ const MessagesPage: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [hiddenConversations, setHiddenConversations] = useState<Set<string>>(new Set());
+  const [isMobile, setIsMobile] = useState(false);
+  const [showConversationList, setShowConversationList] = useState(true);
 
   const currentConversation = conversations.find(c => c.id === selectedConversation);
+
+  // Détection mobile/desktop
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  // Gérer l'affichage mobile
+  useEffect(() => {
+    if (isMobile && selectedConversation) {
+      setShowConversationList(false);
+    } else if (isMobile && !selectedConversation) {
+      setShowConversationList(true);
+    }
+  }, [isMobile, selectedConversation]);
 
   // Charger les messages quand une conversation est sélectionnée
   const loadConversationMessages = useCallback(async (conversationId: string) => {
@@ -116,6 +141,18 @@ const MessagesPage: React.FC = () => {
     setSelectedConversation(null);
     setNewMessage('');
     setUserHasManuallyClosed(true);
+    if (isMobile) {
+      setShowConversationList(true);
+    }
+  };
+
+  // Fonction pour sélectionner une conversation (mobile)
+  const handleSelectConversation = (conversationId: string) => {
+    setSelectedConversation(conversationId);
+    setOpenMenuId(null);
+    if (isMobile) {
+      setShowConversationList(false);
+    }
   };
 
   // Sélectionner automatiquement la première conversation seulement si l'utilisateur n'a pas fermé manuellement
@@ -211,6 +248,205 @@ const MessagesPage: React.FC = () => {
     );
   }
 
+  // Interface mobile (plein écran)
+  if (isMobile) {
+    return (
+      <div className="fixed inset-0 bg-white flex flex-col">
+        {/* Liste des conversations (mobile) */}
+        {showConversationList && (
+          <div className="flex-1 flex flex-col">
+            {/* Header mobile */}
+            <div className="bg-primary-600 text-white p-4 shadow-lg">
+              <h1 className="text-xl font-semibold">Messages</h1>
+            </div>
+            
+            {/* Liste des conversations */}
+            <div className="flex-1 overflow-y-auto bg-gray-50">
+              {loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                </div>
+              ) : conversations.filter(c => !hiddenConversations.has(c.id)).length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
+                  <ChatIcon className="w-16 h-16 mb-4 text-gray-300" />
+                  <p className="text-center text-lg font-medium">Aucune conversation</p>
+                  <p className="text-sm text-center mt-2">Commencez une nouvelle conversation depuis une annonce</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-200">
+                  {conversations.filter(c => !hiddenConversations.has(c.id)).map((conversation) => {
+                    const otherParticipant = conversation.participants.find(p => p.id !== user.id);
+                    if (!otherParticipant) return null;
+
+                    const displayUnreadCount = getDisplayUnreadCount(conversation);
+
+                    return (
+                      <button
+                        key={conversation.id}
+                        onClick={() => handleSelectConversation(conversation.id)}
+                        className="w-full p-4 text-left hover:bg-gray-100 transition-colors bg-white"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="relative">
+                            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+                              <span className="text-primary-600 font-medium">
+                                {otherParticipant.firstName[0]}{otherParticipant.lastName[0]}
+                              </span>
+                            </div>
+                            {displayUnreadCount > 0 && (
+                              <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                {displayUnreadCount}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-base font-medium text-gray-900 truncate">
+                                {otherParticipant.firstName} {otherParticipant.lastName}
+                              </h3>
+                              <span className="text-xs text-gray-400">
+                                {conversation.lastMessage && formatDistanceToNow(
+                                  new Date(conversation.lastMessage.createdAt),
+                                  { addSuffix: true, locale: fr }
+                                )}
+                              </span>
+                            </div>
+                            {conversation.lastMessage && (
+                              <p className={`text-sm truncate mt-1 ${
+                                displayUnreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-500'
+                              }`}>
+                                {conversation.lastMessage.content}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Vue conversation (mobile) */}
+        {!showConversationList && currentConversation && (
+          <div className="flex-1 flex flex-col">
+            {/* Header conversation mobile */}
+            <div className="bg-primary-600 text-white p-4 shadow-lg flex items-center space-x-3">
+              <button
+                onClick={handleCloseConversation}
+                className="p-1 hover:bg-primary-700 rounded-full transition-colors"
+              >
+                <ArrowLeftIcon className="w-6 h-6" />
+              </button>
+              <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-medium text-sm">
+                  {currentConversation.participants.find(p => p.id !== user.id)?.firstName[0]}
+                  {currentConversation.participants.find(p => p.id !== user.id)?.lastName[0]}
+                </span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold">
+                  {currentConversation.participants.find(p => p.id !== user.id)?.firstName}{' '}
+                  {currentConversation.participants.find(p => p.id !== user.id)?.lastName}
+                </h3>
+                <p className="text-sm text-primary-100">
+                  {currentConversation.participants.find(p => p.id !== user.id)?.userType === 'student' ? 'Étudiant' : 'Propriétaire'}
+                </p>
+              </div>
+              <div className="flex space-x-2">
+                <button className="p-2 hover:bg-primary-700 rounded-full transition-colors">
+                  <PhoneIcon className="w-5 h-5" />
+                </button>
+                <button className="p-2 hover:bg-primary-700 rounded-full transition-colors">
+                  <VideoCameraIcon className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Messages mobile */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+              {conversationMessages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <ChatIcon className="w-16 h-16 mb-4 text-gray-300" />
+                  <p className="text-lg">Aucun message</p>
+                  <p className="text-sm">Envoyez le premier message !</p>
+                </div>
+              ) : (
+                <>
+                  {conversationMessages.map((message) => {
+                    const isOwn = String(message.senderId) === String(user.id);
+
+                    return (
+                      <div
+                        key={message.id}
+                        className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2`}
+                      >
+                        <div
+                          className={`max-w-[80%] px-4 py-3 rounded-3xl shadow-sm ${
+                            isOwn
+                              ? 'bg-primary-600 text-white rounded-br-md'
+                              : 'bg-white text-gray-900 rounded-bl-md border border-gray-200'
+                          }`}
+                        >
+                          <p className="text-base break-words">{message.content}</p>
+                          <div className={`flex items-center justify-end mt-1 space-x-1 text-xs ${
+                            isOwn ? 'text-primary-100' : 'text-gray-500'
+                          }`}>
+                            <span>{formatDistanceToNow(new Date(message.createdAt), { addSuffix: true, locale: fr })}</span>
+                            {isOwn && (
+                              <div className="flex items-center">
+                                {message.isRead ? (
+                                  <CheckCircleIcon className="w-3 h-3" />
+                                ) : (
+                                  <CheckIcon className="w-3 h-3" />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </>
+              )}
+            </div>
+
+            {/* Input message mobile */}
+            <div className="p-4 bg-white border-t border-gray-200">
+              <div className="flex items-end space-x-2">
+                <textarea
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Tapez votre message..."
+                  rows={1}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-full resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  disabled={isSending}
+                  style={{ maxHeight: '120px' }}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim() || isSending}
+                  className="w-12 h-12 bg-primary-600 text-white rounded-full flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-700 transition-colors"
+                >
+                  {isSending ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : (
+                    <PaperAirplaneIcon className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Interface desktop (normale)
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -254,10 +490,7 @@ const MessagesPage: React.FC = () => {
                       return (
                         <button
                           key={conversation.id}
-                          onClick={() => {
-                            setSelectedConversation(conversation.id);
-                            setOpenMenuId(null);
-                          }}
+                          onClick={() => handleSelectConversation(conversation.id)}
                           className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
                             selectedConversation === conversation.id ? 'bg-primary-50 border-r-2 border-primary-500' : ''
                           }`}
@@ -440,7 +673,7 @@ const MessagesPage: React.FC = () => {
                             </div>
                           );
                         })}
-                        
+                        <div ref={messagesEndRef} />
                       </>
                     )}
                   </div>

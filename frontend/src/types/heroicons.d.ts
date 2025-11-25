@@ -50,6 +50,6 @@ declare module '@heroicons/react/24/outline' {
   export const EllipsisHorizontalIcon: FC<SVGProps<SVGSVGElement>>;
   export const TrashIcon: FC<SVGProps<SVGSVGElement>>;
   export const InformationCircleIcon: FC<SVGProps<SVGSVGElement>>;
-  
+  export const VideoCameraIcon: FC<SVGProps<SVGSVGElement>>;
 }
   
