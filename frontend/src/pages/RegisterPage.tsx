@@ -90,7 +90,7 @@ const RegisterPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl w-full space-y-8">
+      <div className="max-w-3xl w-full space-y-8">
         <div>
           <div className="flex justify-center">
             <img src={logoSrc} alt="ColocAntananarivo" className="h-12 w-auto" />
@@ -197,40 +197,42 @@ const RegisterPage: React.FC = () => {
               </div>
 
               {/* Email */}
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Adresse email
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="input-field mt-1"
-                  placeholder="votre@email.com"
-                />
-              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                    Adresse email
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="input-field mt-1"
+                    placeholder="votre@email.com"
+                  />
+                </div>
 
-              {/* Téléphone */}
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                  Numéro de téléphone
-                </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="input-field mt-1"
-                  placeholder="+261 34 12 345 67"
-                />
+                {/* Téléphone */}
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                    Numéro de téléphone
+                  </label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="input-field mt-1"
+                    placeholder="+261 34 12 345 67"
+                  />
+                </div>
               </div>
-
+              
               {/* Photo de profil */}
               <div>
                 <label htmlFor="profileImage" className="block text-sm font-medium text-gray-700">
@@ -255,67 +257,72 @@ const RegisterPage: React.FC = () => {
               {/* Champs spécifiques aux étudiants */}
               {formData.userType === 'student' && (
                 <>
-                  <div>
-                    <label htmlFor="university" className="block text-sm font-medium text-gray-700">
-                      Université / École
-                    </label>
-                    <select
-                      id="university"
-                      name="university"
-                      value={formData.university}
-                      onChange={handleChange}
-                      className="input-field mt-1"
-                    >
-                      <option value="">Sélectionnez votre université</option>
-                      <option value="Université d'Antananarivo">Université d'Antananarivo</option>
-                      <option value="École Supérieure Polytechnique">École Supérieure Polytechnique</option>
-                      <option value="Institut National des Sciences Comptables">Institut National des Sciences Comptables</option>
-                      <option value="École de Médecine">École de Médecine</option>
-                      <option value="Autre">Autre</option>
-                    </select>
-                  </div>
+                  <div className="grid grid-cols-3 gap-4">
 
-                  <div>
-                    <label htmlFor="studyLevel" className="block text-sm font-medium text-gray-700">
-                      Niveau d'études
-                    </label>
-                    <select
-                      id="studyLevel"
-                      name="studyLevel"
-                      value={formData.studyLevel}
-                      onChange={handleChange}
-                      className="input-field mt-1"
-                    >
-                      <option value="">Sélectionnez votre niveau</option>
-                      <option value="Licence 1">Licence 1</option>
-                      <option value="Licence 2">Licence 2</option>
-                      <option value="Licence 3">Licence 3</option>
-                      <option value="Master 1">Master 1</option>
-                      <option value="Master 2">Master 2</option>
-                      <option value="Doctorat">Doctorat</option>
-                    </select>
-                  </div>
+                    <div>
+                      <label htmlFor="university" className="block text-sm font-medium text-gray-700">
+                        Université / École
+                      </label>
+                      <select
+                        id="university"
+                        name="university"
+                        value={formData.university}
+                        onChange={handleChange}
+                        className="input-field mt-1"
+                      >
+                        <option value="">Sélectionnez votre université</option>
+                        <option value="Université d'Antananarivo">Université d'Antananarivo</option>
+                        <option value="École Supérieure Polytechnique">École Supérieure Polytechnique</option>
+                        <option value="Institut National des Sciences Comptables">Institut National des Sciences Comptables</option>
+                        <option value="École de Médecine">École de Médecine</option>
+                        <option value="Autre">Autre</option>
+                      </select>
+                    </div>
 
-                  <div>
-                    <label htmlFor="budget" className="block text-sm font-medium text-gray-700">
-                      Budget mensuel (Ar) *
-                    </label>
-                    <input
-                      id="budget"
-                      name="budget"
-                      type="number"
-                      required
-                      min="0"
-                      value={formData.budget || ''}
-                      onChange={handleChange}
-                      className="input-field mt-1"
-                      placeholder="150000"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Votre budget mensuel pour la colocation</p>
+                    <div>
+                      <label htmlFor="studyLevel" className="block text-sm font-medium text-gray-700">
+                        Niveau d'études
+                      </label>
+                      <select
+                        id="studyLevel"
+                        name="studyLevel"
+                        value={formData.studyLevel}
+                        onChange={handleChange}
+                        className="input-field mt-1"
+                      >
+                        <option value="">Sélectionnez votre niveau</option>
+                        <option value="Licence 1">Licence 1</option>
+                        <option value="Licence 2">Licence 2</option>
+                        <option value="Licence 3">Licence 3</option>
+                        <option value="Master 1">Master 1</option>
+                        <option value="Master 2">Master 2</option>
+                        <option value="Doctorat">Doctorat</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="budget" className="block text-sm font-medium text-gray-700">
+                        Budget mensuel (Ar) *
+                      </label>
+                      <input
+                        id="budget"
+                        name="budget"
+                        type="number"
+                        required
+                        min="0"
+                        value={formData.budget || ''}
+                        onChange={handleChange}
+                        className="input-field mt-1"
+                        placeholder="150000"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Votre budget mensuel pour la colocation</p>
+                    </div>
                   </div>
                 </>
               )}
+            </div>
 
+            <div className="grid grid-cols-2 gap-4">
               {/* Mot de passe */}
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
@@ -378,6 +385,7 @@ const RegisterPage: React.FC = () => {
                 </div>
               </div>
             </div>
+
           </div>
           <div className="flex items-center">
             <input
