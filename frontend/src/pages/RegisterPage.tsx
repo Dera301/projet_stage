@@ -108,9 +108,8 @@ const RegisterPage: React.FC = () => {
             </Link>
           </p>
         </div>
-        <div className="max-w-3xl w-full">
-
-        <form   className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSubmit}>
+        
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             {/* Type d'utilisateur */}
             <div className="md:col-span-2">
@@ -258,7 +257,7 @@ const RegisterPage: React.FC = () => {
               {/* Champs spécifiques aux étudiants */}
               {formData.userType === 'student' && (
                 <>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
 
                     <div>
                       <label htmlFor="university" className="block text-sm font-medium text-gray-700">
@@ -301,7 +300,8 @@ const RegisterPage: React.FC = () => {
                       </select>
                     </div>
 
-                    <div>
+                  </div>
+                  <div>
                       <label htmlFor="budget" className="block text-sm font-medium text-gray-700">
                         Budget mensuel (Ar) *
                       </label>
@@ -318,7 +318,6 @@ const RegisterPage: React.FC = () => {
                       />
                       <p className="text-xs text-gray-500 mt-1">Votre budget mensuel pour la colocation</p>
                     </div>
-                  </div>
                 </>
               )}
             </div>
@@ -388,7 +387,6 @@ const RegisterPage: React.FC = () => {
             </div>
 
           </div>
-          
           <div className="flex items-center">
             <input
               id="terms"
@@ -442,9 +440,7 @@ const RegisterPage: React.FC = () => {
               )}
             </button>
           </div>
-          
         </form>
-        </div>
       </div>
     </div>
   );
