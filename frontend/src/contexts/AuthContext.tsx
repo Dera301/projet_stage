@@ -340,8 +340,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const hasCinImages = !!(apiUser.cin_recto_image_path || apiUser.cin_verso_image_path);
     const hasPendingStatus = apiUser.cinPending !== undefined ? Boolean(apiUser.cinPending) : false;
     const cinPending = (hasCinImages && !isCinVerified) || hasPendingStatus;
+    const userStatus = apiUser.status || 'ACTIVE';
+    const isPendingVerification = userStatus === 'PENDING_VERIFICATION';
 
     return {
+      status: userStatus,
       id: String(apiUser.id),
       email: apiUser.email,
       firstName: apiUser.firstName || apiUser.first_name || '',
@@ -356,7 +359,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       avatar: apiUser.avatar || undefined,
       isVerified: Boolean(apiUser.isVerified || apiUser.is_verified || false),
       cinVerified: isCinVerified,
-      cinPending: cinPending,
+      cinPending: cinPending || isPendingVerification,
       cinNumber: apiUser.cinNumber || apiUser.cin_number || undefined,
       cinData: apiUser.cinData ? (typeof apiUser.cinData === 'string' ? JSON.parse(apiUser.cinData) : apiUser.cinData) : undefined,
       cin_verification_requested_at: apiUser.cin_verification_requested_at || undefined,

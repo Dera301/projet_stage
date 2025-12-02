@@ -23,7 +23,8 @@ const CINVerificationBanner: React.FC = () => {
     const hasPendingRequest = 
       Boolean((user as any).cinPending) || 
       Boolean((user as any).cin_verification_requested_at) ||
-      (user as any).cin_verification_status === 'pending';
+      (user as any).cin_verification_status === 'pending' ||
+      (user as any).status === 'PENDING_VERIFICATION';
       
     console.log('Vérification CIN - État:', {
       user,
