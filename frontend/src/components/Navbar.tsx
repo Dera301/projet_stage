@@ -254,7 +254,7 @@ const Navbar: React.FC = () => {
                       {user.firstName}
                     </span>
                   </button>
-                  <div className="absolute right-0 mt-2 w-76 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-gray-200">
+                  <div className="absolute right-0 mt-2 w-100 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-gray-200">
                     <Link
                       to="/dashboard"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary-600 transition-colors whitespace-nowrap"
