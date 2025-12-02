@@ -108,339 +108,340 @@ const RegisterPage: React.FC = () => {
             </Link>
           </p>
         </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            {/* Type d'utilisateur */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Je suis un(e) :
-              </label>
-              <div className="grid grid-cols-2 gap-4">
-                <label className="relative">
-                  <input
-                    type="radio"
-                    name="userType"
-                    value="student"
-                    checked={formData.userType === 'student'}
-                    onChange={handleChange}
-                    className="sr-only"
-                  />
-                  <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                    formData.userType === 'student' 
-                      ? 'border-primary-500 bg-primary-50' 
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}>
-                    <div className="text-center">
-                      <div className="text-lg font-medium text-gray-900">Étudiant(e)</div>
-                      <div className="text-sm text-gray-500">Je cherche un logement</div>
+        <div className="max-w-3xl w-full">
+          <form   className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSubmit}>
+            <div className="flex flex-col gap-4">
+              {/* Type d'utilisateur */}
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Je suis un(e) :
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <label className="relative">
+                    <input
+                      type="radio"
+                      name="userType"
+                      value="student"
+                      checked={formData.userType === 'student'}
+                      onChange={handleChange}
+                      className="sr-only"
+                    />
+                    <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                      formData.userType === 'student' 
+                        ? 'border-primary-500 bg-primary-50' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}>
+                      <div className="text-center">
+                        <div className="text-lg font-medium text-gray-900">Étudiant(e)</div>
+                        <div className="text-sm text-gray-500">Je cherche un logement</div>
+                      </div>
                     </div>
-                  </div>
-                </label>
-                <label className="relative">
-                  <input
-                    type="radio"
-                    name="userType"
-                    value="owner"
-                    checked={formData.userType === 'owner'}
-                    onChange={handleChange}
-                    className="sr-only"
-                  />
-                  <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                    formData.userType === 'owner' 
-                      ? 'border-primary-500 bg-primary-50' 
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}>
-                    <div className="text-center">
-                      <div className="text-lg font-medium text-gray-900">Propriétaire</div>
-                      <div className="text-sm text-gray-500">Je loue un logement</div>
+                  </label>
+                  <label className="relative">
+                    <input
+                      type="radio"
+                      name="userType"
+                      value="owner"
+                      checked={formData.userType === 'owner'}
+                      onChange={handleChange}
+                      className="sr-only"
+                    />
+                    <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                      formData.userType === 'owner' 
+                        ? 'border-primary-500 bg-primary-50' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}>
+                      <div className="text-center">
+                        <div className="text-lg font-medium text-gray-900">Propriétaire</div>
+                        <div className="text-sm text-gray-500">Je loue un logement</div>
+                      </div>
                     </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Informations personnelles - première colonne */}
+              <div className="flex flex-col gap-4">
+                {/* Prénom et Nom */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                      Prénom
+                    </label>
+                    <input
+                      id="firstName"
+                      name="firstName"
+                      type="text"
+                      required
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      className="input-field mt-1"
+                      placeholder="Votre prénom"
+                    />
                   </div>
-                </label>
-              </div>
-            </div>
-
-             {/* Informations personnelles - première colonne */}
-            <div className="space-y-4">
-              {/* Prénom et Nom */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                    Prénom
-                  </label>
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    required
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className="input-field mt-1"
-                    placeholder="Votre prénom"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                    Nom
-                  </label>
-                  <input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    required
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className="input-field mt-1"
-                    placeholder="Votre nom"
-                  />
-                </div>
-              </div>
-
-              {/* Email */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                    Adresse email
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="input-field mt-1"
-                    placeholder="votre@email.com"
-                  />
+                  <div>
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                      Nom
+                    </label>
+                    <input
+                      id="lastName"
+                      name="lastName"
+                      type="text"
+                      required
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      className="input-field mt-1"
+                      placeholder="Votre nom"
+                    />
+                  </div>
                 </div>
 
-                {/* Téléphone */}
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                    Numéro de téléphone
+                {/* Email */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                      Adresse email
+                    </label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="input-field mt-1"
+                      placeholder="votre@email.com"
+                    />
+                  </div>
+
+                  {/* Téléphone */}
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                      Numéro de téléphone
+                    </label>
+                    <input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      required
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="input-field mt-1"
+                      placeholder="+261 34 12 345 67"
+                    />
+                  </div>
+                </div>
+                
+                {/* Photo de profil */}
+                <div className="col-span-2">
+                  <label htmlFor="profileImage" className="block text-sm font-medium text-gray-700">
+                    Photo de profil (optionnel)
                   </label>
                   <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    required
-                    value={formData.phone}
-                    onChange={handleChange}
+                    id="profileImage"
+                    name="profileImage"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
                     className="input-field mt-1"
-                    placeholder="+261 34 12 345 67"
                   />
+                  {formData.profileImage && (
+                    <p className="text-xs text-gray-500 mt-1">{formData.profileImage.name}</p>
+                  )}
                 </div>
               </div>
-              
-              {/* Photo de profil */}
-              <div>
-                <label htmlFor="profileImage" className="block text-sm font-medium text-gray-700">
-                  Photo de profil (optionnel)
-                </label>
-                <input
-                  id="profileImage"
-                  name="profileImage"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="input-field mt-1"
-                />
-                {formData.profileImage && (
-                  <p className="text-xs text-gray-500 mt-1">{formData.profileImage.name}</p>
+
+              {/* Deuxième colonne */}
+              <div className="flex flex-col gap-4">
+                {/* Champs spécifiques aux étudiants */}
+                {formData.userType === 'student' && (
+                  <>
+                    <div className="col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                      <div>
+                        <label htmlFor="university" className="block text-sm font-medium text-gray-700">
+                          Université / École
+                        </label>
+                        <select
+                          id="university"
+                          name="university"
+                          value={formData.university}
+                          onChange={handleChange}
+                          className="input-field mt-1"
+                        >
+                          <option value="">Sélectionnez votre université</option>
+                          <option value="Université d'Antananarivo">Université d'Antananarivo</option>
+                          <option value="École Supérieure Polytechnique">École Supérieure Polytechnique</option>
+                          <option value="Institut National des Sciences Comptables">Institut National des Sciences Comptables</option>
+                          <option value="École de Médecine">École de Médecine</option>
+                          <option value="Autre">Autre</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label htmlFor="studyLevel" className="block text-sm font-medium text-gray-700">
+                          Niveau d'études
+                        </label>
+                        <select
+                          id="studyLevel"
+                          name="studyLevel"
+                          value={formData.studyLevel}
+                          onChange={handleChange}
+                          className="input-field mt-1"
+                        >
+                          <option value="">Sélectionnez votre niveau</option>
+                          <option value="Licence 1">Licence 1</option>
+                          <option value="Licence 2">Licence 2</option>
+                          <option value="Licence 3">Licence 3</option>
+                          <option value="Master 1">Master 1</option>
+                          <option value="Master 2">Master 2</option>
+                          <option value="Doctorat">Doctorat</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label htmlFor="budget" className="block text-sm font-medium text-gray-700">
+                          Budget mensuel (Ar) *
+                        </label>
+                        <input
+                          id="budget"
+                          name="budget"
+                          type="number"
+                          required
+                          min="0"
+                          value={formData.budget || ''}
+                          onChange={handleChange}
+                          className="input-field mt-1"
+                          placeholder="150000"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Votre budget mensuel pour la colocation</p>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
-            </div>
 
-            {/* Deuxième colonne */}
-            <div className="space-y-4">
-              {/* Champs spécifiques aux étudiants */}
-              {formData.userType === 'student' && (
-                <>
-                  <div className="grid grid-cols-3 gap-4">
-
-                    <div>
-                      <label htmlFor="university" className="block text-sm font-medium text-gray-700">
-                        Université / École
-                      </label>
-                      <select
-                        id="university"
-                        name="university"
-                        value={formData.university}
-                        onChange={handleChange}
-                        className="input-field mt-1"
-                      >
-                        <option value="">Sélectionnez votre université</option>
-                        <option value="Université d'Antananarivo">Université d'Antananarivo</option>
-                        <option value="École Supérieure Polytechnique">École Supérieure Polytechnique</option>
-                        <option value="Institut National des Sciences Comptables">Institut National des Sciences Comptables</option>
-                        <option value="École de Médecine">École de Médecine</option>
-                        <option value="Autre">Autre</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label htmlFor="studyLevel" className="block text-sm font-medium text-gray-700">
-                        Niveau d'études
-                      </label>
-                      <select
-                        id="studyLevel"
-                        name="studyLevel"
-                        value={formData.studyLevel}
-                        onChange={handleChange}
-                        className="input-field mt-1"
-                      >
-                        <option value="">Sélectionnez votre niveau</option>
-                        <option value="Licence 1">Licence 1</option>
-                        <option value="Licence 2">Licence 2</option>
-                        <option value="Licence 3">Licence 3</option>
-                        <option value="Master 1">Master 1</option>
-                        <option value="Master 2">Master 2</option>
-                        <option value="Doctorat">Doctorat</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label htmlFor="budget" className="block text-sm font-medium text-gray-700">
-                        Budget mensuel (Ar) *
-                      </label>
-                      <input
-                        id="budget"
-                        name="budget"
-                        type="number"
-                        required
-                        min="0"
-                        value={formData.budget || ''}
-                        onChange={handleChange}
-                        className="input-field mt-1"
-                        placeholder="150000"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Votre budget mensuel pour la colocation</p>
-                    </div>
+              <div className="grid grid-cols-2 gap-4">
+                {/* Mot de passe */}
+                <div className="col-span-2">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                    Mot de passe
+                  </label>
+                  <div className="mt-1 relative">
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
+                      required
+                      value={formData.password}
+                      onChange={handleChange}
+                      className="input-field pr-10"
+                      placeholder="Votre mot de passe"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5 text-gray-400" />
+                      )}
+                    </button>
                   </div>
-                </>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Mot de passe */}
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Mot de passe
-                </label>
-                <div className="mt-1 relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    required
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="input-field pr-10"
-                    placeholder="Votre mot de passe"
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                    ) : (
-                      <EyeIcon className="h-5 w-5 text-gray-400" />
-                    )}
-                  </button>
                 </div>
-              </div>
 
-              {/* Confirmation mot de passe */}
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                  Confirmer le mot de passe
-                </label>
-                <div className="mt-1 relative">
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    required
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    className="input-field pr-10"
-                    placeholder="Confirmez votre mot de passe"
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                    ) : (
-                      <EyeIcon className="h-5 w-5 text-gray-400" />
-                    )}
-                  </button>
+                {/* Confirmation mot de passe */}
+                <div className="col-span-2">
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                    Confirmer le mot de passe
+                  </label>
+                  <div className="mt-1 relative">
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
+                      required
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      className="input-field pr-10"
+                      placeholder="Confirmez votre mot de passe"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5 text-gray-400" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-          </div>
-          <div className="flex items-center">
-            <input
-              id="terms"
-              name="terms"
-              type="checkbox"
-              required
-              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-            />
-            <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
-              J'accepte les{' '}
-              <Link
-                to="/terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary-600 hover:text-primary-500"
-              >
-                conditions d'utilisation
-              </Link>{' '}
-              et la{' '}
-              <Link
-                to="/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary-600 hover:text-primary-500"
-              >
-                politique de confidentialité
-              </Link>
-            </label>
-          </div>
+            <div className="col-span-2 flex items-center">
+              <input
+                id="terms"
+                name="terms"
+                type="checkbox"
+                required
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
+                J'accepte les{' '}
+                <Link
+                  to="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-600 hover:text-primary-500"
+                >
+                  conditions d'utilisation
+                </Link>{' '}
+                et la{' '}
+                <Link
+                  to="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-600 hover:text-primary-500"
+                >
+                  politique de confidentialité
+                </Link>
+              </label>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Vérification CAPTCHA *
-            </label>
-            <SimpleCaptcha onVerify={setCaptchaVerified} />
-          </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Vérification CAPTCHA *
+              </label>
+              <SimpleCaptcha onVerify={setCaptchaVerified} />
+            </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Création du compte...
-                </div>
-              ) : (
-                'Créer mon compte'
-              )}
-            </button>
-          </div>
-        </form>
+            <div className="col-span-2">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Création du compte...
+                  </div>
+                ) : (
+                  'Créer mon compte'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
