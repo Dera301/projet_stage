@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   HomeIcon, 
@@ -14,6 +14,7 @@ import {
   CalendarIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import PropertyCard from '../components/PropertyCard';
 import { useProperty } from '../contexts/PropertyContext';
 import { useAnnouncement } from '../contexts/AnnouncementContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -32,7 +33,14 @@ const HomePage: React.FC = () => {
   const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
   const [latestProperty, setLatestProperty] = useState<Property | null>(null);
   const [latestAnnouncements, setLatestAnnouncements] = useState<any[]>([]);
-  const [publicStats, setPublicStats] = useState<{ totalProperties: number; availableProperties: number; totalUsers: number; totalStudents: number; totalOwners: number; } | null>(null);
+  const [publicStats, setPublicStats] = useState<{ 
+    totalProperties: number; 
+    availableProperties: number; 
+    totalUsers: number; 
+    totalStudents: number; 
+    totalOwners: number; 
+  } | null>(null);
+  
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -314,17 +322,21 @@ const HomePage: React.FC = () => {
   };
 
   // Fonction pour ouvrir le formulaire de contact pour une propriété
-  const openContactFormForProperty = (e: React.MouseEvent, property: Property) => {
+  const openContactFormForProperty = useCallback((e: React.MouseEvent, property: Property) => {
     e.preventDefault();
+    if (!user) {
+      toast.error('Veuillez vous connecter pour contacter le propriétaire');
+      return;
+    }
+    
+    // Vérifier la vérification CIN avant d'afficher le formulaire de contact
     if (!checkVerification(e)) {
       return;
     }
+    
     setSelectedProperty(property);
-    setSelectedAnnouncement(null);
     setShowContactForm(true);
-    const link = `${window.location.origin}/properties/${property.id}`;
-    setContactMessage(`Bonjour, je suis intéressé(e) par votre logement "${property.title}".\n\nLogement: ${link}`);
-  };
+  }, [user, checkVerification]);
 
   const content = (
     <div className="min-h-screen">
@@ -421,7 +433,7 @@ const HomePage: React.FC = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8">
               <h2 className="text-2xl md:text-3xl font-bold mb-2">
-                🎉 Nouveau logement disponible !
+                Nouveau logement disponible !
               </h2>
               <p className="text-primary-200">Découvrez notre dernière annonce</p>
             </div>
@@ -486,7 +498,7 @@ const HomePage: React.FC = () => {
                       <span>Voir les détails</span>
                       
                     </Link>
-                    <button className="p-3 border-2 border-primary-400 text-primary-200 hover:bg-primary-400 hover:text-white rounded-lg transition-colors duration-200">
+                    <button className="p-3 border-2 border-primary-400 text-primary-200 hover:bg-primary-400 hover:text-white rounded-lg transition-colors">
                       <HeartIcon className="w-5 h-5" />
                     </button>
                   </div>
@@ -528,101 +540,15 @@ const HomePage: React.FC = () => {
     {loading ? (
       <div className="flex justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
     ) : filteredProperties.length > 0 ? (
       <FadeInOnScroll>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {filteredProperties.slice(0, itemsPerPage).map((property) => (
-            <div key={property.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
-              {/* Contenu de la carte propriété existant */}
-              <div className="relative">
-                <img
-                  src={getImageUrl(property.images?.[0])}
-                  alt={property.title}
-                  className="w-full h-48 object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = '/api/placeholder/400/300';
-                  }}
-                />
-                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-gray-900 px-2 py-1 rounded-full text-xs font-semibold">
-                  {property.propertyType === 'apartment' ? '🏢 Appartement' : 
-                   property.propertyType === 'house' ? '🏠 Maison' : '🏡 Studio'}
-                </div>
-                <button className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-red-500 hover:text-white transition-colors">
-                  <HeartIcon className="w-4 h-4" />
-                </button>
-              </div>
-              
-              <div className="p-6 flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900 line-clamp-1 flex-1">
-                    {property.title}
-                  </h3>
-                  <div className="text-right">
-                    <div className="text-xl font-bold text-primary-600">
-                      {property.price?.toLocaleString()} Ar
-                    </div>
-                    <div className="text-xs text-gray-500">/mois</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center text-gray-600 mb-3">
-                  <MapPinIcon className="w-4 h-4 mr-1" />
-                  <span className="text-sm">{property.district}</span>
-                </div>
-                
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                  {property.description}
-                </p>
-                
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
-                    <div className="flex items-center space-x-1">
-                      <UsersIcon className="w-4 h-4" />
-                      <span>{property.availableRooms}/{property.totalRooms} ch.</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <CalendarIcon className="w-4 h-4" />
-                      <span>Disponible</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex flex-wrap gap-1 mb-4">
-                  {property.amenities?.slice(0, 2).map((amenity, index) => (
-                    <span key={index} className="badge badge-primary text-xs">
-                      {amenity}
-                    </span>
-                  ))}
-                  {property.amenities && property.amenities.length > 2 && (
-                    <span className="badge badge-primary text-xs">
-                      +{property.amenities.length - 2}
-                    </span>
-                  )}
-                </div>
-                
-                <div className="flex gap-2 mt-auto">
-                  <Link
-                    to={`/properties/${property.id}`}
-                    className="flex-1 btn-primary flex items-center justify-center space-x-2"
-                  >
-                    <span>Voir détails</span>
-                  </Link>
-                  {user && Number(property.ownerId) === Number(user.id) ? null : (
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (checkVerification(e)) {
-                          openContactFormForProperty(e, property);
-                        }
-                      }}
-                      className="flex-1 btn-secondary flex items-center justify-center space-x-2"
-                      title="Contacter le propriétaire"
-                    >
-                      <ChatIcon className="w-4 h-4" />
-                      <span>Contacter</span>
-                    </button>
-                  )}
+            <PropertyCard 
+              key={property.id} 
+              property={property} 
+              onContactClick={openContactFormForProperty} 
+            />
                 </div>
               </div>
             </div>

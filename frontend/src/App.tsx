@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
@@ -6,43 +6,53 @@ import { AuthProvider } from './contexts/AuthContext';
 import { PropertyProvider } from './contexts/PropertyContext';
 import { MessageProvider } from './contexts/MessageContext';
 import { AnnouncementProvider } from './contexts/AnnouncementContext';
+
+// Composants de chargement
 import PageTransition from './components/PageTransition';
+import LoadingSpinner from './components/LoadingSpinner';
 
-// Pages
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import VerifyAccountPage from './pages/VerifyAccountPage';
-import DashboardPage from './pages/DashboardPage';
-import PropertyDetailPage from './pages/PropertyDetailPage';
-import PropertyListPage from './pages/PropertyListPage';
-import CreatePropertyPage from './pages/CreatePropertyPage';
-import ProfilePage from './pages/ProfilePage';
-import MessagesPage from './pages/MessagesPage';
-import AnnouncementsPage from './pages/AnnouncementsPage';
-import AnnouncementDetailPage from './pages/AnnouncementDetailPage';
-import CreateAnnouncementPage from './pages/CreateAnnouncementPage';
-import SearchPage from './pages/SearchPage';
-import AboutPage from './pages/AboutPage';
-import ContactPage from './pages/ContactPage';
-import CINVerificationPage from './pages/CINVerificationPage';
+// Chargement paresseux des pages
+const HomePage = lazy(() => import('./pages/HomePage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const VerifyAccountPage = lazy(() => import('./pages/VerifyAccountPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'));
+const PropertyListPage = lazy(() => import('./pages/PropertyListPage'));
+const CreatePropertyPage = lazy(() => import('./pages/CreatePropertyPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const AnnouncementsPage = lazy(() => import('./pages/AnnouncementsPage'));
+const AnnouncementDetailPage = lazy(() => import('./pages/AnnouncementDetailPage'));
+const CreateAnnouncementPage = lazy(() => import('./pages/CreateAnnouncementPage'));
+const SearchPage = lazy(() => import('./pages/SearchPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+const CINVerificationPage = lazy(() => import('./pages/CINVerificationPage'));
+const EditPropertyPage = lazy(() => import('./pages/EditPropertyPage'));
+const EditAnnouncementPage = lazy(() => import('./pages/EditAnnouncementPage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
+const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage'));
+const AdminRegisterPage = lazy(() => import('./pages/AdminRegisterPage'));
+const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 
-// Components
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import FirstLoginGuide from './components/FirstLoginGuide';
-import ProtectedRoute from './components/ProtectedRoute';
-import AdminRoute from './components/AdminRoute';
-import EditPropertyPage from './pages/EditPropertyPage';
-import EditAnnouncementPage from './pages/EditAnnouncementPage';
-import CINVerificationBanner from './components/CINVerificationBanner';
-import ScrollToTopButton from './components/ScrollToTopButton';
-import AdminPage from './pages/AdminPage';
-import AdminLoginPage from './pages/AdminLoginPage';
-import AdminRegisterPage from './pages/AdminRegisterPage';
-import AppointmentsPage from './pages/AppointmentsPage';
-import TermsPage from './pages/TermsPage';
-import PrivacyPage from './pages/PrivacyPage';
+// Composants UI
+const Navbar = lazy(() => import('./components/Navbar'));
+const Footer = lazy(() => import('./components/Footer'));
+const FirstLoginGuide = lazy(() => import('./components/FirstLoginGuide'));
+const ProtectedRoute = lazy(() => import('./components/ProtectedRoute'));
+const AdminRoute = lazy(() => import('./components/AdminRoute'));
+const CINVerificationBanner = lazy(() => import('./components/CINVerificationBanner'));
+const ScrollToTopButton = lazy(() => import('./components/ScrollToTopButton'));
+
+// Composant de chargement par défaut
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <LoadingSpinner size="large" />
+  </div>
+);
 
 function AppContent() {
   const location = useLocation();
@@ -62,24 +72,32 @@ function AppContent() {
     }
   }, [location.pathname]);
 
+  // Mémoïser le contenu conditionnel pour éviter les rendus inutiles
+  const navbarContent = useMemo(() => !isAdminAuthPage && (
+    <Suspense fallback={null}>
+      <Navbar />
+      <CINVerificationBanner />
+    </Suspense>
+  ), [isAdminAuthPage]);
+
   return (
     <div className="min-h-screen flex flex-col w-full overflow-x-hidden">
-      {!isAdminAuthPage && <Navbar />}
-      {!isAdminAuthPage && <CINVerificationBanner />}
+      {navbarContent}
       
-      {/* 🔥 CORRECTION : Main container avec gestion du débordement */}
+      {/* Main container avec gestion du débordement */}
       <main className="flex-grow w-full overflow-x-hidden pt-16">
         <div className="w-full max-w-full overflow-x-hidden">
           <AnimatePresence mode="wait" initial={false}>
-            <Routes location={location} key={location.pathname}>
-              {/* Routes Admin (sans Navbar/Footer) */}
-              <Route path="/admin/login" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <AdminLoginPage />
-                  </div>
-                </PageTransition>
-              } />
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes location={location} key={location.pathname}>
+                {/* Routes Admin (sans Navbar/Footer) */}
+                <Route path="/admin/login" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <AdminLoginPage />
+                    </div>
+                  </PageTransition>
+                } />
               <Route path="/admin/register" element={
                 <PageTransition>
                   <div className="w-full overflow-x-hidden">
@@ -294,20 +312,98 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <PropertyProvider>
-        <MessageProvider>
-          <AnnouncementProvider>
-            <Router>
-              {/* 🔥 CORRECTION : Container principal avec gestion du débordement */}
-              <div className="w-full overflow-x-hidden">
-                <AppContent />
-              </div>
-            </Router>
-          </AnnouncementProvider>
-        </MessageProvider>
-      </PropertyProvider>
-    </AuthProvider>
+    <Suspense fallback={<LoadingFallback />}>
+      <Router>
+        <AuthProvider>
+          <PropertyProvider>
+            <MessageProvider>
+              <AnnouncementProvider>
+                <Routes>
+                  <Route path="/login" element={
+                    <PageTransition>
+                      <div className="w-full overflow-x-hidden">
+                        <LoginPage />
+                      </div>
+                    </PageTransition>
+                  } />
+                  <Route path="/register" element={
+                    <PageTransition>
+                      <div className="w-full overflow-x-hidden">
+                        <RegisterPage />
+                      </div>
+                    </PageTransition>
+                  } />
+                  <Route path="/verify-account" element={
+                    <PageTransition>
+                      <div className="w-full overflow-x-hidden">
+                        <VerifyAccountPage />
+                      </div>
+                    </PageTransition>
+                  } />
+                  <Route path="/about" element={
+                    <PageTransition>
+                      <div className="w-full overflow-x-hidden">
+                        <AboutPage />
+                      </div>
+                    </PageTransition>
+                  } />
+                  <Route path="/contact" element={
+                    <PageTransition>
+                      <div className="w-full overflow-x-hidden">
+                        <ContactPage />
+                      </div>
+                    </PageTransition>
+                  } />
+                  <Route path="/terms" element={
+                    <PageTransition>
+                      <div className="w-full overflow-x-hidden">
+                        <TermsPage />
+                      </div>
+                    </PageTransition>
+                  } />
+                  <Route path="/privacy" element={
+                    <PageTransition>
+                      <div className="w-full overflow-x-hidden">
+                        <PrivacyPage />
+                      </div>
+                    </PageTransition>
+                  } />
+                  <Route path="/logements" element={
+                    <PageTransition>
+                      <div className="w-full overflow-x-hidden">
+                        <SearchPage />
+                      </div>
+                    </PageTransition>
+                  } />
+                  <Route path="/properties/:id" element={
+                    <PageTransition>
+                      <div className="w-full overflow-x-hidden">
+                        <PropertyDetailPage />
+                      </div>
+                    </PageTransition>
+                  } />
+                  <Route path="/properties" element={
+                    <PageTransition>
+                      <div className="w-full overflow-x-hidden">
+                        <PropertyListPage />
+                      </div>
+                    </PageTransition>
+                  } />
+                  <Route path="/edit-property/:id" element={
+                    <PageTransition>
+                      <div className="w-full overflow-x-hidden">
+                        <EditPropertyPage />
+                      </div>
+                    </PageTransition>
+                  } />
+                  <Route path="/edit-announcement/:id" element={
+                    <PageTransition>
+              </AnnouncementProvider>
+            </MessageProvider>
+          </PropertyProvider>
+        </AuthProvider>
+      </Suspense>
+    </Router>
   );
 }
 

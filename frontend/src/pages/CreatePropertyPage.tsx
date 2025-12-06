@@ -1052,17 +1052,6 @@ const CreatePropertyPage: React.FC = () => {
                   onChange={handleImageUpload}
                   className="hidden"
                 />
-                
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="btn-primary flex items-center justify-center space-x-2 px-4 py-2"
-                  disabled={isUploading || loading}
-                >
-                  <PhotoIcon className="w-5 h-5" />
-                  <span>Sélectionner des images</span>
-                </button>
-                
                 <div className="flex-1 text-sm text-gray-500">
                   <p>Formats acceptés: JPG, PNG, WebP • Max 5MB par image • Maximum 10 images</p>
                   <p className="text-green-600 font-medium">Les images seront sauvegardées définitivement</p>
