@@ -29,9 +29,10 @@ import { apiGet, getImageUrl } from '../config';
 
 const HomePage: React.FC = () => {
   const { properties, loading } = useProperty();
-  const { announcements, loading: loadingAnnouncements } = useAnnouncement();
+  const { announcements = [], loading: loadingAnnouncements } = useAnnouncement();
   const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
   const [latestProperty, setLatestProperty] = useState<Property | null>(null);
+  // Filtrer les annonces pour n'afficher que celles qui sont valides
   const [latestAnnouncements, setLatestAnnouncements] = useState<any[]>([]);
   const [publicStats, setPublicStats] = useState<{ 
     totalProperties: number; 
@@ -147,15 +148,11 @@ const HomePage: React.FC = () => {
   ];
 
 
+  // Filtrer les annonces pour n'afficher que celles qui sont valides
   const filteredAnnouncements = useMemo(() => {
-    if (!searchQuery) return latestAnnouncements;
-    
-    return latestAnnouncements.filter(announcement => 
-      announcement.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      announcement.author?.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      announcement.author?.lastName?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [latestAnnouncements, searchQuery]);
+    if (!announcements || !Array.isArray(announcements)) return [];
+    return announcements.filter(a => a && a.id && a.author);
+  }, [announcements]);
   
   const filteredProperties = useMemo(() => {
     if (!searchQuery) return featuredProperties;
@@ -338,6 +335,13 @@ const HomePage: React.FC = () => {
     setShowContactForm(true);
   }, [user, checkVerification]);
 
+  // Fonction pour afficher le chargement
+  const renderLoading = () => (
+    <div className="flex justify-center py-12">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+    </div>
+  );
+
   const content = (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -361,8 +365,10 @@ const HomePage: React.FC = () => {
           </FadeInOnScroll>
 
           {loadingAnnouncements ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+            renderLoading()
+          ) : !filteredAnnouncements || filteredAnnouncements.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500">Aucune annonce disponible pour le moment.</p>
             </div>
           ) : filteredAnnouncements.length > 0 ? (
             <FadeInOnScroll>
@@ -383,15 +389,14 @@ const HomePage: React.FC = () => {
                       </div>
                       <p className="text-gray-700 text-sm line-clamp-3 mb-4">{a.content}</p>
                       <div className="flex gap-2">
-                        {/* Bouton Voir détails */}
+
                         <Link
                           to={`/announcements/${a.id}`}
                           className="btn-secondary"
                         >
                           Voir détails
                         </Link>
-                        
-                        {/* Bouton Contacter - seulement si ce n'est pas l'annonce de l'utilisateur */}
+
                         {user && Number(a.author?.id) === Number(user.id) ? null : (
                           <button
                             onClick={(e) => {
@@ -415,15 +420,12 @@ const HomePage: React.FC = () => {
           ) : (
             <div className="text-center py-12">
               <ChatIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {searchQuery ? 'Aucune annonce trouvée' : 'Aucune annonce récente'}
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {searchQuery ? 'Essayez avec d\'autres termes de recherche' : 'Les annonces publiées par les étudiants apparaîtront ici.'}
-              </p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune annonce récente</h3>
+              <p className="text-gray-600 mb-4">Les annonces publiées par les étudiants apparaîtront ici.</p>
               <Link to="/announcements" className="btn-primary">Voir les annonces</Link>
             </div>
           )}
+
         </div>
       </section>
 
@@ -540,6 +542,7 @@ const HomePage: React.FC = () => {
     {loading ? (
       <div className="flex justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
     ) : filteredProperties.length > 0 ? (
       <FadeInOnScroll>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
@@ -549,9 +552,6 @@ const HomePage: React.FC = () => {
               property={property} 
               onContactClick={openContactFormForProperty} 
             />
-                </div>
-              </div>
-            </div>
           ))}
         </div>
       </FadeInOnScroll>
@@ -583,15 +583,15 @@ const HomePage: React.FC = () => {
       </div>
     )}
 
-    {featuredProperties.length > 0 && (
-            <div className="text-center">
-              <Link
-                to="/logements"
-                className="btn-primary text-lg px-8 py-3"
-              >
-                Voir tous les logements
-              </Link>
-            </div>
+    {!loading && featuredProperties.length > 0 && (
+      <div className="text-center mt-8">
+        <Link
+          to="/logements"
+          className="btn-primary text-lg px-8 py-3"
+        >
+          Voir tous les logements
+        </Link>
+      </div>
           )}
   </div>
 </section>
@@ -723,7 +723,9 @@ const HomePage: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900">Budget étudiant</h4>
-                    <p className="text-gray-600">Des logements à des prix adaptés aux budgets étudiants</p>
+                    <p className="text-gray-600">
+                      Des logements à des prix adaptés aux budgets étudiants
+                    </p>
                   </div>
                 </div>
                 
@@ -735,7 +737,9 @@ const HomePage: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900">Proche des universités</h4>
-                    <p className="text-gray-600">Localisations stratégiques près des campus et facultés</p>
+                    <p className="text-gray-600">
+                      Localisations stratégiques près des campus et facultés
+                    </p>
                   </div>
                 </div>
                 
@@ -747,7 +751,9 @@ const HomePage: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900">Flexibilité</h4>
-                    <p className="text-gray-600">Contrats adaptés aux calendriers universitaires</p>
+                    <p className="text-gray-600">
+                      Contrats adaptés aux calendriers universitaires
+                    </p>
                   </div>
                 </div>
               </div>
@@ -973,16 +979,11 @@ const HomePage: React.FC = () => {
       <CINVerificationModal 
         isOpen={showVerificationModal} 
         onClose={() => setShowVerificationModal(false)}
-        backButtonText="Retour à l'accueil"
       />
     </div>
   );
 
-  return (
-    <>
-      {content}
-    </>
-  );
+  return content;
 };
 
 export default HomePage;

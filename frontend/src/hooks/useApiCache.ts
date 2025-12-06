@@ -52,10 +52,10 @@ export function useApiCache<T>(
     setError(null);
 
     try {
-      const response = await apiGet<T>(key);
+      const response = await apiGet(key);
       
       if (response.success) {
-        const newData = response.data;
+        const newData = response.data as T;
         // Mettre à jour le cache
         cache.set(key, {
           data: newData,

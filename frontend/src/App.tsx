@@ -98,191 +98,191 @@ function AppContent() {
                     </div>
                   </PageTransition>
                 } />
-              <Route path="/admin/register" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <AdminRegisterPage />
-                  </div>
-                </PageTransition>
-              } />
-                      
-              {/* Routes publiques */}
-              <Route path="/" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <HomePage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/login" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <LoginPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/register" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <RegisterPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/verify-account" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <VerifyAccountPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/about" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <AboutPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/contact" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <ContactPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/terms" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <TermsPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/privacy" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <PrivacyPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/logements" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <SearchPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/properties/:id" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <PropertyDetailPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/properties" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <PropertyListPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/edit-property/:id" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <EditPropertyPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/edit-announcement/:id" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <EditAnnouncementPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/cin-verification" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <CINVerificationPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/appointments" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <AppointmentsPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/admin" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <AdminRoute>
-                      <AdminPage />
-                    </AdminRoute>
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/announcements" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <AnnouncementsPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/announcements/:id" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <AnnouncementDetailPage />
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/create-announcement" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <ProtectedRoute>
-                      <CreateAnnouncementPage />
-                    </ProtectedRoute>
-                  </div>
-                </PageTransition>
-              } />
-              
-              {/* Protected Routes */}
-              <Route path="/dashboard" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <ProtectedRoute>
-                      <DashboardPage />
-                    </ProtectedRoute>
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/create-property" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <ProtectedRoute>
-                      <CreatePropertyPage />
-                    </ProtectedRoute>
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/profile" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <ProtectedRoute>
-                      <ProfilePage />
-                    </ProtectedRoute>
-                  </div>
-                </PageTransition>
-              } />
-              <Route path="/messages" element={
-                <PageTransition>
-                  <div className="w-full overflow-x-hidden">
-                    <ProtectedRoute>
-                      <MessagesPage />
-                    </ProtectedRoute>
-                  </div>
-                </PageTransition>
-              } />
-            </Routes>
+                <Route path="/admin/register" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <AdminRegisterPage />
+                    </div>
+                  </PageTransition>
+                } />                        
+                {/* Routes publiques */}
+                <Route path="/" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <HomePage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/login" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <LoginPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/register" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <RegisterPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/verify-account" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <VerifyAccountPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/about" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <AboutPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/contact" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <ContactPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/terms" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <TermsPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/privacy" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <PrivacyPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/logements" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <SearchPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/properties/:id" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <PropertyDetailPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/properties" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <PropertyListPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/edit-property/:id" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <EditPropertyPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/edit-announcement/:id" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <EditAnnouncementPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/cin-verification" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <CINVerificationPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/appointments" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <AppointmentsPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/admin" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <AdminRoute>
+                        <AdminPage />
+                      </AdminRoute>
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/announcements" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <AnnouncementsPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/announcements/:id" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <AnnouncementDetailPage />
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/create-announcement" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <ProtectedRoute>
+                        <CreateAnnouncementPage />
+                      </ProtectedRoute>
+                    </div>
+                  </PageTransition>
+                } />
+                
+                {/* Protected Routes */}
+                <Route path="/dashboard" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <ProtectedRoute>
+                        <DashboardPage />
+                      </ProtectedRoute>
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/create-property" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <ProtectedRoute>
+                        <CreatePropertyPage />
+                      </ProtectedRoute>
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/profile" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <ProtectedRoute>
+                        <ProfilePage />
+                      </ProtectedRoute>
+                    </div>
+                  </PageTransition>
+                } />
+                <Route path="/messages" element={
+                  <PageTransition>
+                    <div className="w-full overflow-x-hidden">
+                      <ProtectedRoute>
+                        <MessagesPage />
+                      </ProtectedRoute>
+                    </div>
+                  </PageTransition>
+                } />
+              </Routes>
+            </Suspense>
           </AnimatePresence>
         </div>
       </main>
@@ -396,14 +396,19 @@ function App() {
                       </div>
                     </PageTransition>
                   } />
-                  <Route path="/edit-announcement/:id" element={
-                    <PageTransition>
+                  <Route path="/edit-announcement/:id" element={<PageTransition>
+                      <div className="w-full overflow-x-hidden">
+                        <EditAnnouncementPage />
+                      </div>
+                    </PageTransition>
+                  } />
+                </Routes>
               </AnnouncementProvider>
             </MessageProvider>
           </PropertyProvider>
         </AuthProvider>
-      </Suspense>
-    </Router>
+      </Router>
+    </Suspense>
   );
 }
 
