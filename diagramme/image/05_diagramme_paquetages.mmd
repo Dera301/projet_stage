@@ -1,0 +1,33 @@
+graph TD
+    subgraph "ColocAntananarivo"
+        A[Frontend] --> B[Backend]
+        B --> C[Base de Données]
+    end
+
+    subgraph "Frontend"
+        A1[Composants]
+        A2[Pages]
+        A3[Contextes]
+        A4[Services]
+        A5[Utils]
+    end
+
+    subgraph "Backend"
+        B1[Routes]
+        B2[Contrôleurs]
+        B3[Services]
+        B4[Middlewares]
+        B5[Utils]
+        B6[Config]
+    end
+
+    subgraph "Base de Données"
+        C1[Modèles]
+        C2[Migrations]
+        C3[Seeds]
+    end
+
+    style ColocAntananarivo fill:#f5f5f5,stroke:#333,stroke-width:2px
+    style Frontend fill:#e8f5e9,stroke:#333
+    style Backend fill:#e3f2fd,stroke:#333
+    style BaseDeDonnées fill:#f3e5f5,stroke:#333

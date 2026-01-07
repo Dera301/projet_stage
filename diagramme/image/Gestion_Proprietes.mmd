@@ -1,0 +1,30 @@
+classDiagram
+    class Property {
+        +id: string
+        +title: string
+        +description: string
+        +price: number
+        +address: string
+        +isAvailable: boolean
+        +createProperty(data: object): Property
+        +updateProperty(updates: object): boolean
+        +deleteProperty(): boolean
+    }
+
+    class Owner {
+        +properties: Property[]
+        +createProperty(data: object): Property
+        +updateProperty(propertyId: string, updates: object): boolean
+        +deleteProperty(propertyId: string): boolean
+        +getMyProperties(): Property[]
+    }
+
+    class PropertyType {
+        <<Enumeration>>
+        APARTMENT
+        HOUSE
+        STUDIO
+    }
+
+    Property "1" -- "1" PropertyType : a
+    Owner "1" -- "*" Property : possède

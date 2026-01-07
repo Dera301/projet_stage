@@ -1,0 +1,122 @@
+classDiagram
+    %% Titre: UC4 - Modifier son profil - Diagramme de Classe de Conception
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -phone: String
+        -userType: UserType
+        -university: String?
+        -studyLevel: String?
+        -budget: Decimal?
+        -bio: String?
+        -avatar: String?
+        -updatedAt: DateTime
+        --
+        +updateProfile(updateData): User
+        +updateAvatar(avatarPath): void
+        +validateUpdateData(data): boolean
+    }
+
+    class Student {
+        <<entity>>
+        -university: String
+        -studyLevel: String
+        -budget: Decimal
+        --
+        +updateStudentProfile(data): void
+        +updateBudget(newBudget): void
+    }
+
+    class Owner {
+        <<entity>>
+        --
+        +updateOwnerProfile(data): void
+    }
+
+    class Admin {
+        <<entity>>
+        --
+        +updateAdminProfile(data): void
+    }
+
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    class Boundary_EditProfile {
+        <<boundary>>
+        -editProfilePage: Page
+        --
+        +displayForm(userData): void
+        +captureFormData(): FormData
+        +onSubmit(formData): void
+        +showValidationErrors(errors): void
+        +showSuccessMessage(): void
+    }
+
+    class ProfileUpdateController {
+        <<control>>
+        -userRepository: UserRepository
+        -validationService: ValidationService
+        -fileService: FileService
+        --
+        +updateProfile(userId, updateData): Response
+        +validateUpdateData(data): boolean
+        +updateUser(userId, data): User
+        +uploadAvatar(userId, file): String
+        +handleError(error): Response
+    }
+
+    class ValidationService {
+        <<service>>
+        --
+        +validateProfileData(data): boolean
+        +validateEmail(email): boolean
+        +validatePhone(phone): boolean
+        +validateBudget(budget): boolean
+        +checkFieldsAllowed(userType, fields): boolean
+    }
+
+    class FileService {
+        <<service>>
+        --
+        +uploadFile(file, folder): String
+        +deleteFile(filePath): void
+        +validateImageFile(file): boolean
+        +convertToBase64(file): String
+    }
+
+    class UserRepository {
+        <<service>>
+        --
+        +findById(id): User
+        +update(id, data): User
+        +save(user): void
+    }
+
+    class Notification {
+        <<entity>>
+        -type: String
+        -content: String
+        --
+        +create(type, content): Notification
+    }
+
+    %% Relationships
+    User "1" --> "1" UserType : has
+    Student --|> User : extends
+    Owner --|> User : extends
+    Admin --|> User : extends
+    
+    Boundary_EditProfile ..> ProfileUpdateController : uses
+    ProfileUpdateController ..> UserRepository : queries/updates
+    ProfileUpdateController ..> ValidationService : validates
+    ProfileUpdateController ..> FileService : uploads
+    ProfileUpdateController ..> User : modifies

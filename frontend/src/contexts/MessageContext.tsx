@@ -3,6 +3,7 @@ import { Conversation, Message, MessageContextType } from '../types';
 import { useAuth } from './AuthContext';
 import { apiGet, apiJson } from '../config';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '../utils/errorHandler';
 
 const MessageContext = createContext<MessageContextType | undefined>(undefined);
 
@@ -25,6 +26,38 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
   const [loading, setLoading] = useState(false);
   const [isUnauthorized, setIsUnauthorized] = useState(false);
   const { user } = useAuth();
+
+  const showError = (error: any, fallback?: string) => {
+    const info = getErrorMessage(error, fallback);
+    toast.error(info.message, {
+      icon: info.icon,
+      duration: info.title === 'Erreur serveur' ? 6000 : 4000,
+      style: {
+        borderRadius: '8px',
+        background: '#fee2e2',
+        color: '#991b1b',
+        padding: '16px',
+        fontSize: '14px',
+        maxWidth: window.innerWidth < 768 ? '90%' : '400px',
+      },
+      position: window.innerWidth < 768 ? 'bottom-center' : 'top-right',
+    });
+  };
+
+  const showSuccess = (message: string) => {
+    toast.success(message, {
+      duration: 3000,
+      style: {
+        borderRadius: '8px',
+        background: '#dcfce7',
+        color: '#166534',
+        padding: '16px',
+        fontSize: '14px',
+        maxWidth: window.innerWidth < 768 ? '90%' : '400px',
+      },
+      position: window.innerWidth < 768 ? 'bottom-center' : 'top-right',
+    });
+  };
 
   // Charger les conversations depuis l'API
   const fetchConversations = useCallback(async () => {
@@ -57,7 +90,7 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
         console.warn('⚠️ Arrêt du polling des conversations - Token invalide');
         return;
       }
-      toast.error(error.message || 'Erreur lors du chargement des conversations');
+      showError(error, 'Erreur lors du chargement des conversations');
     } finally {
       setLoading(false);
     }
@@ -91,7 +124,7 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
       });
     } catch (error: any) {
       console.error('Erreur chargement messages:', error);
-      toast.error(error.message || 'Erreur lors du chargement des messages');
+      showError(error, 'Erreur lors du chargement des messages');
     }
   }, []);
 
@@ -132,7 +165,7 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
     }
 
     if (!content.trim()) {
-      toast.error('Le message ne peut pas être vide');
+      showError('Le message ne peut pas être vide');
       return;
     }
 
@@ -174,10 +207,10 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
 
       await fetchConversations();
 
-      toast.success('Message envoyé !');
+      showSuccess('Message envoyé !');
     } catch (error: any) {
       console.error('Erreur envoi message:', error);
-      toast.error(error.message || 'Erreur lors de l\'envoi du message');
+      showError(error, 'Erreur lors de l\'envoi du message');
       throw error;
     } finally {
       setLoading(false);
@@ -268,9 +301,9 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
             : c,
         ),
       );
-      toast.success('Message modifié');
+      showSuccess('Message modifié');
     } catch (error: any) {
-      toast.error(error.message || 'Erreur lors de la modification du message');
+      showError(error, 'Erreur lors de la modification du message');
       throw error;
     }
   };
@@ -283,9 +316,9 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
 
       setMessages(prev => prev.filter((m: Message) => m.id !== messageId));
       await fetchConversations();
-      toast.success('Message supprimé');
+      showSuccess('Message supprimé');
     } catch (error: any) {
-      toast.error(error.message || 'Erreur lors de la suppression du message');
+      showError(error, 'Erreur lors de la suppression du message');
       throw error;
     }
   };
@@ -298,9 +331,9 @@ export const MessageProvider: React.FC<MessageProviderProps> = ({ children }) =>
 
       setConversations(prev => prev.filter((c: Conversation) => c.id !== conversationId));
       setMessages(prev => prev.filter((m: Message) => m.conversationId !== conversationId));
-      toast.success('Conversation supprimée');
+      showSuccess('Conversation supprimée');
     } catch (error: any) {
-      toast.error(error.message || 'Erreur lors de la suppression de la conversation');
+      showError(error, 'Erreur lors de la suppression de la conversation');
       throw error;
     }
   };

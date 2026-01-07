@@ -1,0 +1,24 @@
+classDiagram
+    class User {
+        +email: string
+        +password: string
+        +userType: UserType
+        +login(credentials: object): Token
+        +validateToken(token: string): boolean
+    }
+
+    class Token {
+        +value: string
+        +expiresAt: DateTime
+        +isValid(): boolean
+    }
+
+    class UserType {
+        <<Enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    User "1" -- "1" Token : génère
+    User "1" -- "1" UserType : a

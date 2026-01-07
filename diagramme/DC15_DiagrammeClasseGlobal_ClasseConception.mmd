@@ -1,0 +1,450 @@
+---
+config:
+  layout: elk
+  theme: base
+---
+classDiagram
+    %% Diagramme de Classe Global de Conception - Vue d'ensemble du système
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -password: String
+        -firstName: String
+        -lastName: String
+        -phone: String
+        -userType: UserType
+        -status: UserStatus
+        -university: String?
+        -studyLevel: String?
+        -budget: Decimal?
+        -bio: String?
+        -avatar: String?
+        -cinNumber: String?
+        -cinRectoImagePath: String?
+        -cinVersoImagePath: String?
+        -cinData: String?
+        -cinVerified: Boolean
+        -cinVerificationConfidence: Float?
+        -cinVerificationErrors: String?
+        -cinVerifiedAt: DateTime?
+        -cinVerificationRequestedAt: DateTime?
+        -isVerified: Boolean
+        -accountActivationDeadline: DateTime?
+        -lastLogin: DateTime?
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +register(userData: Object): User
+        +login(email: String, password: String): Token
+        +updateProfile(data: Object): User
+        +requestCINVerification(cinNumber: String, rectoImage: String, versoImage: String): CINVerification
+        +getCINVerificationStatus(): Boolean
+        +hashPassword(password: String): String
+        +validateEmail(email: String): Boolean
+        +validatePhone(phone: String): Boolean
+        +generateVerificationCode(): String
+        +verifyPassword(password: String): Boolean
+        +generateToken(): String
+        +updateLastLogin(): void
+        +isAccountActive(): Boolean
+        +ban(reason: String?): void
+        +unban(): void
+        +isBanned(): Boolean
+    }
+    
+    class Student {
+        <<entity>>
+        -university: String?
+        -studyLevel: String?
+        -budget: Decimal?
+        --
+        +getProfile(): User
+        +updateStudentInfo(university: String, studyLevel: String, budget: Decimal): void
+        +publishAnnouncement(content: String): Announcement
+        +planVisit(propertyId: Int, appointmentDate: DateTime, message: String?): Appointment
+        +getMyAppointments(): Appointment[]
+        +cancelAppointment(appointmentId: Int, reason: String?): void
+        +contactOwner(ownerId: Int, message: String): Message
+        +getConversations(): Conversation[]
+        +searchAnnouncements(filter: AnnouncementSearchFilter): Announcement[]
+        +searchProperties(filter: PropertySearchFilter): Property[]
+        +filterPropertiesByBudget(maxBudget: Decimal): Property[]
+        +getAppointmentStatus(appointmentId: Int): AppointmentStatus
+        +receiveNotification(appointmentId: Int, status: AppointmentStatus): void
+        +editMessage(messageId: Int, content: String): Message
+        +removeMessage(messageId: Int): Boolean
+    }
+    
+    class Owner {
+        <<entity>>
+        --
+        +getProfile(): User
+        +updateOwnerInfo(): void
+        +publishAnnouncement(content: String): Announcement
+        +createProperty(title: String, description: String, address: String, price: Decimal, deposit: Decimal, availableRooms: Int, totalRooms: Int, propertyType: PropertyType): Property
+        +updateProperty(id: Int, propertyData: Object): Property
+        +deleteProperty(id: Int): Boolean
+        +getMyProperties(): Property[]
+        +getAppointmentsForProperty(propertyId: Int): Appointment[]
+        +getAllAppointments(): Appointment[]
+        +validateAppointment(appointmentId: Int): Appointment
+        +rejectAppointment(appointmentId: Int, reason: String?): Appointment
+        +postponeAppointment(appointmentId: Int, newDate: DateTime): Appointment
+        +getPendingAppointments(): Appointment[]
+        +contactStudent(studentId: Int, message: String): Message
+        +getConversations(): Conversation[]
+        +searchAnnouncements(filter: AnnouncementSearchFilter): Announcement[]
+        +searchProperties(filter: PropertySearchFilter): Property[]
+        +editMessage(messageId: Int, content: String): Message
+        +removeMessage(messageId: Int): Boolean
+    }
+    
+    class Admin {
+        <<entity>>
+        --
+        +getProfile(): User
+        +deleteAnnouncement(announcementId: Int): Boolean
+        +moderateAnnouncement(id: Int): void
+        +deleteProperty(propertyId: Int): Boolean
+        +moderateProperty(id: Int): void
+        +banUser(userId: Int, reason: String?): User
+        +unbanUser(userId: Int): User
+        +getAllAnnouncements(): Announcement[]
+        +getAllProperties(): Property[]
+        +getAllUsers(): User[]
+        +moderateContent(): void
+        +validateCIN(userId: Int, confidence: Float?): User
+        +rejectCIN(userId: Int, errors: String): User
+        +getPendingCINVerifications(): User[]
+        +reviewCIN(userId: Int): User
+    }
+    
+    class Invite {
+        <<actor>>
+        --
+        +fillRegistrationForm(): void
+        +submitRegistration(data: Object): void
+        +verifyEmail(code: String): void
+        +searchAnnouncements(keyword: String?): Announcement[]
+        +viewAnnouncements(): Announcement[]
+        +searchProperties(keyword: String?, district: String?, minPrice: Decimal?, maxPrice: Decimal?): Property[]
+        +viewProperties(): Property[]
+    }
+    
+    class Property {
+        <<entity>>
+        -id: Int
+        -title: String
+        -description: String
+        -address: String
+        -district: String
+        -price: Decimal
+        -deposit: Decimal
+        -availableRooms: Int
+        -totalRooms: Int
+        -propertyType: PropertyType
+        -amenities: String?
+        -images: String?
+        -ownerId: Int
+        -isAvailable: Boolean
+        -latitude: Decimal?
+        -longitude: Decimal?
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +create(ownerId: Int, propertyData: Object): Property
+        +update(id: Int, propertyData: Object): Property
+        +delete(id: Int): Boolean
+        +getById(id: Int): Property
+        +getByOwner(ownerId: Int): Property[]
+        +validatePropertyData(data: Object): Boolean
+        +toggleAvailability(): void
+        +getAppointments(): Appointment[]
+        +isAvailableForVisit(date: DateTime): Boolean
+        +search(keyword: String?): Property[]
+        +filterByDistrict(district: String): Property[]
+        +filterByPriceRange(minPrice: Decimal, maxPrice: Decimal): Property[]
+        +filterByPropertyType(type: PropertyType): Property[]
+        +filterByRooms(minRooms: Int): Property[]
+        +filterByAvailability(isAvailable: Boolean): Property[]
+        +getAll(): Property[]
+        +delete(): Boolean
+        +isModerated(): Boolean
+    }
+    
+    class Announcement {
+        <<entity>>
+        -id: Int
+        -authorId: Int
+        -content: String
+        -images: String?
+        -contact: String?
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +create(authorId: Int, content: String, images: String?, contact: String?): Announcement
+        +update(id: Int, content: String, images: String?, contact: String?): Announcement
+        +delete(id: Int): Boolean
+        +getById(id: Int): Announcement
+        +getByAuthor(authorId: Int): Announcement[]
+        +validateContent(content: String): Boolean
+        +search(keyword: String): Announcement[]
+        +filterByAuthor(authorId: Int): Announcement[]
+        +filterByDateRange(startDate: DateTime, endDate: DateTime): Announcement[]
+        +getAll(): Announcement[]
+        +getRecent(limit: Int): Announcement[]
+        +delete(): Boolean
+        +isModerated(): Boolean
+    }
+    
+    class Appointment {
+        <<entity>>
+        -id: Int
+        -propertyId: Int
+        -studentId: Int
+        -ownerId: Int
+        -appointmentDate: DateTime
+        -status: AppointmentStatus
+        -message: String?
+        -cancellationReason: String?
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +create(propertyId: Int, studentId: Int, ownerId: Int, appointmentDate: DateTime, message: String?): Appointment
+        +getById(id: Int): Appointment
+        +getByProperty(propertyId: Int): Appointment[]
+        +getByStudent(studentId: Int): Appointment[]
+        +getByOwner(ownerId: Int): Appointment[]
+        +validateDate(date: DateTime): Boolean
+        +checkConflict(ownerId: Int, date: DateTime): Boolean
+        +validate(id: Int): Appointment
+        +reject(id: Int, reason: String?): Appointment
+        +postpone(id: Int, newDate: DateTime): Appointment
+        +updateStatus(status: AppointmentStatus): void
+        +canBeValidated(): Boolean
+        +canBeRejected(): Boolean
+    }
+    
+    class Message {
+        <<entity>>
+        -id: Int
+        -conversationId: Int
+        -senderId: Int
+        -receiverId: Int
+        -content: String
+        -isRead: Boolean
+        -createdAt: DateTime
+        --
+        +send(senderId: Int, receiverId: Int, content: String): Message
+        +markAsRead(): void
+        +getByConversation(conversationId: Int): Message[]
+        +getUnreadCount(receiverId: Int): Int
+        +validateContent(content: String): Boolean
+        +update(id: Int, newContent: String): Message
+        +delete(id: Int): Boolean
+        +getById(id: Int): Message
+        +canBeModified(senderId: Int): Boolean
+        +canBeDeleted(senderId: Int): Boolean
+        +isOwnedBy(userId: Int): Boolean
+    }
+    
+    class Conversation {
+        <<entity>>
+        -id: Int
+        -user1Id: Int
+        -user2Id: Int
+        -unreadCount: Int
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +create(user1Id: Int, user2Id: Int): Conversation
+        +getByUsers(user1Id: Int, user2Id: Int): Conversation
+        +updateUnreadCount(): void
+        +getMessages(): Message[]
+        +delete(): Boolean
+        +deleteMessage(messageId: Int): Boolean
+        +updateMessage(messageId: Int, content: String): Message
+    }
+    
+    class PendingRegistration {
+        <<entity>>
+        -id: Int
+        -email: String
+        -passwordHash: String
+        -firstName: String
+        -lastName: String
+        -phone: String
+        -userType: UserType
+        -university: String?
+        -studyLevel: String?
+        -budget: Decimal?
+        -avatar: String?
+        -verificationCode: String
+        -verificationExpires: DateTime
+        -attempts: Int
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +save(): PendingRegistration
+        +validateCode(code: String): Boolean
+        +isExpired(): Boolean
+    }
+    
+    class VerificationCode {
+        <<entity>>
+        -id: Int
+        -userId: Int
+        -code: String
+        -type: String
+        -expiresAt: DateTime
+        -used: Boolean
+        -createdAt: DateTime
+        --
+        +generate(): String
+        +validate(code: String): Boolean
+        +markAsUsed(): void
+        +isExpired(): Boolean
+    }
+    
+    class CINVerification {
+        <<entity>>
+        -id: Int
+        -userId: Int
+        -cinNumber: String
+        -rectoImagePath: String
+        -versoImagePath: String
+        -status: CINVerificationStatus
+        -confidence: Float?
+        -errors: String?
+        -verifiedAt: DateTime?
+        -requestedAt: DateTime
+        -createdAt: DateTime
+        --
+        +create(userId: Int, cinNumber: String, rectoImage: String, versoImage: String): CINVerification
+        +getById(id: Int): CINVerification
+        +getByUser(userId: Int): CINVerification[]
+        +isPending(): Boolean
+        +validateData(): Boolean
+        +validate(confidence: Float?): void
+        +reject(errors: String): void
+    }
+    
+    class Token {
+        <<value>>
+        -token: String
+        -expiresAt: DateTime
+        -userId: Int
+        --
+        +isValid(): Boolean
+        +getPayload(): Object
+    }
+    
+    class AnnouncementSearchFilter {
+        <<value>>
+        -keyword: String?
+        -authorId: Int?
+        -startDate: DateTime?
+        -endDate: DateTime?
+        -sortBy: String?
+        -order: String?
+        --
+        +apply(announcements: Announcement[]): Announcement[]
+        +validate(): Boolean
+    }
+    
+    class PropertySearchFilter {
+        <<value>>
+        -keyword: String?
+        -district: String?
+        -minPrice: Decimal?
+        -maxPrice: Decimal?
+        -propertyType: PropertyType?
+        -minRooms: Int?
+        -isAvailable: Boolean?
+        -sortBy: String?
+        -order: String?
+        --
+        +apply(properties: Property[]): Property[]
+        +validate(): Boolean
+    }
+    
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+    
+    class UserStatus {
+        <<enumeration>>
+        PENDING_VERIFICATION
+        PENDING_APPROVAL
+        ACTIVE
+        SUSPENDED
+    }
+    
+    class PropertyType {
+        <<enumeration>>
+        APARTMENT
+        HOUSE
+        STUDIO
+    }
+    
+    class AppointmentStatus {
+        <<enumeration>>
+        PENDING
+        CONFIRMED
+        CANCELLED
+        COMPLETED
+    }
+    
+    class CINVerificationStatus {
+        <<enumeration>>
+        PENDING
+        VALIDATED
+        REJECTED
+    }
+    
+    %% Relations principales
+    User "1" --> "1" UserType : posséder
+    User "1" --> "1" UserStatus : posséder
+    User "1" --> "0..*" Property : posséder
+    User "1" --> "0..*" Announcement : publier
+    User "1" --> "0..*" Appointment : créer comme student
+    User "1" --> "0..*" Appointment : recevoir comme owner
+    User "1" --> "0..*" Conversation : participer
+    User "1" --> "0..*" VerificationCode : générer
+    User "1" --> "0..*" CINVerification : demander
+    User "1" --> "0..*" Token : générer
+    User "0..1" --> "1" PendingRegistration : provenir de
+    
+    Student --|> User : hériter
+    Owner --|> User : hériter
+    Admin --|> User : hériter
+    
+    Property "1" --> "1" PropertyType : posséder
+    Property "1" --> "0..*" Appointment : recevoir
+    
+    Announcement "1" --> "1" User : auteur
+    
+    Appointment "1" --> "1" AppointmentStatus : posséder
+    Appointment "1" --> "1" Property : concerner
+    Appointment "1" --> "1" Student : concerner comme student
+    Appointment "1" --> "1" Owner : concerner comme owner
+    
+    Conversation "1" --> "0..*" Message : contenir
+    Message "1" --> "1" User : envoyer par
+    Message "1" --> "1" User : recevoir par
+    
+    CINVerification "1" --> "1" CINVerificationStatus : posséder
+    CINVerification "1" --> "1" User : appartenir à
+    
+    VerificationCode "1" --> "1" User : appartenir à
+    Token "1" --> "1" User : appartenir à
+    
+    PendingRegistration "1" --> "1" UserType : posséder
+    
+    AnnouncementSearchFilter ..> Announcement : filtrer
+    PropertySearchFilter ..> Property : filtrer

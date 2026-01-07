@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { PropertyProvider } from './contexts/PropertyContext';
 import { MessageProvider } from './contexts/MessageContext';
 import { AnnouncementProvider } from './contexts/AnnouncementContext';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Composants de chargement
 import PageTransition from './components/PageTransition';
@@ -313,17 +314,19 @@ function AppContent() {
 function App() {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <Router>
-        <AuthProvider>
-          <PropertyProvider>
-            <MessageProvider>
-              <AnnouncementProvider>
-                <AppContent />
-              </AnnouncementProvider>
-            </MessageProvider>
-          </PropertyProvider>
-        </AuthProvider>
-      </Router>
+      <ErrorBoundary>
+        <Router>
+          <AuthProvider>
+            <PropertyProvider>
+              <MessageProvider>
+                <AnnouncementProvider>
+                  <AppContent />
+                </AnnouncementProvider>
+              </MessageProvider>
+            </PropertyProvider>
+          </AuthProvider>
+        </Router>
+      </ErrorBoundary>
     </Suspense>
   );
 }

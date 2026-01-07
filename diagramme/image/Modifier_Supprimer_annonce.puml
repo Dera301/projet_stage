@@ -1,0 +1,17 @@
+@startuml
+title Modifier/Supprimer annonce
+class Utilisateur {
+  +updateAnnouncement(id, data)
+  +deleteAnnouncement(id)
+}
+class Admin {
+  +moderateAnnouncement(id, action, reason?)
+}
+class Announcement {
+  +content: String
+  +update(data)
+  +remove()
+}
+Utilisateur "1" --> "*" Announcement : appartient >
+Admin --> Announcement : modère >
+@enduml

@@ -1,0 +1,87 @@
+---
+config:
+  layout: elk
+  theme: base
+---
+classDiagram
+    %% Diagramme de Classe de Conception - Planifier Visite
+    
+    class Appointment {
+        <<entity>>
+        -id: Int
+        -propertyId: Int
+        -studentId: Int
+        -ownerId: Int
+        -appointmentDate: DateTime
+        -status: AppointmentStatus
+        -message: String?
+        -cancellationReason: String?
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +create(propertyId: Int, studentId: Int, ownerId: Int, appointmentDate: DateTime, message: String?): Appointment
+        +getById(id: Int): Appointment
+        +getByProperty(propertyId: Int): Appointment[]
+        +getByStudent(studentId: Int): Appointment[]
+        +getByOwner(ownerId: Int): Appointment[]
+        +validateDate(date: DateTime): Boolean
+        +checkConflict(ownerId: Int, date: DateTime): Boolean
+    }
+    
+    class Property {
+        <<entity>>
+        -id: Int
+        -title: String
+        -address: String
+        -ownerId: Int
+        -isAvailable: Boolean
+        --
+        +getAppointments(): Appointment[]
+        +isAvailableForVisit(date: DateTime): Boolean
+    }
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        --
+        +getMyAppointments(): Appointment[]
+    }
+    
+    class Student {
+        <<entity>>
+        --
+        +planVisit(propertyId: Int, appointmentDate: DateTime, message: String?): Appointment
+        +getMyAppointments(): Appointment[]
+        +cancelAppointment(appointmentId: Int, reason: String?): void
+    }
+    
+    class Owner {
+        <<entity>>
+        --
+        +getAppointmentsForProperty(propertyId: Int): Appointment[]
+        +getAllAppointments(): Appointment[]
+    }
+    
+    class AppointmentStatus {
+        <<enumeration>>
+        PENDING
+        CONFIRMED
+        CANCELLED
+        COMPLETED
+    }
+    
+    %% Relations
+    User "1" --> "0..*" Appointment : créer comme student
+    User "1" --> "0..*" Appointment : recevoir comme owner
+    Property "1" --> "0..*" Appointment : avoir
+    Appointment "1" --> "1" AppointmentStatus : posséder
+    Student --|> User : hériter
+    Owner --|> User : hériter
+    
+    Student ..> Appointment : créer
+    Student ..> Property : consulter
+

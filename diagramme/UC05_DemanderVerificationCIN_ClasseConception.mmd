@@ -1,0 +1,131 @@
+classDiagram
+    %% Titre: UC5 - Demander vérification CIN - Diagramme de Classe de Conception
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        -cinNumber: String?
+        -cinData: String?
+        -cinVerified: Boolean
+        -cinRectoImagePath: String?
+        -cinVersoImagePath: String?
+        -cinVerificationRequestedAt: DateTime?
+        --
+        +submitCINVerification(cinData): void
+        +validateCINNumber(number): boolean
+        +getCINStatus(): CINStatus
+    }
+
+    class Student {
+        <<entity>>
+        --
+        +requestCINVerification(cinData): void
+    }
+
+    class Owner {
+        <<entity>>
+        --
+        +requestCINVerification(cinData): void
+    }
+
+    class Admin {
+        <<entity>>
+        --
+        +reviewCINRequest(userId): CINRequest
+        +getCINList(): List
+    }
+
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    class Boundary_CINVerification {
+        <<boundary>>
+        -cinPage: Page
+        --
+        +displayCINForm(): void
+        +captureFormData(): CINFormData
+        +captureImages(): ImageData
+        +onSubmit(cinData, images): void
+        +showValidationErrors(errors): void
+        +showConfirmation(message): void
+    }
+
+    class CINVerificationController {
+        <<control>>
+        -userRepository: UserRepository
+        -fileService: FileService
+        -validationService: ValidationService
+        -notificationService: NotificationService
+        --
+        +submitCINVerification(userId, cinData, images): Response
+        +validateCINNumber(number): boolean
+        +uploadCINImages(files): ImagePaths
+        +saveCINData(userId, data): void
+        +notifyAdmin(userId): void
+    }
+
+    class ValidationService {
+        <<service>>
+        --
+        +validateCINNumber(number): boolean
+        +validateImageFormat(image): boolean
+        +validateImageSize(image): boolean
+    }
+
+    class FileService {
+        <<service>>
+        --
+        +uploadImage(file): String
+        +convertToBase64(file): String
+        +validateImage(file): boolean
+    }
+
+    class UserRepository {
+        <<service>>
+        --
+        +findById(id): User
+        +updateCINData(id, data): void
+    }
+
+    class CINRequest {
+        <<entity>>
+        -userId: Int
+        -cinNumber: String
+        -rectoImagePath: String
+        -versoImagePath: String
+        -status: String
+        -requestDate: DateTime
+        --
+        +create(userId, cinData): CINRequest
+        +getStatus(): String
+    }
+
+    class NotificationService {
+        <<service>>
+        --
+        +notifyAdminCINRequest(user): void
+        +notifyUserCINSubmitted(user): void
+    }
+
+    %% Relationships
+    User "1" --> "1" UserType : has
+    Student --|> User : extends
+    Owner --|> User : extends
+    Admin --|> User : extends
+    
+    Boundary_CINVerification ..> CINVerificationController : uses
+    CINVerificationController ..> UserRepository : updates
+    CINVerificationController ..> FileService : uploads
+    CINVerificationController ..> ValidationService : validates
+    CINVerificationController ..> CINRequest : creates
+    CINVerificationController ..> NotificationService : notifies
+    
+    CINRequest "1" --> "1" User : belongs_to

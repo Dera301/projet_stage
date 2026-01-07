@@ -1,0 +1,26 @@
+@startuml
+title Modéliser contenu
+class Admin {
+  +listAnnouncements()
+  +deleteAnnouncement(id)
+  +listProperties()
+  +toggleAvailability(id)
+  +updatePolicy(text)
+}
+class Announcement {
+  +content: String
+  +remove()
+}
+class Property {
+  +isAvailable: Boolean
+  +toggleAvailability()
+}
+class Notification {
+  +type: String
+  +content: String
+  +sendToAdmin()
+}
+Admin --> Announcement : modère >
+Admin --> Property : contrôle >
+Notification --> Admin : rapports >
+@enduml

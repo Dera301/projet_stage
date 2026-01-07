@@ -1,0 +1,109 @@
+classDiagram
+    %% Titre: UC1 - S'inscrire - Diagramme de Classe de Conception
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -password: String
+        -firstName: String
+        -lastName: String
+        -phone: String
+        -userType: UserType
+        -university: String?
+        -studyLevel: String?
+        -budget: Decimal?
+        -avatar: String?
+        -accountActivationDeadline: DateTime?
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +register(userData): User
+        +hashPassword(password): String
+        +validateEmail(email): boolean
+        +validatePhone(phone): boolean
+        +createVerificationCode(): String
+    }
+
+    class Invite {
+        <<boundary>>
+        -registrationPage: Page
+        --
+        +displayForm(): void
+        +validateForm(formData): boolean
+        +onSubmit(formData): void
+        +showSuccessMessage(message): void
+        +redirect(path): void
+    }
+
+    class Student {
+        <<entity>>
+        -university: String
+        -studyLevel: String
+        -budget: Decimal
+        --
+        +getUniversities(): List
+        +getStudyLevels(): List
+    }
+
+    class Owner {
+        <<entity>>
+        --
+        +getOwnerProperties(): List
+    }
+
+    class Admin {
+        <<entity>>
+        --
+        +receiveUserNotification(notification): void
+    }
+
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    class RegistrationController {
+        <<control>>
+        -userRepository: UserRepository
+        -validationService: ValidationService
+        -notificationService: NotificationService
+        --
+        +register(email, password, firstName, lastName, phone, userType): Response
+        +validateUniqueEmail(email): boolean
+        +createUser(userData): User
+        +generateToken(user): String
+        +notifyAdmin(user): void
+    }
+
+    class ValidationService {
+        <<service>>
+        --
+        +validateEmail(email): boolean
+        +validatePassword(password): boolean
+        +validatePhone(phone): boolean
+        +validateRequired(fields): boolean
+    }
+
+    class NotificationService {
+        <<service>>
+        --
+        +notifyAdminUserRegistered(user): void
+        +sendWelcomeEmail(user): void
+    }
+
+    %% Relationships
+    User "1" --> "1" UserType : has
+    Student --|> User : extends
+    Owner --|> User : extends
+    Admin --|> User : extends
+    
+    Invite ..> RegistrationController : uses
+    RegistrationController ..> User : creates
+    RegistrationController ..> ValidationService : uses
+    RegistrationController ..> NotificationService : uses
+    
+    ValidationService ..> User : validates
+    NotificationService ..> Admin : notifies

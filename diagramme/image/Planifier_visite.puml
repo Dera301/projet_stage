@@ -1,0 +1,21 @@
+@startuml
+title Planifier visite
+class Student {
+  +scheduleAppointment(propertyId, date, message?)
+}
+class Owner {
+  +id: Int
+}
+class Property {
+  +id: Int
+  +isAvailable: Boolean
+}
+class Appointment {
+  +appointmentDate: DateTime
+  +status: AppointmentStatus
+  +create()
+}
+Student "1" --> "*" Appointment : initie >
+Owner "1" <-- "*" Appointment : notifié >
+Property "1" <-- "*" Appointment : concerne >
+@enduml

@@ -1,0 +1,217 @@
+classDiagram
+    %% Titre: UC12 - Planifier une Visite - Diagramme de Classe de Conception
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        -phone: String?
+        --
+    }
+
+    class Student {
+        <<entity>>
+        -budget: Float
+        -university: String?
+        --
+        +scheduleVisit(propertyId, date): void
+        +addMessageToAppointment(message): void
+    }
+
+    class Owner {
+        <<entity>>
+        --
+        +receiveAppointmentRequest(appointment): void
+    }
+
+    class Admin {
+        <<entity>>
+        --
+    }
+
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    class Boundary_ScheduleAppointment {
+        <<boundary>>
+        -appointmentForm: Form
+        -dateTimePicker: Component
+        -confirmationDialog: Dialog
+        --
+        +displayPropertyInfo(property): void
+        +displayAvailableSlots(slots): void
+        +displayScheduleForm(): void
+        +onSelectDateTime(datetime): void
+        +onAddMessage(message): void
+        +onSubmit(appointmentData): void
+        +onCancel(): void
+    }
+
+    class AppointmentSchedulingController {
+        <<control>>
+        -appointmentRepository: AppointmentRepository
+        -propertyRepository: PropertyRepository
+        -userRepository: UserRepository
+        -availabilityService: AvailabilityService
+        -validationService: ValidationService
+        -notificationService: NotificationService
+        -messageService: MessageService
+        --
+        +getAvailableSlots(propertyId): List
+        +scheduleAppointment(studentId, propertyId, datetime): Appointment
+        +validateAppointmentRequest(request): Boolean
+        +checkConflicts(propertyId, datetime): List
+    }
+
+    class Appointment {
+        <<entity>>
+        -id: Int
+        -propertyId: Int
+        -studentId: Int
+        -ownerId: Int
+        -appointmentDate: DateTime
+        -status: AppointmentStatus
+        -message: String?
+        -cancellationReason: String?
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +cancel(reason): void
+        +confirm(): void
+        +complete(): void
+        +reschedule(newDate): void
+    }
+
+    class AppointmentStatus {
+        <<enumeration>>
+        PENDING
+        CONFIRMED
+        CANCELLED
+        COMPLETED
+    }
+
+    class AppointmentRequest {
+        <<entity>>
+        -studentId: Int
+        -propertyId: Int
+        -appointmentDate: DateTime
+        -message: String?
+        -preferredContactMethod: String
+        --
+        +validate(): ValidationResult
+    }
+
+    class Property {
+        <<entity>>
+        -id: Int
+        -title: String
+        -address: String
+        -ownerId: Int
+        -isAvailable: Boolean
+        --
+    }
+
+    class AppointmentRepository {
+        <<service>>
+        --
+        +create(appointment): Appointment
+        +findByPropertyAndDate(propertyId, date): List
+        +findByStudent(studentId): List
+        +findByOwner(ownerId): List
+        +findByPropertyAndStudent(propertyId, studentId): List
+    }
+
+    class PropertyRepository {
+        <<service>>
+        --
+        +findById(id): Property
+    }
+
+    class UserRepository {
+        <<service>>
+        --
+        +findById(id): User
+    }
+
+    class AvailabilityService {
+        <<service>>
+        -slotDuration: Int
+        -maxDaysAhead: Int
+        --
+        +getAvailableSlots(propertyId, dayRange): List
+        +isSlotAvailable(propertyId, datetime): Boolean
+        +generateTimeSlots(date): List
+        +checkOwnerAvailability(ownerId, datetime): Boolean
+    }
+
+    class ValidationService {
+        <<service>>
+        --
+        +validateAppointmentRequest(request): ValidationResult
+        +validateStudentBudget(studentId, propertyId): Boolean
+        +validateAppointmentDate(date): Boolean
+        +checkStudentExists(studentId): Boolean
+        +checkPropertyExists(propertyId): Boolean
+        +preventDuplicateAppointments(studentId, propertyId): Boolean
+    }
+
+    class NotificationService {
+        <<service>>
+        --
+        +notifyOwnerAppointmentRequested(ownerId, appointment): void
+        +notifyStudentAppointmentConfirmed(studentId, appointment): void
+        +sendAppointmentReminder(appointmentId): void
+    }
+
+    class MessageService {
+        <<service>>
+        --
+        +createAppointmentMessage(appointmentId, studentId, content): void
+    }
+
+    class TimeSlot {
+        <<entity>>
+        -startTime: DateTime
+        -endTime: DateTime
+        -isAvailable: Boolean
+        -isBooked: Boolean
+        --
+    }
+
+    class ValidationResult {
+        <<entity>>
+        -isValid: Boolean
+        -errors: List~String~
+        --
+    }
+
+    %% Relationships
+    User "1" --> "1" UserType : has
+    Student --|> User : extends
+    Owner --|> User : extends
+    Admin --|> User : extends
+    
+    Boundary_ScheduleAppointment ..> AppointmentSchedulingController : uses
+    AppointmentSchedulingController ..> AppointmentRepository : creates
+    AppointmentSchedulingController ..> PropertyRepository : queries
+    AppointmentSchedulingController ..> UserRepository : queries
+    AppointmentSchedulingController ..> AvailabilityService : checks
+    AppointmentSchedulingController ..> ValidationService : validates
+    AppointmentSchedulingController ..> NotificationService : notifies
+    AppointmentSchedulingController ..> MessageService : handles
+    
+    AppointmentRequest --> ValidationService : validated_by
+    AppointmentSchedulingController --> Appointment : creates
+    Appointment "1" --> "1" AppointmentStatus : has
+    Appointment "1" --> "1" Property : is_for
+    Appointment "1" --> "1" Student : requested_by
+    Appointment "1" --> "1" Owner : owned_by
+    
+    AvailabilityService --> TimeSlot : generates

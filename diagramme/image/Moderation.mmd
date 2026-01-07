@@ -1,0 +1,50 @@
+classDiagram
+    class Admin {
+        +id: string
+        +role: AdminRole
+        +deleteContent(contentId: string, contentType: string): boolean
+        +warnUser(userId: string, reason: string): boolean
+        +suspendUser(userId: string, duration: number, reason: string): boolean
+        +viewReports(status: ReportStatus): Report[]
+        +resolveReport(reportId: string, action: string): boolean
+    }
+
+    class Report {
+        +id: string
+        +reporterId: string
+        +reportedItemId: string
+        +reportedItemType: string
+        +reason: string
+        +status: ReportStatus
+        +createdAt: DateTime
+        +resolvedAt: DateTime
+        +resolve(adminId: string, action: string): boolean
+        +addNote(note: string): void
+    }
+
+    class User {
+        +id: string
+        +reports: Report[]
+        +reportContent(contentId: string, reason: string): Report
+        +appealModeration(decisionId: string, reason: string): boolean
+    }
+
+    class ReportStatus {
+        <<Enumeration>>
+        PENDING
+        IN_REVIEW
+        RESOLVED
+        REJECTED
+    }
+
+    class AdminRole {
+        <<Enumeration>>
+        SUPER_ADMIN
+        MODERATOR
+        SUPPORT
+    }
+
+    Admin "1" -- "*" Report : traite
+    User "1" -- "*" Report : crée
+    Report "1" -- "1" ReportStatus : a
+    Admin "1" -- "1" AdminRole : a

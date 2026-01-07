@@ -1,0 +1,33 @@
+classDiagram
+    class Message {
+        +id: string
+        +content: string
+        +timestamp: DateTime
+        +isRead: boolean
+        +senderId: string
+        +send(conversationId: string, content: string): Message
+        +markAsRead(): void
+    }
+
+    class Conversation {
+        +id: string
+        +participants: User[]
+        +messages: Message[]
+        +createdAt: DateTime
+        +updatedAt: DateTime
+        +addMessage(sender: User, content: string): Message
+        +getMessages(limit?: number, offset?: number): Message[]
+        +markAsRead(userId: string): void
+    }
+
+    class User {
+        +id: string
+        +conversations: Conversation[]
+        +startConversation(participantIds: string[]): Conversation
+        +sendMessage(conversationId: string, content: string): Message
+        +getConversations(): Conversation[]
+    }
+
+    User "1" -- "*" Conversation : participe
+    Conversation "1" -- "*" Message : contient
+    Message "1" -- "1" User : envoyé_par

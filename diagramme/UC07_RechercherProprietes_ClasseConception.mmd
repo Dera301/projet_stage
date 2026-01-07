@@ -1,0 +1,181 @@
+classDiagram
+    %% Titre: UC7 - Rechercher Propriétés - Diagramme de Classe de Conception
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        -budget: Float?
+        -university: String?
+        --
+        +searchProperties(filters): List
+        +viewSearchResults(): void
+    }
+
+    class Student {
+        <<entity>>
+        -budget: Float
+        -university: String
+        --
+        +setSearchFilters(filters): void
+        +applyBudgetFilter(): void
+        +applyUniversityFilter(): void
+    }
+
+    class Owner {
+        <<entity>>
+        --
+    }
+
+    class Admin {
+        <<entity>>
+        --
+    }
+
+    class Invite {
+        <<boundary>>
+        --
+        +searchAsGuest(): void
+    }
+
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    class Boundary_SearchProperties {
+        <<boundary>>
+        -searchPage: Page
+        -filterPanel: Component
+        -resultsList: Component
+        --
+        +displaySearchForm(): void
+        +displayFilters(available_filters): void
+        +displayResults(properties): void
+        +onSearch(filters): void
+        +onFilterChange(filters): void
+    }
+
+    class SearchController {
+        <<control>>
+        -propertyRepository: PropertyRepository
+        -searchFilterService: SearchFilterService
+        -cacheService: CacheService
+        --
+        +search(filters): List
+        +getAvailableFilters(): FilterOptions
+        +getSearchHistory(): List
+        +clearSearchHistory(): void
+    }
+
+    class SearchFilterService {
+        <<service>>
+        -validFilters: Map
+        --
+        +validateFilters(filters): Boolean
+        +normalizeFilters(filters): FilterObject
+        +buildQuery(filters): Query
+        +applyPriceRange(min, max): void
+        +applyPropertyType(types): void
+        +applyLocation(district): void
+        +applyAvailableRooms(count): void
+        +applyAmenities(amenities): void
+        +sortResults(sortBy): void
+    }
+
+    class SearchQuery {
+        <<entity>>
+        -id: Int
+        -userId: Int
+        -priceMin: Float?
+        -priceMax: Float?
+        -district: String?
+        -propertyType: String?
+        -availableRooms: Int?
+        -amenities: List~String~?
+        -sortBy: String
+        -createdAt: DateTime
+        --
+        +execute(): List
+        +getFilterSummary(): String
+    }
+
+    class Property {
+        <<entity>>
+        -id: Int
+        -title: String
+        -description: String
+        -address: String
+        -district: String
+        -price: Float
+        -deposit: Float
+        -availableRooms: Int
+        -totalRooms: Int
+        -propertyType: PropertyType
+        -amenities: String?
+        -images: String?
+        -isAvailable: Boolean
+        -ownerId: Int
+        -latitude: Float?
+        -longitude: Float?
+        --
+        +matchesFilter(filter): Boolean
+        +getSearchScore(query): Float
+    }
+
+    class PropertyType {
+        <<enumeration>>
+        APARTMENT
+        HOUSE
+        STUDIO
+    }
+
+    class PropertyRepository {
+        <<service>>
+        -db: Database
+        --
+        +findByFilters(filters): List
+        +findAvailable(): List
+        +countByFilter(filters): Int
+        +findPopular(): List
+    }
+
+    class CacheService {
+        <<service>>
+        --
+        +cacheSearchResults(key, results): void
+        +getFromCache(key): List?
+        +invalidateCache(key): void
+    }
+
+    class FilterOptions {
+        <<entity>>
+        -priceRange: Range
+        -districtOptions: List~String~
+        -propertyTypes: List~PropertyType~
+        -amenitiesOptions: List~String~
+        -roomCounts: List~Int~
+        --
+        +get(): FilterOptions
+    }
+
+    %% Relationships
+    User "1" --> "1" UserType : has
+    Student --|> User : extends
+    Owner --|> User : extends
+    Admin --|> User : extends
+    
+    Boundary_SearchProperties ..> SearchController : uses
+    SearchController ..> PropertyRepository : queries
+    SearchController ..> SearchFilterService : uses
+    SearchController ..> CacheService : uses
+    
+    SearchFilterService --> SearchQuery : builds
+    SearchQuery --> Property : searches
+    PropertyRepository "1" --> "*" Property : retrieves
+    SearchFilterService --> FilterOptions : provides

@@ -1,0 +1,250 @@
+classDiagram
+    %% Titre: UC15 - Publier Annonce - Diagramme de Classe de Conception
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        --
+        +publishAnnouncement(content): void
+    }
+
+    class Student {
+        <<entity>>
+        --
+        +publishStudentAnnouncement(content): void
+    }
+
+    class Owner {
+        <<entity>>
+        --
+        +publishOwnerAnnouncement(content): void
+    }
+
+    class Admin {
+        <<entity>>
+        --
+        +moderateAnnouncements(): void
+        +approveAnnouncement(announcementId): void
+        +rejectAnnouncement(announcementId, reason): void
+    }
+
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    class Boundary_PublishAnnouncement {
+        <<boundary>>
+        -announcementForm: Form
+        -imageUploadComponent: Component
+        -categorySelector: Component
+        -previewPanel: Component
+        --
+        +displayAnnouncementForm(): void
+        +displayImageUpload(): void
+        +displayCategoryOptions(): void
+        +displayPreview(announcement): void
+        +onCategorySelect(category): void
+        +onImageUpload(images): void
+        +onPublish(formData): void
+        +onSaveDraft(): void
+        +onCancel(): void
+    }
+
+    class AnnouncementPublicationController {
+        <<control>>
+        -announcementRepository: AnnouncementRepository
+        -fileService: FileService
+        -validationService: ValidationService
+        -moderationService: ModerationService
+        -notificationService: NotificationService
+        --
+        +publishAnnouncement(userId, announcementData): Announcement
+        +uploadImages(announcementId, images): List
+        +saveDraft(userId, announcementData): AnnouncementDraft
+        +previewAnnouncement(data): AnnouncementPreview
+        +deleteAnnouncement(announcementId, userId): void
+    }
+
+    class Announcement {
+        <<entity>>
+        -id: Int
+        -authorId: Int
+        -content: String
+        -images: String?
+        -category: String?
+        -contact: String?
+        -status: AnnouncementStatus
+        -viewCount: Int
+        -createdAt: DateTime
+        -publishedAt: DateTime?
+        -expiresAt: DateTime?
+        --
+        +publish(): void
+        +approve(): void
+        +reject(reason): void
+        +markExpired(): void
+        +incrementViewCount(): void
+    }
+
+    class AnnouncementStatus {
+        <<enumeration>>
+        DRAFT
+        PENDING_REVIEW
+        APPROVED
+        REJECTED
+        PUBLISHED
+        EXPIRED
+    }
+
+    class AnnouncementData {
+        <<entity>>
+        -content: String
+        -images: List~File~?
+        -category: String?
+        -contact: String?
+        -phoneNumber: String?
+        -email: String?
+        --
+        +validate(): ValidationResult
+        +getFormattedContent(): String
+    }
+
+    class AnnouncementDraft {
+        <<entity>>
+        -id: Int
+        -authorId: Int
+        -content: String
+        -images: String?
+        -category: String?
+        -savedAt: DateTime
+        --
+        +publish(): Announcement
+        +update(data): void
+    }
+
+    class AnnouncementRepository {
+        <<service>>
+        --
+        +create(announcement): Announcement
+        +publish(id): void
+        +findById(id): Announcement
+        +findByAuthor(authorId): List
+        +findPending(): List
+        +findApproved(): List
+        +markExpired(): void
+    }
+
+    class AnnouncementImage {
+        <<entity>>
+        -id: Int
+        -announcementId: Int
+        -imagePath: String
+        -displayOrder: Int
+        -uploadedAt: DateTime
+        --
+    }
+
+    class FileService {
+        <<service>>
+        --
+        +uploadImage(file): String
+        +uploadMultipleImages(files): List
+        +deleteImage(path): void
+        +validateImageFile(file): Boolean
+        +optimizeImage(file): File
+        +createThumbnail(imagePath): String
+    }
+
+    class ValidationService {
+        <<service>>
+        -minContentLength: Int
+        -maxContentLength: Int
+        -allowedCategories: List
+        --
+        +validateAnnouncementData(data): ValidationResult
+        +validateContent(content): Boolean
+        +validateCategory(category): Boolean
+        +validateContact(contact): Boolean
+        +checkForSpam(content): Boolean
+        +checkForOffensiveContent(content): Boolean
+    }
+
+    class ModerationService {
+        <<service>>
+        --
+        +submitForReview(announcementId): void
+        +reviewAnnouncement(announcementId, moderatorId): ReviewResult
+        +approveAnnouncement(announcementId): void
+        +rejectAnnouncement(announcementId, reason): void
+        +flagAsSpam(announcementId, reason): void
+        +getReviewQueue(): List
+    }
+
+    class ModerationQueue {
+        <<entity>>
+        -id: Int
+        -announcementId: Int
+        -submittedAt: DateTime
+        -reviewedAt: DateTime?
+        -reviewedBy: Int?
+        --
+    }
+
+    class NotificationService {
+        <<service>>
+        --
+        +notifyAnnouncementPublished(authorId, announcement): void
+        +notifyModeratorsNewSubmission(announcementId): void
+        +notifyAuthorApproval(authorId, announcement): void
+        +notifyAuthorRejection(authorId, announcement, reason): void
+        +notifyAnnouncementExpiring(authorId, announcement): void
+    }
+
+    class Category {
+        <<entity>>
+        -id: Int
+        -name: String
+        -description: String
+        -icon: String?
+        --
+    }
+
+    class ValidationResult {
+        <<entity>>
+        -isValid: Boolean
+        -errors: List~String~
+        -warnings: List~String~
+        --
+    }
+
+    %% Relationships
+    User "1" --> "1" UserType : has
+    Student --|> User : extends
+    Owner --|> User : extends
+    Admin --|> User : extends
+    
+    Boundary_PublishAnnouncement ..> AnnouncementPublicationController : uses
+    AnnouncementPublicationController ..> AnnouncementRepository : creates/publishes
+    AnnouncementPublicationController ..> FileService : uploads_images
+    AnnouncementPublicationController ..> ValidationService : validates
+    AnnouncementPublicationController ..> ModerationService : submits
+    AnnouncementPublicationController ..> NotificationService : notifies
+    
+    AnnouncementPublicationController --> Announcement : publishes
+    AnnouncementPublicationController --> AnnouncementDraft : manages
+    
+    Announcement "1" --> "1" AnnouncementStatus : has
+    Announcement "1" --> "*" AnnouncementImage : has
+    Announcement "1" --> "1" User : authored_by
+    Announcement "1" --> "1" Category : categorized_by
+    
+    AnnouncementDraft "1" --> "1" User : belongs_to
+    ModerationService --> ModerationQueue : manages
+    ValidationService --> ValidationResult : produces

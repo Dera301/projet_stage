@@ -1,0 +1,24 @@
+classDiagram
+    %% Titre: UC2 - Se connecter - Diagramme de Classe de Conception
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -password: String
+        -firstName: String
+        -lastName: String
+        -phone: String
+        -userType: UserType
+        -university: String?
+        -studyLevel: String?
+        -budget: Decimal?
+        -lastLogin: DateTime?
+        --
+        +verifyPassword(password): boolean
+        +verifyEmail(email): boolean
+        +updateLastLogin(): void
+        +getFullData(): UserData
+    }
+
+    

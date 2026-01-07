@@ -1,0 +1,106 @@
+---
+config:
+  layout: elk
+  theme: base
+---
+classDiagram
+    %% Diagramme de Classe de Conception - Inscription
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -password: String
+        -firstName: String
+        -lastName: String
+        -phone: String
+        -userType: UserType
+        -university: String?
+        -studyLevel: String?
+        -budget: Decimal?
+        -avatar: String?
+        -isVerified: Boolean
+        -status: UserStatus
+        -accountActivationDeadline: DateTime?
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +register(userData: Object): User
+        +hashPassword(password: String): String
+        +validateEmail(email: String): Boolean
+        +validatePhone(phone: String): Boolean
+        +generateVerificationCode(): String
+    }
+    
+    class PendingRegistration {
+        <<entity>>
+        -id: Int
+        -email: String
+        -passwordHash: String
+        -firstName: String
+        -lastName: String
+        -phone: String
+        -userType: UserType
+        -university: String?
+        -studyLevel: String?
+        -budget: Decimal?
+        -avatar: String?
+        -verificationCode: String
+        -verificationExpires: DateTime
+        -attempts: Int
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +save(): PendingRegistration
+        +validateCode(code: String): Boolean
+        +isExpired(): Boolean
+    }
+    
+    class VerificationCode {
+        <<entity>>
+        -id: Int
+        -userId: Int
+        -code: String
+        -type: String
+        -expiresAt: DateTime
+        -used: Boolean
+        -createdAt: DateTime
+        --
+        +generate(): String
+        +validate(code: String): Boolean
+        +markAsUsed(): void
+    }
+    
+    class Invite {
+        <<actor>>
+        --
+        +fillRegistrationForm(): void
+        +submitRegistration(data: Object): void
+        +verifyEmail(code: String): void
+    }
+    
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+    
+    class UserStatus {
+        <<enumeration>>
+        PENDING_VERIFICATION
+        PENDING_APPROVAL
+        ACTIVE
+        SUSPENDED
+    }
+    
+    %% Relations
+    User "1" --> "1" UserType : posséder
+    User "1" --> "1" UserStatus : posséder
+    User "1" --> "0..*" VerificationCode : générer
+    PendingRegistration "1" --> "1" UserType : posséder
+    
+    Invite ..> User : créer
+    Invite ..> PendingRegistration : créer
+    User ..> VerificationCode : générer
+

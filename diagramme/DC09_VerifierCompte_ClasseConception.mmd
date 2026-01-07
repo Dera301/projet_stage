@@ -1,0 +1,76 @@
+---
+config:
+  layout: elk
+  theme: base
+---
+classDiagram
+    %% Diagramme de Classe de Conception - Vérifier CIN
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -cinNumber: String?
+        -cinRectoImagePath: String?
+        -cinVersoImagePath: String?
+        -cinData: String?
+        -cinVerified: Boolean
+        -cinVerificationConfidence: Float?
+        -cinVerificationErrors: String?
+        -cinVerifiedAt: DateTime?
+        -cinVerificationRequestedAt: DateTime?
+        -status: UserStatus
+        -createdAt: DateTime
+        --
+        +requestCINVerification(cinNumber: String, rectoImage: String, versoImage: String): CINVerification
+        +getCINVerificationStatus(): Boolean
+        +uploadCINImages(rectoImage: String, versoImage: String): void
+        +validateCINData(): Boolean
+    }
+    
+    class CINVerification {
+        <<entity>>
+        -id: Int
+        -userId: Int
+        -cinNumber: String
+        -rectoImagePath: String
+        -versoImagePath: String
+        -status: CINVerificationStatus
+        -confidence: Float?
+        -errors: String?
+        -verifiedAt: DateTime?
+        -requestedAt: DateTime
+        -createdAt: DateTime
+        --
+        +create(userId: Int, cinNumber: String, rectoImage: String, versoImage: String): CINVerification
+        +getById(id: Int): CINVerification
+        +getByUser(userId: Int): CINVerification[]
+        +isPending(): Boolean
+        +validateData(): Boolean
+    }
+    
+    class UserStatus {
+        <<enumeration>>
+        PENDING_VERIFICATION
+        PENDING_APPROVAL
+        ACTIVE
+        SUSPENDED
+    }
+    
+    class CINVerificationStatus {
+        <<enumeration>>
+        PENDING
+        VALIDATED
+        REJECTED
+    }
+    
+    %% Relations
+    User "1" --> "1" UserStatus : posséder
+    User "1" --> "0..*" CINVerification : demander
+    CINVerification "1" --> "1" CINVerificationStatus : posséder
+    CINVerification "1" --> "1" User : appartenir à
+    
+    User ..> CINVerification : créer
+    User ..> CINVerification : vérifier statut

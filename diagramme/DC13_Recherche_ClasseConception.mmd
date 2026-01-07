@@ -1,0 +1,129 @@
+---
+config:
+  layout: elk
+  theme: base
+---
+classDiagram
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        --
+        +searchAnnouncements(filter: AnnouncementSearchFilter): Announcement[]
+        +getAnnouncements(): Announcement[]
+        +searchProperties(filter: PropertySearchFilter): Property[]
+        +getProperties(): Property[]
+    }
+
+    class Student {
+        <<entity>>
+        -budget: Decimal?
+        --
+        +searchAnnouncements(filter: AnnouncementSearchFilter): Announcement[]
+        +searchProperties(filter: PropertySearchFilter): Property[]
+        +filterPropertiesByBudget(maxBudget: Decimal): Property[]
+    }
+
+    class Owner {
+        <<entity>>
+        --
+        +searchAnnouncements(filter: AnnouncementSearchFilter): Announcement[]
+        +searchProperties(filter: PropertySearchFilter): Property[]
+    }
+
+    class Invite {
+        <<actor>>
+        --
+        +searchAnnouncements(keyword: String?): Announcement[]
+        +viewAnnouncements(): Announcement[]
+        +searchProperties(keyword: String?, district: String?, minPrice: Decimal?, maxPrice: Decimal?): Property[]
+        +viewProperties(): Property[]
+    }
+
+    Student --|> User : hériter
+    Owner --|> User : hériter
+    class Announcement {
+        <<entity>>
+        -id: Int
+        -authorId: Int
+        -content: String
+        -images: String?
+        -contact: String?
+        -createdAt: DateTime
+        --
+        +search(keyword: String): Announcement[]
+        +filterByAuthor(authorId: Int): Announcement[]
+        +filterByDateRange(startDate: DateTime, endDate: DateTime): Announcement[]
+        +getAll(): Announcement[]
+        +getRecent(limit: Int): Announcement[]
+    }
+
+    class AnnouncementSearchFilter {
+        <<value>>
+        -keyword: String?
+        -authorId: Int?
+        -startDate: DateTime?
+        -endDate: DateTime?
+        -sortBy: String?
+        -order: String?
+        --
+        +apply(announcements: Announcement[]): Announcement[]
+        +validate(): Boolean
+    }
+
+    User "1" --> "0..*" Announcement : consulter
+    AnnouncementSearchFilter ..> Announcement : filtrer
+    User ..> AnnouncementSearchFilter : utiliser
+    class Property {
+        <<entity>>
+        -id: Int
+        -title: String
+        -description: String
+        -address: String
+        -district: String
+        -price: Decimal
+        -deposit: Decimal
+        -availableRooms: Int
+        -totalRooms: Int
+        -propertyType: PropertyType
+        -amenities: String?
+        -isAvailable: Boolean
+        -latitude: Decimal?
+        -longitude: Decimal?
+        --
+        +search(keyword: String?): Property[]
+        +filterByDistrict(district: String): Property[]
+        +filterByPriceRange(minPrice: Decimal, maxPrice: Decimal): Property[]
+        +filterByPropertyType(type: PropertyType): Property[]
+        +filterByRooms(minRooms: Int): Property[]
+        +filterByAvailability(isAvailable: Boolean): Property[]
+        +getAll(): Property[]
+    }
+
+    class PropertySearchFilter {
+        <<value>>
+        -keyword: String?
+        -district: String?
+        -minPrice: Decimal?
+        -maxPrice: Decimal?
+        -propertyType: PropertyType?
+        -minRooms: Int?
+        -isAvailable: Boolean?
+        -sortBy: String?
+        -order: String?
+        --
+        +apply(properties: Property[]): Property[]
+        +validate(): Boolean
+    }
+
+    class PropertyType {
+        <<enumeration>>
+        APARTMENT
+        HOUSE
+        STUDIO
+    }
+
+    Property "1" --> "1" PropertyType : posséder
+    PropertySearchFilter ..> Property : filtrer
+    User "1" --> "0..*" Property : consulter
+    User ..> PropertySearchFilter : utiliser

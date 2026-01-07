@@ -10,7 +10,8 @@ import {
   XMarkIcon,
   EllipsisHorizontalIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  ArrowLeftIcon
 } from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -38,6 +39,7 @@ const MessagesPage: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [hiddenConversations, setHiddenConversations] = useState<Set<string>>(new Set());
+  const [isMobileView, setIsMobileView] = useState(false);
 
   const currentConversation = conversations.find(c => c.id === selectedConversation);
 
@@ -120,10 +122,16 @@ const MessagesPage: React.FC = () => {
 
   // Sélectionner automatiquement la première conversation seulement si l'utilisateur n'a pas fermé manuellement
   useEffect(() => {
-    if (conversations.length > 0 && !selectedConversation && !loading && !userHasManuallyClosed) {
+    if (
+      conversations.length > 0 &&
+      !selectedConversation &&
+      !loading &&
+      !userHasManuallyClosed &&
+      !isMobileView
+    ) {
       setSelectedConversation(conversations[0].id);
     }
-  }, [conversations, selectedConversation, loading, userHasManuallyClosed]);
+  }, [conversations, selectedConversation, loading, userHasManuallyClosed, isMobileView]);
 
   // Auto-sélection via query param ?to=<userId> & optionnellement prefill=<message>
   useEffect(() => {
@@ -155,6 +163,16 @@ const MessagesPage: React.FC = () => {
       if (raw) setHiddenConversations(new Set<string>(JSON.parse(raw)));
     } catch {}
   }, [user]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 1024);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const persistHiddenConversations = (next: Set<string>) => {
     if (!user) return;
@@ -202,6 +220,14 @@ const MessagesPage: React.FC = () => {
   return isFromOther && isUnread ? 1 : 0;
 };
 
+  const handleBackToList = () => {
+    setSelectedConversation(null);
+    setUserHasManuallyClosed(true);
+  };
+
+  const showConversationList = !isMobileView || !selectedConversation;
+  const showConversationPanel = !isMobileView || !!selectedConversation;
+  const currentParticipant = currentConversation?.participants.find(p => p.id !== user?.id);
 
   if (!user) {
     return (
@@ -225,9 +251,11 @@ const MessagesPage: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="flex h-[600px]">
+          <div className="flex flex-col lg:flex-row h-[calc(100vh-220px)] min-h-[520px]">
             {/* Conversations List */}
-            <div className="w-1/3 border-r border-gray-200 flex flex-col">
+            <div
+              className={`${showConversationList ? 'flex' : 'hidden'} lg:flex lg:w-1/3 border-r border-gray-200 flex-col bg-white`}
+            >
               <div className="p-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
               </div>
@@ -257,9 +285,12 @@ const MessagesPage: React.FC = () => {
                           onClick={() => {
                             setSelectedConversation(conversation.id);
                             setOpenMenuId(null);
+                            setUserHasManuallyClosed(false);
                           }}
                           className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
-                            selectedConversation === conversation.id ? 'bg-primary-50 border-r-2 border-primary-500' : ''
+                            selectedConversation === conversation.id
+                              ? 'bg-primary-50 border-r-2 border-primary-500'
+                              : ''
                           }`}
                         >
                           <div className="flex items-center space-x-3">
@@ -324,25 +355,35 @@ const MessagesPage: React.FC = () => {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 flex flex-col">
+            <div
+              className={`${showConversationPanel ? 'flex' : 'hidden'} flex-1 flex-col bg-gray-50`}
+            >
               {currentConversation ? (
                 <>
                   {/* Chat Header avec bouton de fermeture */}
-                  <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                  <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-white">
                     <div className="flex items-center space-x-3">
+                      {isMobileView && (
+                        <button
+                          onClick={handleBackToList}
+                          className="mr-2 rounded-full p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                          title="Retour aux conversations"
+                        >
+                          <ArrowLeftIcon className="w-5 h-5" />
+                        </button>
+                      )}
                       <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
                         <span className="text-primary-600 font-medium text-sm">
-                          {currentConversation.participants.find(p => p.id !== user.id)?.firstName[0]}
-                          {currentConversation.participants.find(p => p.id !== user.id)?.lastName[0]}
+                          {currentParticipant?.firstName?.[0]}
+                          {currentParticipant?.lastName?.[0]}
                         </span>
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">
-                          {currentConversation.participants.find(p => p.id !== user.id)?.firstName}{' '}
-                          {currentConversation.participants.find(p => p.id !== user.id)?.lastName}
+                          {currentParticipant?.firstName} {currentParticipant?.lastName}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          {currentConversation.participants.find(p => p.id !== user.id)?.userType === 'student' ? 'Étudiant' : 'Propriétaire'}
+                          {currentParticipant?.userType === 'student' ? 'Étudiant' : 'Propriétaire'}
                         </p>
                       </div>
                     </div>
@@ -446,7 +487,7 @@ const MessagesPage: React.FC = () => {
                   </div>
 
                   {/* Message Input */}
-                  <div className="p-4 border-t border-gray-200">
+                  <div className="p-4 border-t border-gray-200 bg-white">
                     <div className="flex space-x-2">
                       <textarea
                         value={newMessage}
@@ -472,16 +513,16 @@ const MessagesPage: React.FC = () => {
                   </div>
                 </>
               ) : (
-                <div className="flex-1 flex items-center justify-center text-gray-500">
-                  <div className="text-center">
-                    <ChatIcon className="w-16 h-16 mx-auto mb-4" />
+                <div className="flex-1 flex items-center justify-center text-gray-500 bg-white">
+                  <div className="text-center px-6">
+                    <ChatIcon className="w-16 h-16 mx-auto mb-4 text-primary-400" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">
                       {conversations.length === 0 ? 'Aucune conversation' : 'Sélectionnez une conversation'}
                     </h3>
-                    <p>
+                    <p className="text-sm text-gray-500">
                       {conversations.length === 0 
-                        ? 'Commencez une nouvelle conversation depuis une annonce' 
-                        : 'Choisissez une conversation pour commencer à discuter'
+                        ? 'Commencez une nouvelle conversation depuis une annonce.' 
+                        : 'Choisissez une conversation pour commencer à discuter.'
                       }
                     </p>
                   </div>

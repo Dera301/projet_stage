@@ -1,0 +1,110 @@
+classDiagram
+    class User {
+        +id: Int
+        +email: String
+        +password: String
+        +firstName: String
+        +lastName: String
+        +userType: Enum[student, owner, admin]
+        +status: UserStatus
+        +phone: String
+        +university: String?
+        +studyLevel: String?
+        +bio: String?
+        +avatar: String?
+        +budget: Decimal?
+        +isVerified: Boolean
+        +lastLogin: DateTime?
+        +createdAt: DateTime
+        +updatedAt: DateTime
+        +create()
+        +updateProfile()
+        +verifyEmail()
+    }
+
+    class Property {
+        +id: Int
+        +title: String
+        +description: String
+        +address: String
+        +district: String
+        +price: Decimal
+        +deposit: Decimal
+        +availableRooms: Int
+        +totalRooms: Int
+        +propertyType: Enum[apartment, house, studio]
+        +amenities: String?
+        +images: String?
+        +isAvailable: Boolean
+        +latitude: Decimal?
+        +longitude: Decimal?
+        +createdAt: DateTime
+        +updatedAt: DateTime
+        +create()
+        +update()
+        +delete()
+        +search()
+    }
+
+    class Announcement {
+        +id: Int
+        +content: String
+        +images: String?
+        +contact: String?
+        +createdAt: DateTime
+        +updatedAt: DateTime
+        +publish()
+        +update()
+        +delete()
+    }
+
+    class Appointment {
+        +id: Int
+        +appointmentDate: DateTime
+        +status: Enum[pending, confirmed, cancelled]
+        +message: String?
+        +cancellationReason: String?
+        +createdAt: DateTime
+        +updatedAt: DateTime
+        +schedule()
+        +confirm()
+        +cancel()
+    }
+
+    class Message {
+        +id: Int
+        +content: String
+        +isRead: Boolean
+        +createdAt: DateTime
+        +send()
+        +markAsRead()
+    }
+
+    class Conversation {
+        +id: Int
+        +unreadCount: Int
+        +createdAt: DateTime
+        +updatedAt: DateTime
+        +start()
+        +markAsRead()
+    }
+
+    class ContactMessage {
+        +id: Int
+        +name: String
+        +email: String
+        +subject: String
+        +message: String
+        +createdAt: DateTime
+        +send()
+    }
+
+        User "1" -- "*" Property : posséder
+    User "1" -- "*" Announcement : créer
+    User "1" -- "*" Appointment : planifier
+    Property "1" -- "*" Appointment : contenir
+    User "1" -- "*" Message : envoyer
+    User "1" -- "*" Message : recevoir
+    User "1" -- "*" Conversation : participer
+    Conversation "1" -- "*" Message : contenir
+    User "1" -- "0..*" ContactMessage : envoyer

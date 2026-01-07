@@ -1,0 +1,65 @@
+classDiagram
+    %% Diagramme de Classe de Conception - Créer, Modifier, Supprimer Annonce
+    
+    class Announcement {
+        <<entity>>
+        -id: Int
+        -authorId: Int
+        -content: String
+        -images: String?
+        -contact: String?
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +create(authorId: Int, content: String, images: String?, contact: String?): Announcement
+        +update(id: Int, content: String, images: String?, contact: String?): Announcement
+        +delete(id: Int): Boolean
+        +getById(id: Int): Announcement
+        +getByAuthor(authorId: Int): Announcement[]
+        +validateContent(content: String): Boolean
+    }
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        --
+        +createAnnouncement(content: String, images: String?, contact: String?): Announcement
+        +updateAnnouncement(id: Int, content: String): Announcement
+        +deleteAnnouncement(id: Int): Boolean
+        +getMyAnnouncements(): Announcement[]
+    }
+    
+    class Student {
+        <<entity>>
+        --
+        +publishAnnouncement(content: String): Announcement
+    }
+    
+    class Owner {
+        <<entity>>
+        --
+        +publishAnnouncement(content: String): Announcement
+    }
+    
+    class Admin {
+        <<entity>>
+        --
+        +deleteAnnouncement(id: Int): Boolean
+        +moderateAnnouncement(id: Int): void
+    }
+    
+    %% Relations
+    User "1" --> "0..*" Announcement : publie
+    Student --|> User : hérite
+    Owner --|> User : hérite
+    Admin --|> User : hérite
+    
+    User ..> Announcement : crée
+    User ..> Announcement : modifie
+    User ..> Announcement : supprime
+    Admin ..> Announcement : modère
+

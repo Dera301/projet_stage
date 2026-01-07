@@ -1,0 +1,57 @@
+classDiagram
+    class CINVerification {
+        +id: string
+        +userId: string
+        +cinNumber: string
+        +status: VerificationStatus
+        +submittedAt: DateTime
+        +verifiedAt: DateTime
+        +adminNotes: string
+        +submitVerification(cinNumber: string, images: File[]): boolean
+        +getVerificationStatus(): object
+    }
+
+    class User {
+        +id: string
+        +cinVerified: boolean
+        +cinVerification: CINVerification
+        +requestCINVerification(cinNumber: string, images: File[]): boolean
+        +getCINVerificationStatus(): object
+    }
+
+    class Admin {
+        +id: string
+        +verifyCIN(verificationId: string, status: boolean, notes: string): boolean
+        +getPendingVerifications(): CINVerification[]
+        +getVerificationHistory(userId: string): CINVerification[]
+    }
+
+    class VerificationStatus {
+        <<Enumeration>>
+        PENDING
+        APPROVED
+        REJECTED
+        EXPIRED
+    }
+
+    class CINDocument {
+        +id: string
+        +verificationId: string
+        +documentType: DocumentType
+        +fileUrl: string
+        +uploadedAt: DateTime
+    }
+
+    class DocumentType {
+        <<Enumeration>>
+        CIN_FRONT
+        CIN_BACK
+        SELFIE
+        PROOF_OF_ADDRESS
+    }
+
+    User "1" -- "0..1" CINVerification : a
+    Admin "1" -- "*" CINVerification : traite
+    CINVerification "1" -- "*" CINDocument : contient
+    CINVerification "1" -- "1" VerificationStatus : a
+    CINDocument "1" -- "1" DocumentType : a

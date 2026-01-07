@@ -1,0 +1,93 @@
+---
+config:
+  layout: elk
+  theme: base
+---
+classDiagram
+    %% Diagramme de Classe de Conception - Créer, Modifier, Supprimer Propriété
+    
+    class Property {
+        <<entity>>
+        -id: Int
+        -title: String
+        -description: String
+        -address: String
+        -district: String
+        -price: Decimal
+        -deposit: Decimal
+        -availableRooms: Int
+        -totalRooms: Int
+        -propertyType: PropertyType
+        -amenities: String?
+        -images: String?
+        -ownerId: Int
+        -isAvailable: Boolean
+        -latitude: Decimal?
+        -longitude: Decimal?
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +create(ownerId: Int, propertyData: Object): Property
+        +update(id: Int, propertyData: Object): Property
+        +delete(id: Int): Boolean
+        +getById(id: Int): Property
+        +getByOwner(ownerId: Int): Property[]
+        +validatePropertyData(data: Object): Boolean
+        +toggleAvailability(): void
+    }
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        --
+        +getMyProperties(): Property[]
+    }
+    
+    class Owner {
+        <<entity>>
+        --
+        +createProperty(title: String, description: String, address: String, price: Decimal, deposit: Decimal, availableRooms: Int, totalRooms: Int, propertyType: PropertyType): Property
+        +updateProperty(id: Int, propertyData: Object): Property
+        +deleteProperty(id: Int): Boolean
+        +getMyProperties(): Property[]
+    }
+    
+    class Admin {
+        <<entity>>
+        --
+        +deleteProperty(id: Int): Boolean
+        +moderateProperty(id: Int): void
+    }
+    
+    class PropertyType {
+        <<enumeration>>
+        APARTMENT
+        HOUSE
+        STUDIO
+    }
+    
+    class Appointment {
+        <<entity>>
+        -id: Int
+        -propertyId: Int
+        -status: AppointmentStatus
+        --
+        +getByProperty(propertyId: Int): Appointment[]
+    }
+    
+    %% Relations
+    User "1" --> "0..*" Property : posséder
+    Property "1" --> "1" PropertyType : posséder
+    Property "1" --> "0..*" Appointment : recevoir
+    Owner --|> User : hériter
+    Admin --|> User : hériter
+    
+    Owner ..> Property : créer
+    Owner ..> Property : modifier
+    Owner ..> Property : supprimer
+    Admin ..> Property : modérer
+

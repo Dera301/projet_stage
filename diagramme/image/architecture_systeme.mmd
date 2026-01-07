@@ -1,0 +1,32 @@
+graph TD
+    subgraph Client
+        A[Interface Utilisateur] -->|Requêtes| B[API REST]
+        B -->|Réponses| A
+    end
+
+    subgraph Serveur
+        B --> C[Contrôleurs]
+        C --> D[Services Métier]
+        D --> E[Modèles & ORM]
+        E --> F[(Base de Données)]
+        F --> E
+        E --> D
+        D --> C
+        C --> B
+    end
+
+    subgraph Services Externes
+        G[Stockage Fichiers]
+        H[Service Email]
+        I[API Carte]
+        J[Service d'Authentification]
+    end
+
+    D --> G
+    D --> H
+    D --> I
+    D --> J
+
+    style Client fill:#f9f,stroke:#333,stroke-width:2px
+    style Serveur fill:#bbf,stroke:#333,stroke-width:2px
+    style Services fill:#bfb,stroke:#333,stroke-width:2px

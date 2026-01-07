@@ -1,0 +1,247 @@
+classDiagram
+    %% Titre: UC13 - Gérer Statut Rendez-Vous - Diagramme de Classe de Conception
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        --
+    }
+
+    class Student {
+        <<entity>>
+        --
+        +viewAppointmentStatus(): void
+        +cancelAppointment(appointmentId, reason): void
+    }
+
+    class Owner {
+        <<entity>>
+        --
+        +confirmAppointment(appointmentId): void
+        +rejectAppointment(appointmentId, reason): void
+        +markAppointmentCompleted(appointmentId): void
+    }
+
+    class Admin {
+        <<entity>>
+        --
+        +moderateAppointmentConflicts(): void
+    }
+
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    class Boundary_AppointmentStatus {
+        <<boundary>>
+        -appointmentListView: View
+        -appointmentDetailView: View
+        -actionPanel: Component
+        -confirmationDialog: Dialog
+        --
+        +displayMyAppointments(appointments): void
+        +displayAppointmentDetails(appointment): void
+        +displayAvailableActions(appointment, userType): void
+        +onConfirmAppointment(): void
+        +onRejectAppointment(reason): void
+        +onCancelAppointment(reason): void
+        +onMarkCompleted(): void
+    }
+
+    class AppointmentStatusController {
+        <<control>>
+        -appointmentRepository: AppointmentRepository
+        -userRepository: UserRepository
+        -propertyRepository: PropertyRepository
+        -stateTransitionService: StateTransitionService
+        -validationService: ValidationService
+        -notificationService: NotificationService
+        -messageService: MessageService
+        --
+        +getMyAppointments(userId, userType): List
+        +getAppointmentDetails(appointmentId): AppointmentDetails
+        +confirmAppointment(appointmentId, ownerId): void
+        +rejectAppointment(appointmentId, ownerId, reason): void
+        +cancelAppointment(appointmentId, userId, reason): void
+        +markCompleted(appointmentId, ownerId): void
+    }
+
+    class Appointment {
+        <<entity>>
+        -id: Int
+        -propertyId: Int
+        -studentId: Int
+        -ownerId: Int
+        -appointmentDate: DateTime
+        -status: AppointmentStatus
+        -message: String?
+        -cancellationReason: String?
+        -completionDate: DateTime?
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +canTransitionTo(newStatus): Boolean
+        +confirm(): void
+        +reject(reason): void
+        +cancel(reason): void
+        +complete(): void
+    }
+
+    class AppointmentStatus {
+        <<enumeration>>
+        PENDING
+        CONFIRMED
+        CANCELLED
+        COMPLETED
+    }
+
+    class AppointmentDetails {
+        <<entity>>
+        -appointment: Appointment
+        -property: Property
+        -student: StudentInfo
+        -owner: OwnerInfo
+        -possibleActions: List~String~
+        --
+        +getStatusLabel(): String
+        +canBeModified(): Boolean
+        +getTimeline(): Timeline
+    }
+
+    class StateTransitionService {
+        <<service>>
+        -validTransitions: Map
+        --
+        +isValidTransition(fromStatus, toStatus): Boolean
+        +canConfirm(appointment, userId): Boolean
+        +canReject(appointment, userId): Boolean
+        +canCancel(appointment, userId): Boolean
+        +canComplete(appointment, userId): Boolean
+        +getValidNextStates(currentStatus, userType): List
+    }
+
+    class ValidationService {
+        <<service>>
+        --
+        +validateStatusChange(appointment, newStatus, userId): ValidationResult
+        +validateCancellationReason(reason): Boolean
+        +validateRejectionReason(reason): Boolean
+        +checkAuthorization(userId, appointment, action): Boolean
+        +checkTimeConstraints(appointment): Boolean
+    }
+
+    class AppointmentRepository {
+        <<service>>
+        --
+        +findById(id): Appointment
+        +update(appointment): void
+        +findByStudent(studentId): List
+        +findByOwner(ownerId): List
+        +findByStatus(status): List
+        +countByStatus(status): Int
+    }
+
+    class UserRepository {
+        <<service>>
+        --
+        +findById(id): User
+    }
+
+    class PropertyRepository {
+        <<service>>
+        --
+        +findById(id): Property
+    }
+
+    class NotificationService {
+        <<service>>
+        --
+        +notifyAppointmentConfirmed(studentId, appointment): void
+        +notifyAppointmentRejected(studentId, appointment, reason): void
+        +notifyAppointmentCancelled(recipientId, appointment, reason): void
+        +notifyAppointmentCompleted(studentId, appointment): void
+        +sendAppointmentReminder(appointmentId): void
+        +sendPostVisitSurvey(studentId, propertyId): void
+    }
+
+    class MessageService {
+        <<service>>
+        --
+        +createStatusChangeMessage(appointmentId, newStatus, reason): void
+    }
+
+    class Property {
+        <<entity>>
+        -id: Int
+        -title: String
+        -address: String
+        -ownerId: Int
+        --
+    }
+
+    class StudentInfo {
+        <<entity>>
+        -userId: Int
+        -name: String
+        -email: String
+        -phone: String?
+        -university: String?
+        --
+    }
+
+    class OwnerInfo {
+        <<entity>>
+        -userId: Int
+        -name: String
+        -email: String
+        -phone: String?
+        --
+    }
+
+    class ValidationResult {
+        <<entity>>
+        -isValid: Boolean
+        -errors: List~String~
+        -constraints: List~String~
+        --
+    }
+
+    class Timeline {
+        <<entity>>
+        -createdAt: DateTime
+        -confirmedAt: DateTime?
+        -completedAt: DateTime?
+        -cancelledAt: DateTime?
+        --
+    }
+
+    %% Relationships
+    User "1" --> "1" UserType : has
+    Student --|> User : extends
+    Owner --|> User : extends
+    Admin --|> User : extends
+    
+    Boundary_AppointmentStatus ..> AppointmentStatusController : uses
+    AppointmentStatusController ..> AppointmentRepository : queries/updates
+    AppointmentStatusController ..> UserRepository : queries
+    AppointmentStatusController ..> PropertyRepository : queries
+    AppointmentStatusController ..> StateTransitionService : checks
+    AppointmentStatusController ..> ValidationService : validates
+    AppointmentStatusController ..> NotificationService : notifies
+    AppointmentStatusController ..> MessageService : creates_messages
+    
+    AppointmentStatusController --> AppointmentDetails : retrieves
+    AppointmentDetails "1" --> "1" Appointment : contains
+    AppointmentDetails "1" --> "1" Property : shows
+    AppointmentDetails "1" --> "1" StudentInfo : shows
+    AppointmentDetails "1" --> "1" OwnerInfo : shows
+    
+    Appointment "1" --> "1" AppointmentStatus : has
+    StateTransitionService --> AppointmentStatus : manages

@@ -1,0 +1,40 @@
+classDiagram
+    class Appointment {
+        +id: string
+        +date: DateTime
+        +status: AppointmentStatus
+        +message: string
+        +schedule(propertyId: string, date: DateTime): Appointment
+        +confirm(): boolean
+        +cancel(reason: string): boolean
+    }
+
+    class Student {
+        +requestAppointment(propertyId: string, date: DateTime): Appointment
+        +viewMyAppointments(): Appointment[]
+        +cancelAppointment(appointmentId: string): boolean
+    }
+
+    class Owner {
+        +viewAppointments(propertyId?: string): Appointment[]
+        +updateAppointmentStatus(appointmentId: string, status: string): boolean
+    }
+
+    class Property {
+        +id: string
+        +title: string
+        +getAvailableSlots(date: Date): DateTime[]
+    }
+
+    class AppointmentStatus {
+        <<Enumeration>>
+        PENDING
+        CONFIRMED
+        CANCELLED
+        COMPLETED
+    }
+
+    Student "1" -- "*" Appointment : crée
+    Owner "1" -- "*" Appointment : gère
+    Property "1" -- "*" Appointment : a
+    Appointment "1" -- "1" AppointmentStatus : a

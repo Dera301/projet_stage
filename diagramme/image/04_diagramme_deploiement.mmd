@@ -1,0 +1,14 @@
+graph TD
+    subgraph "Server"
+        A[Frontend - Vercel] -->|Requêtes API| B[Backend - Vercel/Heroku]
+        B -->|Stockage| C[(Base de Données - NEON)]
+        B -->|Stockage Fichiers| D[Cloudinary]
+    end
+
+    subgraph "Clients"
+        E[Navigateur Web] -->|Accès| A
+        F[App Mobile] -->|Accès| A
+    end
+
+    style Cloud fill:#e1f5fe,stroke:#333,stroke-width:2px
+    style Clients fill:#f3e5f5,stroke:#333,stroke-width:2px

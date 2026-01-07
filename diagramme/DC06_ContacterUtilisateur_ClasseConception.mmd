@@ -1,0 +1,78 @@
+---
+config:
+  layout: elk
+  theme: base
+---
+classDiagram
+    %% Diagramme de Classe de Conception - Contacter Utilisateur
+    
+    class Message {
+        <<entity>>
+        -id: Int
+        -conversationId: Int
+        -senderId: Int
+        -receiverId: Int
+        -content: String
+        -isRead: Boolean
+        -createdAt: DateTime
+        --
+        +send(senderId: Int, receiverId: Int, content: String): Message
+        +markAsRead(): void
+        +getByConversation(conversationId: Int): Message[]
+        +getUnreadCount(receiverId: Int): Int
+        +validateContent(content: String): Boolean
+    }
+    
+    class Conversation {
+        <<entity>>
+        -id: Int
+        -user1Id: Int
+        -user2Id: Int
+        -unreadCount: Int
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +create(user1Id: Int, user2Id: Int): Conversation
+        +getByUsers(user1Id: Int, user2Id: Int): Conversation
+        +updateUnreadCount(): void
+        +getMessages(): Message[]
+    }
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        --
+        +sendMessage(receiverId: Int, content: String): Message
+        +getConversations(): Conversation[]
+        +getMessages(conversationId: Int): Message[]
+        +markMessagesAsRead(conversationId: Int): void
+    }
+    
+    class Student {
+        <<entity>>
+        --
+        +contactOwner(ownerId: Int, message: String): Message
+        +getConversations(): Conversation[]
+    }
+    
+    class Owner {
+        <<entity>>
+        --
+        +contactStudent(studentId: Int, message: String): Message
+        +getConversations(): Conversation[]
+    }
+    
+    %% Relations
+    User "1" --> "0..*" Conversation : participer
+    Conversation "1" --> "0..*" Message : contenir
+    Message "1" --> "1" User : envoyer par
+    Message "1" --> "1" User : recevoir par
+    Student --|> User : hériter
+    Owner --|> User : hériter
+    
+    User ..> Message : envoyer
+    User ..> Conversation : créer
+

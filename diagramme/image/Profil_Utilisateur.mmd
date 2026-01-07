@@ -1,0 +1,43 @@
+classDiagram
+    class UserProfile {
+        +id: string
+        +firstName: string
+        +lastName: string
+        +email: string
+        +phone: string
+        +avatarUrl: string
+        +bio: string
+        +university: string
+        +studyLevel: string
+        +updateProfile(data: object): boolean
+        +changePassword(oldPassword: string, newPassword: string): boolean
+        +uploadAvatar(file: File): string
+        +getPublicProfile(): object
+    }
+
+    class User {
+        +id: string
+        +profile: UserProfile
+        +verifyEmail(token: string): boolean
+        +requestPasswordReset(email: string): boolean
+        +resetPassword(token: string, newPassword: string): boolean
+        +updateEmail(newEmail: string): boolean
+    }
+
+    class NotificationSettings {
+        +emailNotifications: boolean
+        +smsNotifications: boolean
+        +pushNotifications: boolean
+        +updateSettings(settings: object): boolean
+    }
+
+    class UserPreferences {
+        +language: string
+        +theme: string
+        +notifications: NotificationSettings
+        +updatePreferences(prefs: object): boolean
+    }
+
+    User "1" -- "1" UserProfile : a
+    User "1" -- "1" UserPreferences : a
+    UserPreferences "1" -- "1" NotificationSettings : contient

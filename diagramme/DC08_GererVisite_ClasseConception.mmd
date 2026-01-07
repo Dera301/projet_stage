@@ -1,0 +1,90 @@
+---
+config:
+  layout: elk
+  theme: base
+---
+classDiagram
+    %% Diagramme de Classe de Conception - Gérer Visite (Valider/Reporter)
+    
+    class Appointment {
+        <<entity>>
+        -id: Int
+        -propertyId: Int
+        -studentId: Int
+        -ownerId: Int
+        -appointmentDate: DateTime
+        -status: AppointmentStatus
+        -message: String?
+        -cancellationReason: String?
+        -updatedAt: DateTime
+        --
+        +validate(id: Int): Appointment
+        +reject(id: Int, reason: String?): Appointment
+        +postpone(id: Int, newDate: DateTime): Appointment
+        +getById(id: Int): Appointment
+        +getByOwner(ownerId: Int): Appointment[]
+        +updateStatus(status: AppointmentStatus): void
+        +canBeValidated(): Boolean
+        +canBeRejected(): Boolean
+    }
+    
+    class Owner {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        --
+        +validateAppointment(appointmentId: Int): Appointment
+        +rejectAppointment(appointmentId: Int, reason: String?): Appointment
+        +postponeAppointment(appointmentId: Int, newDate: DateTime): Appointment
+        +getAppointmentsForProperty(propertyId: Int): Appointment[]
+        +getPendingAppointments(): Appointment[]
+    }
+    
+    class Property {
+        <<entity>>
+        -id: Int
+        -title: String
+        -ownerId: Int
+        --
+        +getAppointments(): Appointment[]
+    }
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        --
+        +getAppointments(): Appointment[]
+    }
+    class Student {
+        <<entity>>
+        -id: Int
+        --
+        +getAppointmentStatus(appointmentId: Int): AppointmentStatus
+        +receiveNotification(appointmentId: Int, status: AppointmentStatus): void
+    }
+    
+    class AppointmentStatus {
+        <<enumeration>>
+        PENDING
+        CONFIRMED
+        CANCELLED
+        COMPLETED
+    }
+    
+    %% Relations
+    Owner "1" --> "0..*" Appointment : gérer
+    Appointment "1" --> "1" AppointmentStatus : posséder
+    Appointment "1" --> "1" Property : concerner
+    Appointment "1" --> "1" Student : concerner
+    Owner --|> User : hériter
+    Student --|> User : hériter
+    
+    Owner ..> Appointment : valider
+    Owner ..> Appointment : rejeter
+    Owner ..> Appointment : reporter
+

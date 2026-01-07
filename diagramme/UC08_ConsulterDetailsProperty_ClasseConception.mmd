@@ -1,0 +1,214 @@
+classDiagram
+    %% Titre: UC8 - Consulter Détails Propriété - Diagramme de Classe de Conception
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        -createdAt: DateTime
+        --
+        +viewPropertyDetails(propertyId): void
+        +contactOwner(): void
+    }
+
+    class Student {
+        <<entity>>
+        --
+        +scheduleVisit(propertyId): void
+        +viewOwnerProfile(): void
+    }
+
+    class Owner {
+        <<entity>>
+        --
+        +viewPropertyStats(): PropertyStats
+    }
+
+    class Admin {
+        <<entity>>
+        --
+        +viewPropertyAudit(): void
+    }
+
+    class Invite {
+        <<boundary>>
+        --
+        +viewAsGuest(): void
+    }
+
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    class Boundary_PropertyDetails {
+        <<boundary>>
+        -detailsPage: Page
+        -imageGallery: Component
+        -ownerCard: Component
+        -appointmentButton: Component
+        -messageButton: Component
+        --
+        +displayPropertyInfo(property): void
+        +displayImages(images): void
+        +displayOwnerInfo(owner): void
+        +displayAmenities(amenities): void
+        +displayLocation(latitude, longitude): void
+        +onScheduleVisit(): void
+        +onContactOwner(): void
+    }
+
+    class PropertyDetailController {
+        <<control>>
+        -propertyRepository: PropertyRepository
+        -userRepository: UserRepository
+        -appointmentRepository: AppointmentRepository
+        -reviewService: ReviewService
+        -activityService: ActivityService
+        --
+        +getPropertyDetails(propertyId): PropertyDetails
+        +getPropertyImages(propertyId): List
+        +getOwnerInfo(ownerId): OwnerProfile
+        +getReviews(propertyId): List
+        +trackView(userId, propertyId): void
+    }
+
+    class Property {
+        <<entity>>
+        -id: Int
+        -title: String
+        -description: String
+        -address: String
+        -district: String
+        -price: Float
+        -deposit: Float
+        -availableRooms: Int
+        -totalRooms: Int
+        -propertyType: PropertyType
+        -amenities: String?
+        -images: String?
+        -ownerId: Int
+        -isAvailable: Boolean
+        -latitude: Float?
+        -longitude: Float?
+        -createdAt: DateTime
+        --
+        +getFullDetails(): PropertyDetails
+        +getImageGallery(): List
+        +isStillAvailable(): Boolean
+    }
+
+    class PropertyType {
+        <<enumeration>>
+        APARTMENT
+        HOUSE
+        STUDIO
+    }
+
+    class PropertyRepository {
+        <<service>>
+        --
+        +findById(id): Property
+        +findImages(propertyId): List
+        +incrementViewCount(propertyId): void
+    }
+
+    class UserRepository {
+        <<service>>
+        --
+        +findById(id): User
+    }
+
+    class AppointmentRepository {
+        <<service>>
+        --
+        +findByProperty(propertyId): List
+        +findByPropertyAndStudent(propertyId, studentId): Appointment?
+    }
+
+    class ReviewService {
+        <<service>>
+        --
+        +getPropertyReviews(propertyId): List
+        +calculateAverageRating(propertyId): Float
+        +getReviewSummary(propertyId): ReviewSummary
+    }
+
+    class ActivityService {
+        <<service>>
+        --
+        +trackPropertyView(userId, propertyId): void
+        +getViewStats(propertyId): ViewStats
+        +recordUserInteraction(userId, propertyId, action): void
+    }
+
+    class PropertyDetails {
+        <<entity>>
+        -property: Property
+        -owner: OwnerProfile
+        -images: List~String~
+        -reviews: List~Review~
+        -appointments: List~Appointment~
+        -averageRating: Float
+        --
+        +getFormattedPrice(): String
+        +getAmenityList(): List
+    }
+
+    class OwnerProfile {
+        <<entity>>
+        -userId: Int
+        -name: String
+        -email: String
+        -phone: String?
+        -avatar: String?
+        -propertyCount: Int
+        -averageRating: Float
+        --
+        +canContact(): Boolean
+    }
+
+    class Appointment {
+        <<entity>>
+        -id: Int
+        -propertyId: Int
+        -studentId: Int
+        -ownerId: Int
+        -appointmentDate: DateTime
+        -status: AppointmentStatus
+        --
+    }
+
+    class AppointmentStatus {
+        <<enumeration>>
+        PENDING
+        CONFIRMED
+        CANCELLED
+        COMPLETED
+    }
+
+    %% Relationships
+    User "1" --> "1" UserType : has
+    Student --|> User : extends
+    Owner --|> User : extends
+    Admin --|> User : extends
+    
+    Boundary_PropertyDetails ..> PropertyDetailController : uses
+    PropertyDetailController ..> PropertyRepository : queries
+    PropertyDetailController ..> UserRepository : queries
+    PropertyDetailController ..> AppointmentRepository : queries
+    PropertyDetailController ..> ReviewService : uses
+    PropertyDetailController ..> ActivityService : uses
+    
+    PropertyDetailController --> PropertyDetails : builds
+    PropertyDetails "1" --> "1" Property : contains
+    PropertyDetails "1" --> "1" OwnerProfile : contains
+    PropertyDetails "1" --> "*" Appointment : shows
+    
+    Property "1" --> "1" PropertyType : is_a
+    Appointment "1" --> "1" AppointmentStatus : has

@@ -1,0 +1,84 @@
+---
+config:
+  layout: elk
+  theme: base
+---
+classDiagram
+    %% Diagramme de Classe de Conception - Gérer Contenu (Supprimer Annonce/Propriété, Bannir Utilisateur)
+    
+    class Admin {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        --
+        +deleteAnnouncement(announcementId: Int): Boolean
+        +deleteProperty(propertyId: Int): Boolean
+        +banUser(userId: Int, reason: String?): User
+        +unbanUser(userId: Int): User
+        +getAllAnnouncements(): Announcement[]
+        +getAllProperties(): Property[]
+        +getAllUsers(): User[]
+        +moderateContent(): void
+    }
+    
+    class Announcement {
+        <<entity>>
+        -id: Int
+        -authorId: Int
+        -content: String
+        -createdAt: DateTime
+        --
+        +delete(): Boolean
+        +isModerated(): Boolean
+    }
+    
+    class Property {
+        <<entity>>
+        -id: Int
+        -ownerId: Int
+        -title: String
+        -isAvailable: Boolean
+        -createdAt: DateTime
+        --
+        +delete(): Boolean
+        +isModerated(): Boolean
+    }
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -status: UserStatus
+        --
+        +ban(reason: String?): void
+        +unban(): void
+        +isBanned(): Boolean
+    }
+    
+    class UserStatus {
+        <<enumeration>>
+        PENDING_VERIFICATION
+        PENDING_APPROVAL
+        ACTIVE
+        SUSPENDED
+    }
+    
+    class UserType {
+        <<enumeration>>
+        ADMIN
+    }
+    
+    %% Relations
+    Admin "1" --> "0..*" Announcement : modérer
+    Admin "1" --> "0..*" Property : modérer
+    Admin "1" --> "0..*" User : bannir
+    User "1" --> "1" UserStatus : posséder
+    Admin --|> User : hériter
+    
+    Admin ..> Announcement : supprimer
+    Admin ..> Property : supprimer
+    Admin ..> User : bannir
+

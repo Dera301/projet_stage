@@ -1,0 +1,88 @@
+graph TB
+    subgraph "Couche de Présentation"
+        direction TB
+        UI[Interface Utilisateur<br/>React + TypeScript]
+        Pages[Pages<br/>Login, Register, Dashboard, etc.]
+        Components[Composants Réutilisables<br/>Forms, Cards, Modals]
+        Contexts[Contextes React<br/>Auth, Property, Message]
+    end
+    
+    subgraph "Couche de Contrôle"
+        direction TB
+        Routes[Routes Express<br/>/auth, /properties, /messages]
+        Middleware[Middleware<br/>JWT Auth, Validation, Error Handling]
+        Controllers[Contrôleurs<br/>AuthController, PropertyController, etc.]
+    end
+    
+    subgraph "Couche Métier / Services"
+        direction TB
+        BusinessLogic[Logique Métier<br/>Validation, Calculs, Règles]
+        EmailService[Service Email<br/>Notifications, Vérifications]
+        FileService[Service Fichiers<br/>Upload Images, CIN]
+        NotificationService[Service Notifications<br/>Admin, Utilisateurs]
+    end
+    
+    subgraph "Couche d'Accès aux Données"
+        direction TB
+        PrismaORM[Prisma ORM<br/>Mapping Objet-Relationnel]
+        Repositories[Repositories<br/>UserRepository, PropertyRepository]
+        Queries[Requêtes SQL<br/>Optimisées et Indexées]
+    end
+    
+    subgraph "Couche de Données"
+        direction TB
+        PostgreSQL[(Base de Données<br/>PostgreSQL)]
+        FileStorage[Stockage Fichiers<br/>Cloudinary / Local]
+    end
+    
+    subgraph "Services Externes"
+        direction TB
+        Clerk[Service Auth<br/>Clerk - Optionnel]
+        Cloudinary[Service Images<br/>Cloudinary]
+        EmailProvider[Service Email<br/>SMTP / SendGrid]
+    end
+    
+    %% Relations entre couches
+    UI --> Pages
+    Pages --> Components
+    Components --> Contexts
+    Contexts --> Routes
+    
+    Routes --> Middleware
+    Middleware --> Controllers
+    Controllers --> BusinessLogic
+    
+    BusinessLogic --> EmailService
+    BusinessLogic --> FileService
+    BusinessLogic --> NotificationService
+    BusinessLogic --> PrismaORM
+    
+    PrismaORM --> Repositories
+    Repositories --> Queries
+    Queries --> PostgreSQL
+    
+    FileService --> FileStorage
+    FileService --> Cloudinary
+    EmailService --> EmailProvider
+    Controllers --> Clerk
+    
+    style UI fill:#e1f5ff
+    style Pages fill:#e1f5ff
+    style Components fill:#e1f5ff
+    style Contexts fill:#e1f5ff
+    style Routes fill:#fff4e1
+    style Middleware fill:#fff4e1
+    style Controllers fill:#fff4e1
+    style BusinessLogic fill:#e8f5e9
+    style EmailService fill:#e8f5e9
+    style FileService fill:#e8f5e9
+    style NotificationService fill:#e8f5e9
+    style PrismaORM fill:#f3e5f5
+    style Repositories fill:#f3e5f5
+    style Queries fill:#f3e5f5
+    style PostgreSQL fill:#ffebee
+    style FileStorage fill:#ffebee
+    style Clerk fill:#f5f5f5
+    style Cloudinary fill:#f5f5f5
+    style EmailProvider fill:#f5f5f5
+

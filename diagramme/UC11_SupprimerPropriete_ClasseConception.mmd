@@ -1,0 +1,212 @@
+classDiagram
+    %% Titre: UC11 - Supprimer une Propriété - Diagramme de Classe de Conception
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        --
+    }
+
+    class Student {
+        <<entity>>
+        --
+    }
+
+    class Owner {
+        <<entity>>
+        --
+        +deleteProperty(propertyId): void
+        +requestPropertyDeletion(propertyId, reason): void
+    }
+
+    class Admin {
+        <<entity>>
+        --
+        +approvePropertyDeletion(propertyId): void
+        +rejectPropertyDeletion(propertyId, reason): void
+    }
+
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    class Boundary_DeleteProperty {
+        <<boundary>>
+        -confirmationDialog: Dialog
+        -reasonForm: Form
+        -deletionHistoryView: View
+        --
+        +displayDeleteConfirmation(): void
+        +displayDeletionReason(): void
+        +displayImpactWarning(): void
+        +onConfirmDelete(): void
+        +onCancel(): void
+    }
+
+    class PropertyDeletionController {
+        <<control>>
+        -propertyRepository: PropertyRepository
+        -appointmentRepository: AppointmentRepository
+        -fileService: FileService
+        -auditService: AuditService
+        -notificationService: NotificationService
+        -messageService: MessageService
+        --
+        +deleteProperty(propertyId, ownerId): void
+        +softDeleteProperty(propertyId, ownerId): void
+        +permanentlyDeleteProperty(propertyId): void
+        +checkDeletionEligibility(propertyId): DeletionEligibility
+        +getDeletionImpactReport(propertyId): ImpactReport
+    }
+
+    class Property {
+        <<entity>>
+        -id: Int
+        -title: String
+        -description: String
+        -address: String
+        -ownerId: Int
+        -isAvailable: Boolean
+        -isDeleted: Boolean
+        -deletedAt: DateTime?
+        -deletionReason: String?
+        -createdAt: DateTime
+        --
+        +delete(): void
+        +permanentlyDelete(): void
+        +restore(): void
+    }
+
+    class PropertyRepository {
+        <<service>>
+        --
+        +findById(id): Property
+        +findByIdAndOwner(id, ownerId): Property
+        +softDelete(id, reason): void
+        +permanentlyDelete(id): void
+        +findDeletedProperties(): List
+        +restore(id): void
+    }
+
+    class Appointment {
+        <<entity>>
+        -id: Int
+        -propertyId: Int
+        -studentId: Int
+        -ownerId: Int
+        -appointmentDate: DateTime
+        -status: AppointmentStatus
+        --
+    }
+
+    class AppointmentRepository {
+        <<service>>
+        --
+        +findByProperty(propertyId): List
+        +findActiveByProperty(propertyId): List
+        +cancelByProperty(propertyId, reason): void
+    }
+
+    class AppointmentStatus {
+        <<enumeration>>
+        PENDING
+        CONFIRMED
+        CANCELLED
+        COMPLETED
+    }
+
+    class FileService {
+        <<service>>
+        --
+        +deletePropertyImages(propertyId): void
+        +deleteImage(path): void
+        +backupImages(propertyId): void
+    }
+
+    class DeletionEligibility {
+        <<entity>>
+        -canDelete: Boolean
+        -restrictions: List~String~
+        -activeAppointments: Int
+        -pendingAppointments: Int
+        --
+        +isSoftDeleteAllowed(): Boolean
+        +isPermanentDeleteAllowed(): Boolean
+    }
+
+    class ImpactReport {
+        <<entity>>
+        -propertyId: Int
+        -appointmentCount: Int
+        -studentAffected: List~Int~
+        -imageCount: Int
+        -dataSize: Float
+        --
+        +getSummary(): String
+        +estimateDeletionTime(): Int
+    }
+
+    class DeletionLog {
+        <<entity>>
+        -id: Int
+        -propertyId: Int
+        -ownerId: Int
+        -deletionType: String
+        -reason: String?
+        -deletedAt: DateTime
+        -permanentlyDeletedAt: DateTime?
+        --
+        +logDeletion(): void
+    }
+
+    class AuditService {
+        <<service>>
+        --
+        +recordDeletion(propertyId, ownerId, reason): void
+        +recordPermanentDeletion(propertyId): void
+        +getDeletionHistory(propertyId): List
+    }
+
+    class NotificationService {
+        <<service>>
+        --
+        +notifyStudentsPropertyDeleted(propertyId): void
+        +notifyOwnerDeletionConfirmed(ownerId, property): void
+        +notifyStudentsAppointmentCancelled(appointmentId, reason): void
+    }
+
+    class MessageService {
+        <<service>>
+        --
+        +sendAutoCancellationMessage(studentId, propertyId, reason): void
+    }
+
+    %% Relationships
+    User "1" --> "1" UserType : has
+    Student --|> User : extends
+    Owner --|> User : extends
+    Admin --|> User : extends
+    
+    Boundary_DeleteProperty ..> PropertyDeletionController : uses
+    PropertyDeletionController ..> PropertyRepository : queries/deletes
+    PropertyDeletionController ..> AppointmentRepository : affects
+    PropertyDeletionController ..> FileService : deletes_images
+    PropertyDeletionController ..> AuditService : records
+    PropertyDeletionController ..> NotificationService : notifies
+    PropertyDeletionController ..> MessageService : sends_messages
+    
+    PropertyDeletionController --> DeletionEligibility : checks
+    PropertyDeletionController --> ImpactReport : generates
+    PropertyDeletionController --> Property : deletes
+    
+    Property "1" --> "*" Appointment : has
+    Appointment "1" --> "1" AppointmentStatus : has
+    
+    AuditService --> DeletionLog : creates

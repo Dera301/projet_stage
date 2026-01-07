@@ -1,0 +1,26 @@
+classDiagram
+    class User {
+        +email: string
+        +password: string
+        +firstName: string
+        +lastName: string
+        +phone: string
+        +userType: UserType
+        +register(userData: object): User
+    }
+
+    class Validation {
+        +validateEmail(email: string): boolean
+        +validatePassword(password: string): boolean
+        +validatePhone(phone: string): boolean
+    }
+
+    class UserType {
+        <<Enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    User --> Validation : utilise
+    User "1" -- "1" UserType : a

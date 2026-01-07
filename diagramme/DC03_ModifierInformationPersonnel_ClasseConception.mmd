@@ -1,0 +1,47 @@
+classDiagram
+    %% Diagramme de Classe de Conception - Modifier Information Personnel
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -phone: String
+        -university: String?
+        -studyLevel: String?
+        -budget: Decimal?
+        -bio: String?
+        -avatar: String?
+        -updatedAt: DateTime
+        --
+        +updateProfile(data: Object): User
+        +updatePersonalInfo(firstName: String, lastName: String, phone: String): User
+        +updateAcademicInfo(university: String, studyLevel: String): User
+        +updateBudget(budget: Decimal): User
+        +updateBio(bio: String): User
+        +updateAvatar(avatar: String): User
+        +validatePersonalInfo(): Boolean
+    }
+    
+    class Student {
+        <<entity>>
+        -university: String?
+        -studyLevel: String?
+        -budget: Decimal?
+        --
+        +updateStudentInfo(university: String, studyLevel: String, budget: Decimal): void
+    }
+    
+    class Owner {
+        <<entity>>
+        --
+        +updateOwnerInfo(): void
+    }
+    
+    %% Relations
+    Student --|> User : hérite
+    Owner --|> User : hérite
+    
+    User ..> User : modifie
+

@@ -1,0 +1,79 @@
+---
+config:
+  layout: elk
+  theme: base
+---
+classDiagram
+    %% Diagramme de Classe de Conception - Gérer Vérification (Valider/Rejeter CIN)
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -cinNumber: String?
+        -cinRectoImagePath: String?
+        -cinVersoImagePath: String?
+        -cinData: String?
+        -cinVerified: Boolean
+        -cinVerificationConfidence: Float?
+        -cinVerificationErrors: String?
+        -cinVerifiedAt: DateTime?
+        -cinVerificationRequestedAt: DateTime?
+        --
+        +requestCINVerification(cinNumber: String, rectoImage: String, versoImage: String): void
+        +getCINVerificationStatus(): Boolean
+    }
+    
+    class Admin {
+        <<entity>>
+        -id: Int
+        -email: String
+        -userType: UserType
+        --
+        +validateCIN(userId: Int, confidence: Float?): User
+        +rejectCIN(userId: Int, errors: String): User
+        +getPendingCINVerifications(): User[]
+        +reviewCIN(userId: Int): User
+    }
+    
+    class CINVerification {
+        <<entity>>
+        -userId: Int
+        -cinNumber: String
+        -rectoImagePath: String
+        -versoImagePath: String
+        -status: CINVerificationStatus
+        -confidence: Float?
+        -errors: String?
+        -verifiedAt: DateTime?
+        -requestedAt: DateTime
+        --
+        +validate(confidence: Float?): void
+        +reject(errors: String): void
+        +isPending(): Boolean
+    }
+    
+    class CINVerificationStatus {
+        <<enumeration>>
+        PENDING
+        VALIDATED
+        REJECTED
+    }
+    
+    class UserType {
+        <<enumeration>>
+        ADMIN
+    }
+    
+    %% Relations
+    Admin "1" --> "0..*" User : vérifier
+    User "1" --> "0..1" CINVerification : demander
+    CINVerification "1" --> "1" CINVerificationStatus : posséder
+    Admin --|> User : hériter
+    
+    Admin ..> User : valider CIN
+    Admin ..> User : rejeter CIN
+    User ..> CINVerification : créer
+

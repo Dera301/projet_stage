@@ -1,0 +1,188 @@
+
+# Modèle du Domaine - Plateforme Coloc Antananarivo
+
+## Diagramme Entité-Relation Complet
+
+<!-- [MermaidChart: 0b0fa270-c53e-42e4-acce-60d8302874ea] -->
+<!-- [MermaidChart: 0b0fa270-c53e-42e4-acce-60d8302874ea] -->
+<!-- [MermaidChart: 0b0fa270-c53e-42e4-acce-60d8302874ea] -->
+```mermaid
+erDiagram
+    User ||--o{ Property : "owns"
+    User ||--o{ Announcement : "creates"
+    User ||--o{ Appointment : "creates (student)"
+    User ||--o{ Appointment : "receives (owner)"
+    User ||--o{ Conversation : "user1"
+    User ||--o{ Conversation : "user2"
+    User ||--o{ Message : "sends"
+    User ||--o{ Message : "receives"
+    Property ||--o{ Appointment : "has"
+    Conversation ||--o{ Message : "contains"
+    
+    User {
+        int id PK
+        string email UK
+        string password
+        string firstName
+        string lastName
+        string phone
+        enum userType "student, owner, admin"
+        string university
+        string studyLevel
+        text bio
+        string avatar
+        decimal budget
+        string cinNumber
+        text cinData
+        boolean cinVerified
+        string cinRectoImagePath
+        string cinVersoImagePath
+        float cinVerificationConfidence
+        text cinVerificationErrors
+        datetime cinVerifiedAt
+        datetime cinVerificationRequestedAt
+        boolean isVerified
+        string clerkId UK
+        datetime accountActivationDeadline
+        datetime createdAt
+        datetime updatedAt
+    }
+    
+    Property {
+        int id PK
+        string title
+        text description
+        string address
+        string district
+        decimal price
+        decimal deposit
+        int availableRooms
+        int totalRooms
+        enum propertyType "apartment, house, studio"
+        text amenities
+        text images
+        int ownerId FK
+        boolean isAvailable
+        decimal latitude
+        decimal longitude
+        datetime createdAt
+        datetime updatedAt
+    }
+    
+    Announcement {
+        int id PK
+        int authorId FK
+        text content
+        text images
+        string contact
+        datetime createdAt
+        datetime updatedAt
+    }
+    
+    Appointment {
+        int id PK
+        int propertyId FK
+        int studentId FK
+        int ownerId FK
+        datetime appointmentDate
+        enum status "pending, confirmed, cancelled, completed"
+        text message
+        datetime createdAt
+        datetime updatedAt
+    }
+    
+    Conversation {
+        int id PK
+        int user1Id FK
+        int user2Id FK
+        int unreadCount
+        datetime createdAt
+        datetime updatedAt
+    }
+    
+    Message {
+        int id PK
+        int conversationId FK
+        int senderId FK
+        int receiverId FK
+        text content
+        boolean isRead
+        datetime createdAt
+    }
+    
+    ContactMessage {
+        int id PK
+        string name
+        string email
+        string subject
+        text message
+        datetime createdAt
+    }
+```
+
+## Description des Entités
+
+### User (Utilisateur)
+- **Description** : Représente tous les utilisateurs de la plateforme (étudiants, propriétaires, administrateurs)
+- **Attributs clés** :
+  - `userType` : Définit le rôle (student, owner, admin)
+  - `cinVerified` : Statut de vérification de la CIN
+  - `accountActivationDeadline` : Délai de 24h pour activer le compte
+  - `clerkId` : ID utilisateur dans Clerk (optionnel)
+
+### Property (Propriété)
+- **Description** : Représente un logement disponible à la location
+- **Attributs clés** :
+  - `propertyType` : Type de logement (apartment, house, studio)
+  - `amenities` : Équipements disponibles (JSON)
+  - `images` : Photos du logement (JSON)
+  - `latitude/longitude` : Coordonnées GPS pour la géolocalisation
+
+### Announcement (Annonce)
+- **Description** : Annonces publiées par les utilisateurs
+- **Attributs clés** :
+  - `content` : Contenu de l'annonce
+  - `images` : Images associées (JSON)
+  - `contact` : Informations de contact
+
+### Appointment (Rendez-vous)
+- **Description** : Rendez-vous de visite planifiés
+- **Attributs clés** :
+  - `status` : Statut du rendez-vous (pending, confirmed, cancelled, completed)
+  - `appointmentDate` : Date et heure du rendez-vous
+
+### Conversation (Conversation)
+- **Description** : Conversation entre deux utilisateurs
+- **Attributs clés** :
+  - `user1Id/user2Id` : Les deux participants
+  - `unreadCount` : Nombre de messages non lus
+
+### Message (Message)
+- **Description** : Message individuel dans une conversation
+- **Attributs clés** :
+  - `isRead` : Indicateur de lecture
+  - `content` : Contenu du message
+
+### ContactMessage (Message de Contact)
+- **Description** : Messages de contact envoyés par les visiteurs non authentifiés
+- **Attributs clés** :
+  - `name`, `email`, `subject`, `message` : Informations du contact
+
+## Relations
+
+1. **User → Property** (1:N) : Un propriétaire peut avoir plusieurs propriétés
+2. **User → Announcement** (1:N) : Un utilisateur peut créer plusieurs annonces
+3. **User → Appointment** (1:N) : Un étudiant peut créer plusieurs rendez-vous, un propriétaire peut en recevoir plusieurs
+4. **Property → Appointment** (1:N) : Une propriété peut avoir plusieurs rendez-vous
+5. **User → Conversation** (N:M) : Deux utilisateurs peuvent avoir une conversation
+6. **Conversation → Message** (1:N) : Une conversation contient plusieurs messages
+7. **User → Message** (1:N) : Un utilisateur peut envoyer/recevoir plusieurs messages
+
+## Contraintes Métier
+
+- Un utilisateur doit avoir un `userType` valide (student, owner, admin)
+- Un rendez-vous doit avoir un statut valide (pending, confirmed, cancelled, completed)
+- Une propriété doit avoir un propriétaire valide
+- Un message doit avoir un expéditeur et un destinataire différents
+- Une conversation est unique entre deux utilisateurs donnés
+

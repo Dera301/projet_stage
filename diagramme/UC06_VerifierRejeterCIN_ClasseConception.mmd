@@ -1,0 +1,158 @@
+classDiagram
+    %% Titre: UC6 - Vérifier/Rejeter CIN (Admin) - Diagramme de Classe de Conception
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        -cinNumber: String?
+        -cinVerified: Boolean
+        -cinRectoImagePath: String?
+        -cinVersoImagePath: String?
+        -cinVerifiedAt: DateTime?
+        --
+        +updateCINStatus(status): void
+        +receiveCINNotification(message): void
+    }
+
+    class Student {
+        <<entity>>
+        --
+        +receiveCINDecision(decision): void
+    }
+
+    class Owner {
+        <<entity>>
+        --
+        +receiveCINDecision(decision): void
+    }
+
+    class Admin {
+        <<entity>>
+        --
+        +reviewCINRequests(): List
+        +viewCINImages(userId): CINImages
+        +approveCIN(userId): void
+        +rejectCIN(userId, reason): void
+    }
+
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    class Boundary_CINReview {
+        <<boundary>>
+        -cinReviewPage: Page
+        --
+        +displayCINList(): void
+        +displayCINImages(recto, verso): void
+        +displayApprovalForm(): void
+        +onApprove(): void
+        +onReject(reason): void
+    }
+
+    class CINVerificationAdminController {
+        <<control>>
+        -userRepository: UserRepository
+        -cinRequestRepository: CINRequestRepository
+        -validationService: ValidationService
+        -messageService: MessageService
+        -notificationService: NotificationService
+        --
+        +getCINList(): List
+        +getCINDetails(userId): CINDetails
+        +approveCIN(userId): Response
+        +rejectCIN(userId, reason): Response
+        +saveCINDecision(userId, decision, reason): void
+    }
+
+    class CINRequest {
+        <<entity>>
+        -userId: Int
+        -cinNumber: String
+        -rectoImagePath: String
+        -versoImagePath: String
+        -status: String
+        -decision: String?
+        -decisionReason: String?
+        -decisionDate: DateTime?
+        --
+        +approve(): void
+        +reject(reason): void
+        +getStatus(): String
+    }
+
+    class CINRequestRepository {
+        <<service>>
+        --
+        +findPending(): List
+        +findByUserId(userId): CINRequest
+        +updateStatus(id, status): void
+        +save(cinRequest): void
+    }
+
+    class UserRepository {
+        <<service>>
+        --
+        +findById(id): User
+        +updateCINVerified(id, verified): void
+    }
+
+    class MessageService {
+        <<service>>
+        --
+        +createAutoMessage(fromAdminId, toUserId, content): void
+        +sendApprovalMessage(user): void
+        +sendRejectionMessage(user, reason): void
+    }
+
+    class NotificationService {
+        <<service>>
+        --
+        +notifyUserCINApproved(user): void
+        +notifyUserCINRejected(user, reason): void
+    }
+
+    class Conversation {
+        <<entity>>
+        -id: Int
+        -user1Id: Int
+        -user2Id: Int
+        -unreadCount: Int
+        --
+        +create(user1, user2): Conversation
+    }
+
+    class Message {
+        <<entity>>
+        -id: Int
+        -conversationId: Int
+        -senderId: Int
+        -receiverId: Int
+        -content: String
+        -isRead: Boolean
+        --
+        +create(conversation, sender, receiver, content): Message
+    }
+
+    %% Relationships
+    User "1" --> "1" UserType : has
+    Student --|> User : extends
+    Owner --|> User : extends
+    Admin --|> User : extends
+    
+    Boundary_CINReview ..> CINVerificationAdminController : uses
+    CINVerificationAdminController ..> CINRequestRepository : queries/updates
+    CINVerificationAdminController ..> UserRepository : updates
+    CINVerificationAdminController ..> MessageService : creates_messages
+    CINVerificationAdminController ..> NotificationService : notifies
+    
+    CINRequest "1" --> "1" User : belongs_to
+    Message "1" --> "1" User : to_user
+    Message "1" --> "1" Conversation : in_conversation

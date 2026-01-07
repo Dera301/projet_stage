@@ -1,0 +1,102 @@
+classDiagram
+    direction LR
+
+    %% ------------------ Classes d'Entité ------------------
+    class User {
+        +int id
+        +string email
+        +string firstName
+        +string lastName
+        +string phone
+        +UserType userType
+        +string university
+        +string studyLevel
+        +decimal budget
+        +boolean cinVerified
+        +boolean isVerified
+        +DateTime createdAt
+        +register(userData) User
+        +login(email, password) Token
+    }
+
+    class Property {
+        +int id
+        +string title
+        +string address
+        +decimal price
+        +boolean isAvailable
+    }
+
+    class Appointment {
+        +int id
+        +DateTime appointmentDate
+        +AppointmentStatus status
+    }
+
+    class Conversation {
+        +int id
+    }
+
+    class Message {
+        +int id
+        +string content
+        +boolean isRead
+        +DateTime sentAt
+    }
+    
+    class Announcement {
+        +int id
+        +string content
+    }
+
+
+    %% ------------------ Classes Utilisateurs (Héritage) ------------------
+    class Student {
+        +searchProperties(filters) Property[]
+        +createAppointment(propertyId, date) Appointment
+        +createAnnouncement(data) Announcement
+    }
+    
+    class Owner {
+        +createProperty(propertyData) Property
+        +manageAppointments() Appointment[]
+        +confirmAppointment(id) Appointment
+    }
+    
+    class Admin {
+        +getAllUsers() User[]
+        +verifyCIN(userId, status) boolean
+        +deleteAnnouncement(id) boolean
+        +deleteProperties(id) boolean
+        +deleteUsers(id) boolean
+    }
+
+    class Invite {
+        +viewProperties() Property[]
+        +viewAnnouncement() Announcement[]
+        +register(userData) User
+    }
+    
+    User <|-- Student
+    User <|-- Owner
+    User <|-- Admin
+    User <|-- Invite
+
+    
+    %% ------------------ Relations ------------------
+    
+    %% Relations User - Property
+    Owner "1" *-- "N" Property : posséder
+    
+    %% Relations Visites (Appointments)
+    Student "1" --> "*" Appointment : créer
+    Owner "1" --> "*" Appointment : recevoir
+    Property "1" *-- "N" Appointment : gérer
+
+    %% Relations Messagerie
+    User "1" *-- "N" Conversation : participer
+    Conversation "1" *-- "N" Message : contenir
+    User "1" --> "*" Message : envoyer/recevoir
+    
+    %% Relations Annonce Colocataire/Information
+    User "1" *-- "N" Announcement : créer

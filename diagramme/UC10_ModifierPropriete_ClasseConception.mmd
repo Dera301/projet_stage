@@ -1,0 +1,216 @@
+classDiagram
+    %% Titre: UC10 - Modifier une Propriété - Diagramme de Classe de Conception
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        --
+    }
+
+    class Student {
+        <<entity>>
+        --
+    }
+
+    class Owner {
+        <<entity>>
+        --
+        +editProperty(propertyId, updates): void
+        +updatePropertyImages(propertyId, images): void
+    }
+
+    class Admin {
+        <<entity>>
+        --
+    }
+
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    class Boundary_EditProperty {
+        <<boundary>>
+        -editForm: Form
+        -imageGallery: Component
+        -changeHistory: Component
+        --
+        +displayEditForm(property): void
+        +displayCurrentImages(images): void
+        +displayChangeHistory(): void
+        +onUpdate(formData): void
+        +onImageChange(images): void
+        +onRollback(version): void
+        +onCancel(): void
+    }
+
+    class PropertyEditController {
+        <<control>>
+        -propertyRepository: PropertyRepository
+        -fileService: FileService
+        -validationService: ValidationService
+        -auditService: AuditService
+        -notificationService: NotificationService
+        --
+        +getPropertyForEdit(propertyId, ownerId): EditableProperty
+        +updateProperty(propertyId, ownerId, updates): Property
+        +updateImages(propertyId, images): List
+        +removeImage(imageId): void
+        +rollbackChanges(propertyId, version): void
+        +publishChanges(propertyId): void
+    }
+
+    class EditableProperty {
+        <<entity>>
+        -id: Int
+        -title: String
+        -description: String
+        -address: String
+        -district: String
+        -price: Float
+        -deposit: Float
+        -totalRooms: Int
+        -availableRooms: Int
+        -propertyType: PropertyType
+        -amenities: List~String~
+        -images: List~PropertyImage~
+        -isAvailable: Boolean
+        -lastModified: DateTime
+        -version: Int
+        --
+        +canBeEdited(userId): Boolean
+        +getChanges(oldProperty): ChangeSet
+    }
+
+    class Property {
+        <<entity>>
+        -id: Int
+        -title: String
+        -description: String
+        -address: String
+        -district: String
+        -price: Float
+        -deposit: Float
+        -availableRooms: Int
+        -totalRooms: Int
+        -propertyType: PropertyType
+        -amenities: String?
+        -images: String?
+        -ownerId: Int
+        -isAvailable: Boolean
+        -updatedAt: DateTime
+        -version: Int
+        --
+        +update(changes): void
+        +publish(): void
+        +saveDraft(): void
+    }
+
+    class PropertyType {
+        <<enumeration>>
+        APARTMENT
+        HOUSE
+        STUDIO
+    }
+
+    class PropertyRepository {
+        <<service>>
+        --
+        +findById(id): Property
+        +findByIdAndOwner(id, ownerId): Property
+        +update(property): void
+        +findVersions(propertyId): List
+        +rollbackToVersion(propertyId, version): void
+    }
+
+    class FileService {
+        <<service>>
+        --
+        +uploadImage(file): String
+        +deleteImage(path): void
+        +replaceImage(oldPath, newFile): String
+        +reorderImages(propertyId, order): void
+        +validateImageFile(file): Boolean
+    }
+
+    class ValidationService {
+        <<service>>
+        --
+        +validateUpdateData(oldProperty, newData): ValidationResult
+        +validatePriceChange(oldPrice, newPrice): Boolean
+        +validateRoomCountChange(total, available): Boolean
+        +validateAddressChange(address): Boolean
+        +checkConflicts(propertyId, updates): List~Conflict~
+    }
+
+    class AuditService {
+        <<service>>
+        --
+        +recordChange(propertyId, changes, ownerId): void
+        +getChangeHistory(propertyId): List
+        +trackFieldModification(propertyId, field, oldValue, newValue): void
+    }
+
+    class PropertyImage {
+        <<entity>>
+        -id: Int
+        -propertyId: Int
+        -imagePath: String
+        -displayOrder: Int
+        -uploadedAt: DateTime
+        --
+    }
+
+    class ChangeSet {
+        <<entity>>
+        -propertyId: Int
+        -changes: Map~String,Object~
+        -changedAt: DateTime
+        -changedBy: Int
+        -changeDescription: String
+        --
+        +getChangedFields(): List
+    }
+
+    class NotificationService {
+        <<service>>
+        --
+        +notifyPropertyUpdated(owner, property): void
+        +notifyStudentsIfPriceChanged(propertyId, oldPrice, newPrice): void
+        +notifyIfAvailabilityChanged(propertyId, isAvailable): void
+    }
+
+    class ValidationResult {
+        <<entity>>
+        -isValid: Boolean
+        -errors: List~String~
+        -warnings: List~String~
+        --
+    }
+
+    %% Relationships
+    User "1" --> "1" UserType : has
+    Student --|> User : extends
+    Owner --|> User : extends
+    Admin --|> User : extends
+    
+    Boundary_EditProperty ..> PropertyEditController : uses
+    PropertyEditController ..> PropertyRepository : queries/updates
+    PropertyEditController ..> FileService : manages_images
+    PropertyEditController ..> ValidationService : validates
+    PropertyEditController ..> AuditService : records
+    PropertyEditController ..> NotificationService : notifies
+    
+    PropertyEditController --> EditableProperty : loads
+    PropertyEditController --> Property : updates
+    Property "1" --> "1" PropertyType : is_a
+    Property "1" --> "*" PropertyImage : contains
+    
+    AuditService --> ChangeSet : creates
+    EditableProperty --> ChangeSet : generates

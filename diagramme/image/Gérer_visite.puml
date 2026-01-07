@@ -1,0 +1,19 @@
+@startuml
+title Gérer visite (rejeter/reporter)
+class Owner {
+  +respondAppointment(id, status)
+}
+class Admin {
+  +updateAppointmentStatus(id, status)
+}
+class Student {
+  +cancelAppointment(id)
+}
+class Appointment {
+  +status: AppointmentStatus
+  +updateStatus(status)
+}
+Owner --> Appointment : modifie >
+Admin --> Appointment : supervise >
+Student --> Appointment : peut annuler >
+@enduml

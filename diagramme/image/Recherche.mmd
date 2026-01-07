@@ -1,0 +1,42 @@
+classDiagram
+    class SearchService {
+        +searchProperties(filters: object, pagination: object): SearchResult~Property~
+        +searchAnnouncements(query: string, filters: object): SearchResult~Announcement~
+        +searchUsers(query: string, filters: object): SearchResult~User~
+        +getFilters(): object
+        +getSearchSuggestions(query: string): string[]
+    }
+
+    class SearchResult~T~ {
+        +items: T[]
+        +total: number
+        +page: number
+        +pageSize: number
+        +getPaginatedResults(): T[]
+    }
+
+    class Property {
+        +id: string
+        +title: string
+        +price: number
+        +location: string
+        +matchesFilters(filters: object): boolean
+    }
+
+    class Announcement {
+        +id: string
+        +title: string
+        +content: string
+        +matchesSearch(query: string): boolean
+    }
+
+    class User {
+        +id: string
+        +name: string
+        +matchesSearch(query: string): boolean
+    }
+
+    SearchService --> SearchResult
+    SearchService --> Property
+    SearchService --> Announcement
+    SearchService --> User

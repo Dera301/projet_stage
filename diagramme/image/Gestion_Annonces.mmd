@@ -1,0 +1,37 @@
+classDiagram
+    class Announcement {
+        +id: string
+        +title: string
+        +content: string
+        +authorId: string
+        +createdAt: DateTime
+        +updatedAt: DateTime
+        +isActive: boolean
+        +publish(): boolean
+        +update(content: string): boolean
+        +delete(): boolean
+        +toggleStatus(): boolean
+    }
+
+    class User {
+        +id: string
+        +createAnnouncement(data: object): Announcement
+        +getMyAnnouncements(): Announcement[]
+        +updateAnnouncement(announcementId: string, updates: object): boolean
+        +deleteAnnouncement(announcementId: string): boolean
+    }
+
+    class AnnouncementStatus {
+        <<Enumeration>>
+        DRAFT
+        PUBLISHED
+        ARCHIVED
+    }
+
+    class SearchService {
+        +searchAnnouncements(query: string, filters: object): Announcement[]
+    }
+
+    User "1" -- "*" Announcement : publie
+    Announcement "1" -- "1" AnnouncementStatus : a
+    SearchService "1" -- "*" Announcement : indexe

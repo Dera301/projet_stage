@@ -1,0 +1,36 @@
+// [MermaidChart: 1f910a4f-edaa-4659-8cb4-b30a0e4264e4]
+---
+id: 0b0fa270-c53e-42e4-acce-60d8302874ea
+---
+classDiagram
+direction TB
+    class Animal {
+	    +int age
+	    +String gender
+	    +isMammal()
+	    +mate()
+    }
+
+    class Duck {
+	    +String beakColor
+	    +swim()
+	    +quack()
+    }
+
+    class Fish {
+	    -int sizeInFeet
+	    -canEat()
+    }
+
+    class Zebra {
+	    +bool is_wild
+	    +run()
+    }
+
+    class UntitledClass {
+    }
+
+    Animal <|-- Duck
+    Animal <|-- Fish
+    Animal <|-- Zebra
+    Duck -- UntitledClass

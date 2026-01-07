@@ -1,0 +1,77 @@
+---
+config:
+  layout: elk
+  theme: base
+---
+classDiagram
+    %% Diagramme de Classe de Conception - Supprimer/Modifier Message
+    
+    class Message {
+        <<entity>>
+        -id: Int
+        -conversationId: Int
+        -senderId: Int
+        -receiverId: Int
+        -content: String
+        -isRead: Boolean
+        -createdAt: DateTime
+        --
+        +update(id: Int, newContent: String): Message
+        +delete(id: Int): Boolean
+        +getById(id: Int): Message
+        +canBeModified(senderId: Int): Boolean
+        +canBeDeleted(senderId: Int): Boolean
+        +isOwnedBy(userId: Int): Boolean
+    }
+    
+    class Conversation {
+        <<entity>>
+        -id: Int
+        -user1Id: Int
+        -user2Id: Int
+        -updatedAt: DateTime
+        --
+        +delete(): Boolean
+        +getMessages(): Message[]
+        +deleteMessage(messageId: Int): Boolean
+        +updateMessage(messageId: Int, content: String): Message
+    }
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        --
+        +modifyMessage(messageId: Int, newContent: String): Message
+        +deleteMessage(messageId: Int): Boolean
+        +deleteConversation(conversationId: Int): Boolean
+        +getMyMessages(): Message[]
+    }
+    
+    class Student {
+        <<entity>>
+        --
+        +editMessage(messageId: Int, content: String): Message
+        +removeMessage(messageId: Int): Boolean
+    }
+    
+    class Owner {
+        <<entity>>
+        --
+        +editMessage(messageId: Int, content: String): Message
+        +removeMessage(messageId: Int): Boolean
+    }
+    
+    %% Relations
+    User "1" --> "0..*" Conversation : participer
+    Conversation "1" --> "0..*" Message : contenir
+    Message "1" --> "1" User : envoyer par
+    Student --|> User : hériter
+    Owner --|> User : hériter
+    
+    User ..> Message : modifier
+    User ..> Message : supprimer
+    User ..> Conversation : supprimer
+

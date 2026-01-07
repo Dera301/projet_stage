@@ -1,0 +1,217 @@
+classDiagram
+    %% Titre: UC14 - Échanger Messages - Diagramme de Classe de Conception
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        -phone: String?
+        --
+        +sendMessage(recipientId, content): void
+        +readMessage(messageId): void
+    }
+
+    class Student {
+        <<entity>>
+        --
+        +messageOwner(ownerId, content): void
+        +viewConversations(): void
+    }
+
+    class Owner {
+        <<entity>>
+        --
+        +messageStudent(studentId, content): void
+        +replyToStudent(messageId, content): void
+    }
+
+    class Admin {
+        <<entity>>
+        --
+    }
+
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    class Boundary_Messaging {
+        <<boundary>>
+        -conversationsList: Component
+        -messageThread: Component
+        -inputBox: Component
+        -notificationBadge: Component
+        --
+        +displayConversationList(conversations): void
+        +displayMessageThread(conversation): void
+        +displayMessageInput(): void
+        +onSendMessage(content): void
+        +onReadConversation(conversationId): void
+        +onMarkAsRead(messageId): void
+        +onDeleteConversation(conversationId): void
+    }
+
+    class MessagingController {
+        <<control>>
+        -conversationRepository: ConversationRepository
+        -messageRepository: MessageRepository
+        -userRepository: UserRepository
+        -validationService: ValidationService
+        -encryptionService: EncryptionService
+        -notificationService: NotificationService
+        --
+        +getConversations(userId): List
+        +getConversationMessages(conversationId, userId): List
+        +sendMessage(senderId, recipientId, content): Message
+        +markMessageAsRead(messageId): void
+        +deleteConversation(conversationId, userId): void
+        +searchMessages(conversationId, query): List
+    }
+
+    class Conversation {
+        <<entity>>
+        -id: Int
+        -user1Id: Int
+        -user2Id: Int
+        -unreadCount: Int
+        -lastMessageAt: DateTime
+        -createdAt: DateTime
+        --
+        +getOtherUser(userId): Int
+        +incrementUnreadCount(): void
+        +resetUnreadCount(): void
+        +getPreview(): String
+    }
+
+    class Message {
+        <<entity>>
+        -id: Int
+        -conversationId: Int
+        -senderId: Int
+        -receiverId: Int
+        -content: String
+        -isRead: Boolean
+        -readAt: DateTime?
+        -createdAt: DateTime
+        -updatedAt: DateTime
+        --
+        +markAsRead(): void
+        +canBeDeleted(): Boolean
+        +canBeEdited(): Boolean
+    }
+
+    class ConversationRepository {
+        <<service>>
+        --
+        +findByUsers(userId1, userId2): Conversation?
+        +createOrGet(userId1, userId2): Conversation
+        +findAllByUser(userId): List
+        +delete(conversationId, userId): void
+        +getUnreadConversations(userId): List
+    }
+
+    class MessageRepository {
+        <<service>>
+        --
+        +create(message): Message
+        +findByConversation(conversationId, limit): List
+        +findById(messageId): Message
+        +findUnreadByUser(userId): List
+        +markAsRead(messageId): void
+        +searchInConversation(conversationId, query): List
+    }
+
+    class UserRepository {
+        <<service>>
+        --
+        +findById(id): User
+        +findByEmail(email): User?
+    }
+
+    class ValidatedMessage {
+        <<entity>>
+        -content: String
+        -isSpam: Boolean
+        -wordCount: Int
+        -hasLinks: Boolean
+        --
+        +isValid(): Boolean
+        +getSafeContent(): String
+    }
+
+    class ValidationService {
+        <<service>>
+        -maxMessageLength: Int
+        -minMessageLength: Int
+        --
+        +validateMessage(content): ValidatedMessage
+        +validateRecipient(recipientId): Boolean
+        +checkBlockedUsers(senderId, recipientId): Boolean
+        +checkMessageRate(userId): Boolean
+        +filterSpamKeywords(content): String
+    }
+
+    class EncryptionService {
+        <<service>>
+        --
+        +encryptMessage(content): String
+        +decryptMessage(encrypted): String
+        +hashMessage(content): String
+    }
+
+    class NotificationService {
+        <<service>>
+        --
+        +notifyNewMessage(userId, message): void
+        +sendInAppNotification(userId, message): void
+        +sendEmailNotification(userId, message): void
+        +notifyUnreadCount(userId): void
+    }
+
+    class MessageMetadata {
+        <<entity>>
+        -messageId: Int
+        -deliveredAt: DateTime?
+        -readAt: DateTime?
+        -editedAt: DateTime?
+        -deletedAt: DateTime?
+        --
+    }
+
+    class BlockedUser {
+        <<entity>>
+        -blockerId: Int
+        -blockedUserId: Int
+        -reason: String?
+        -blockedAt: DateTime
+        --
+    }
+
+    %% Relationships
+    User "1" --> "1" UserType : has
+    Student --|> User : extends
+    Owner --|> User : extends
+    Admin --|> User : extends
+    
+    Boundary_Messaging ..> MessagingController : uses
+    MessagingController ..> ConversationRepository : queries/creates
+    MessagingController ..> MessageRepository : creates/reads
+    MessagingController ..> UserRepository : queries
+    MessagingController ..> ValidationService : validates
+    MessagingController ..> EncryptionService : encrypts
+    MessagingController ..> NotificationService : notifies
+    
+    Message "1" --> "1" Conversation : in
+    Message "1" --> "1" User : from_sender
+    Message "1" --> "1" User : to_receiver
+    
+    Conversation "2" --> "1" User : involves
+    Conversation "1" --> "*" Message : contains
+    
+    Message "1" --> "1" MessageMetadata : has
+    ValidationService --> ValidatedMessage : produces

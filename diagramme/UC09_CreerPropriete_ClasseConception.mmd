@@ -1,0 +1,206 @@
+classDiagram
+    %% Titre: UC9 - Créer une Propriété - Diagramme de Classe de Conception
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        --
+    }
+
+    class Student {
+        <<entity>>
+        --
+    }
+
+    class Owner {
+        <<entity>>
+        --
+        +createProperty(details): void
+        +uploadPropertyImages(images): void
+    }
+
+    class Admin {
+        <<entity>>
+        --
+    }
+
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    class Boundary_CreateProperty {
+        <<boundary>>
+        -createForm: Form
+        -imageUploadComponent: Component
+        -previewPanel: Component
+        --
+        +displayCreateForm(): void
+        +displayImageUpload(): void
+        +displayPropertyPreview(property): void
+        +onSubmit(formData): void
+        +onImageUpload(images): void
+        +onCancel(): void
+    }
+
+    class PropertyCreationController {
+        <<control>>
+        -propertyRepository: PropertyRepository
+        -fileService: FileService
+        -validationService: ValidationService
+        -notificationService: NotificationService
+        --
+        +createProperty(ownerId, propertyData): Property
+        +uploadImages(propertyId, images): List
+        +validatePropertyData(data): Boolean
+        +publishProperty(propertyId): void
+        +savePropertyDraft(propertyId, data): void
+    }
+
+    class PropertyCreationForm {
+        <<entity>>
+        -title: String
+        -description: String
+        -address: String
+        -district: String
+        -price: Float
+        -deposit: Float
+        -totalRooms: Int
+        -availableRooms: Int
+        -propertyType: PropertyType
+        -amenities: List~String~
+        -latitude: Float?
+        -longitude: Float?
+        --
+        +validate(): ValidationResult
+        +getFormattedData(): Object
+    }
+
+    class Property {
+        <<entity>>
+        -id: Int
+        -title: String
+        -description: String
+        -address: String
+        -district: String
+        -price: Float
+        -deposit: Float
+        -availableRooms: Int
+        -totalRooms: Int
+        -propertyType: PropertyType
+        -amenities: String?
+        -images: String?
+        -ownerId: Int
+        -isAvailable: Boolean
+        -latitude: Float?
+        -longitude: Float?
+        -createdAt: DateTime
+        --
+        +save(): void
+        +publish(): void
+        +saveDraft(): void
+    }
+
+    class PropertyType {
+        <<enumeration>>
+        APARTMENT
+        HOUSE
+        STUDIO
+    }
+
+    class PropertyRepository {
+        <<service>>
+        --
+        +create(property): Property
+        +save(property): void
+        +findById(id): Property
+    }
+
+    class FileService {
+        <<service>>
+        -uploadDir: String
+        -allowedExtensions: List
+        -maxFileSize: Int
+        --
+        +uploadImage(file): String
+        +uploadMultipleImages(files): List
+        +validateImageFile(file): Boolean
+        +deleteImage(path): void
+        +optimizeImage(file): File
+    }
+
+    class ValidationService {
+        <<service>>
+        --
+        +validatePropertyData(data): ValidationResult
+        +validatePrice(price): Boolean
+        +validateRoomCount(total, available): Boolean
+        +validateAddress(address): Boolean
+        +validatePropertyType(type): Boolean
+        +checkDuplicateAddress(address, ownerId): Boolean
+    }
+
+    class PropertyImage {
+        <<entity>>
+        -id: Int
+        -propertyId: Int
+        -imagePath: String
+        -displayOrder: Int
+        -uploadedAt: DateTime
+        --
+        +getUrl(): String
+    }
+
+    class Amenity {
+        <<entity>>
+        -id: Int
+        -name: String
+        -description: String
+        --
+        +getValue(): String
+    }
+
+    class NotificationService {
+        <<service>>
+        --
+        +notifyPropertyCreated(owner, property): void
+        +notifyPropertyPublished(owner, property): void
+        +notifyPropertyDraftSaved(owner, property): void
+    }
+
+    class ValidationResult {
+        <<entity>>
+        -isValid: Boolean
+        -errors: List~String~
+        -warnings: List~String~
+        --
+        +hasErrors(): Boolean
+        +getErrorMessages(): List
+    }
+
+    %% Relationships
+    User "1" --> "1" UserType : has
+    Student --|> User : extends
+    Owner --|> User : extends
+    Admin --|> User : extends
+    
+    Boundary_CreateProperty ..> PropertyCreationController : uses
+    PropertyCreationController --> PropertyCreationForm : receives
+    PropertyCreationController ..> PropertyRepository : saves
+    PropertyCreationController ..> FileService : uploads_images
+    PropertyCreationController ..> ValidationService : validates
+    PropertyCreationController ..> NotificationService : notifies
+    
+    PropertyCreationForm --> PropertyCreationController : submits
+    PropertyCreationController --> Property : creates
+    Property "1" --> "1" PropertyType : is_a
+    Property "1" --> "*" PropertyImage : has
+    PropertyImage --> FileService : stored_by
+    
+    PropertyCreationForm --> ValidationService : validates_with

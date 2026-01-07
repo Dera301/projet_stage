@@ -1,0 +1,79 @@
+classDiagram
+    %% Diagramme de Classe de Conception - Authentification
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -password: String
+        -firstName: String
+        -lastName: String
+        -userType: UserType
+        -status: UserStatus
+        -isVerified: Boolean
+        -lastLogin: DateTime?
+        -createdAt: DateTime
+        --
+        +login(email: String, password: String): Token
+        +verifyPassword(password: String): Boolean
+        +generateToken(): String
+        +updateLastLogin(): void
+        +isAccountActive(): Boolean
+    }
+    
+    class Token {
+        <<value>>
+        -token: String
+        -expiresAt: DateTime
+        -userId: Int
+        --
+        +isValid(): Boolean
+        +getPayload(): Object
+    }
+    
+    class Student {
+        <<entity>>
+        -university: String?
+        -studyLevel: String?
+        -budget: Decimal?
+        --
+        +getProfile(): User
+    }
+    
+    class Owner {
+        <<entity>>
+        --
+        +getProfile(): User
+    }
+    
+    class Admin {
+        <<entity>>
+        --
+        +getProfile(): User
+    }
+    
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+    
+    class UserStatus {
+        <<enumeration>>
+        PENDING_VERIFICATION
+        PENDING_APPROVAL
+        ACTIVE
+        SUSPENDED
+    }
+    
+    %% Relations
+    User "1" --> "1" UserType : possède
+    User "1" --> "1" UserStatus : possède
+    User "1" --> "0..*" Token : génère
+    Student --|> User : hérite
+    Owner --|> User : hérite
+    Admin --|> User : hérite
+    
+    User ..> Token : crée
+

@@ -1,0 +1,131 @@
+classDiagram
+    %% Titre: UC3 - Consulter son profil - Diagramme de Classe de Conception
+    
+    class User {
+        <<entity>>
+        -id: Int
+        -email: String
+        -firstName: String
+        -lastName: String
+        -phone: String
+        -userType: UserType
+        -university: String?
+        -studyLevel: String?
+        -budget: Decimal?
+        -bio: String?
+        -avatar: String?
+        -cinVerified: Boolean
+        -cinVerificationRequestedAt: DateTime?
+        -cinVerifiedAt: DateTime?
+        -createdAt: DateTime
+        --
+        +getProfileData(): ProfileData
+        +getCINStatus(): CINStatus
+    }
+
+    class Student {
+        <<entity>>
+        -university: String
+        -studyLevel: String
+        -budget: Decimal
+        --
+        +getProfilePage(): ProfilePage
+        +getCINVerificationStatus(): String
+        +getAppointmentHistory(): List
+    }
+
+    class Owner {
+        <<entity>>
+        --
+        +getProfilePage(): ProfilePage
+        +getPropertiesCount(): Int
+        +getAppointmentHistory(): List
+    }
+
+    class Admin {
+        <<entity>>
+        --
+        +viewProfile(userId): ProfileData
+    }
+
+    class UserType {
+        <<enumeration>>
+        STUDENT
+        OWNER
+        ADMIN
+    }
+
+    class Student_Boundary {
+        <<boundary>>
+        -profilePage: Page
+        --
+        +displayProfile(userData): void
+        +displayCINStatus(status): void
+        +displayAppointmentHistory(): void
+    }
+
+    class Owner_Boundary {
+        <<boundary>>
+        -profilePage: Page
+        --
+        +displayProfile(userData): void
+        +displayPropertiesCount(): void
+        +displayAppointmentHistory(): void
+    }
+
+    class Admin_Boundary {
+        <<boundary>>
+        -userProfilePage: Page
+        --
+        +displayUserProfile(userData): void
+    }
+
+    class ProfileController {
+        <<control>>
+        -userRepository: UserRepository
+        -appointmentRepository: AppointmentRepository
+        -propertyRepository: PropertyRepository
+        --
+        +getProfile(userId): Response
+        +getProfileByRole(userId, userType): Response
+        +getCINStatus(userId): Response
+        +getAppointmentHistory(userId): Response
+        +getPropertiesCount(userId): Response
+    }
+
+    class UserRepository {
+        <<service>>
+        --
+        +findById(id): User
+        +getProfileData(userId): ProfileData
+    }
+
+    class AppointmentRepository {
+        <<service>>
+        --
+        +findByUserId(userId): List
+        +getAppointmentHistory(userId): List
+    }
+
+    class PropertyRepository {
+        <<service>>
+        --
+        +findByOwnerId(ownerId): List
+        +countPropertiesByOwner(ownerId): Int
+    }
+
+    %% Relationships
+    User "1" --> "1" UserType : has
+    Student --|> User : extends
+    Owner --|> User : extends
+    Admin --|> User : extends
+    
+    Student_Boundary ..> ProfileController : uses
+    Owner_Boundary ..> ProfileController : uses
+    Admin_Boundary ..> ProfileController : uses
+    
+    ProfileController ..> UserRepository : queries
+    ProfileController ..> AppointmentRepository : queries
+    ProfileController ..> PropertyRepository : queries
+    
+    ProfileController ..> User : retrieves

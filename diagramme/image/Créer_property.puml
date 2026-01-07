@@ -1,0 +1,14 @@
+@startuml
+title Créer propriété
+class Owner {
+  +createProperty(data)
+}
+class Property {
+  +title: String
+  +address: String
+  +price: Decimal
+  +isAvailable: Boolean
+  +enregistrer()
+}
+Owner "1" --> "*" Property : possède >
+@enduml

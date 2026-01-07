@@ -1,0 +1,13 @@
+@startuml
+title Modifier profil
+class Utilisateur {
+  +updateProfile(data)
+  +changerMotDePasse(newPassword)
+}
+class Notification {
+  +type: String
+  +content: String
+  +sendToAdmin()
+}
+Utilisateur --> Notification : informe changements
+@enduml
